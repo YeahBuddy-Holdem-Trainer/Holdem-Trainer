@@ -29,6 +29,7 @@
 <script defer src="js/texture.js"></script>
 <script defer src="js/hand-reading.js"></script>
 <script defer src="js/pots.js"></script>
+<script defer src="js/exploit.js"></script>
 <script defer src="js/replay.js"></script>
 <script defer src="js/icm.js"></script>
 <script defer src="js/assessment.js"></script>
@@ -93,7 +94,7 @@
           <a href="#matchups"><b>Equity</b><span>Hand vs hand, hand vs range, range vs range, range vs board</span></a>
           <a href="#sizing"><b>EV</b><span>Bet sizing, board texture, 3-bet and multiway pots, ICM</span></a>
           <a href="#preflop"><b>Ranges</b><span>Preflop charts, range builder and combinatorics</span></a>
-          <a href="#hand"><b>Play</b><span>Full hands, hand reading, replays and your hand log</span></a>
+          <a href="#hand"><b>Play</b><span>Full hands, hand reading, exploit drills, replays and your hand log</span></a>
           <a href="#progress"><b>Progress</b><span>Scores by trainer and spot</span></a>
         </div>
       </section>
@@ -472,6 +473,39 @@
         <h3>Session</h3>
         <div class="stats"><div class="stat"><div class="n" id="rd-n">0</div><span class="small muted">hands</span></div><div class="stat"><div class="n" id="rd-avg">–</div><span class="small muted">avg miss (pts)</span></div><div class="stat"><div class="n" id="rd-reads">–</div><span class="small muted">final reads right</span></div></div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPLOIT DRILLS -->
+<section class="view" id="v-exploit" hidden>
+  <details class="learn"><summary>How this works <span>Adjusting to the player in front of you</span></summary><div class="learn-body">
+    <p>Balanced play makes you hard to beat. <b>Exploiting</b> makes the most money from players who aren't balanced: you lean away from the standard play in the direction their mistakes open up.</p>
+    <ul>
+      <li><b>Bluff-catch:</b> call when they bluff more than the price needs, fold when they bluff less.</li>
+      <li><b>Thin value:</b> bet medium hands into players who call with worse; check them against players who only call with better, or who bluff when checked to.</li>
+      <li><b>Bluffs:</b> bluff players who fold too much, never bluff calling stations.</li>
+      <li><b>C-bets:</b> small c-bets with nothing print against players who fold to them, and burn money against players who never do.</li>
+    </ul>
+    <p>Each answer shows the expected value of every option against that player and what you'd do against a balanced player. Pick one of your own players from the hand log to drill against their style.</p>
+  </div></details>
+  <div class="cols">
+    <div class="panel stage">
+      <div class="setup">
+        <label class="field" for="xp-who"><span>Opponent</span><select id="xp-who"></select></label>
+        <label class="field" for="xp-fam"><span>Spot</span><select id="xp-fam"><option value="mixed">Mixed</option><option value="catch">Bluff-catch on the river</option><option value="thin">Thin value on the river</option><option value="bluff">Bluff the river?</option><option value="cbet">C-bet with nothing</option></select></label>
+      </div>
+      <h3 id="xp-fam-lbl"></h3>
+      <p class="small" id="xp-opp"></p>
+      <div class="ptable" id="xp-table"></div>
+      <p id="xp-q" style="font-size:16px"></p>
+      <div class="row pt-opts" id="xp-acts"></div>
+      <div id="xp-out" style="display:grid;gap:10px"></div>
+      <div class="row"><button class="act ghost" type="button" id="xp-next">Next spot</button></div>
+    </div>
+    <div class="panel">
+      <h3>Session</h3>
+      <div class="stats"><div class="stat"><div class="n" id="xp-n">0</div><span class="small muted">spots</span></div><div class="stat"><div class="n" id="xp-acc">–</div><span class="small muted">best or close</span></div></div>
     </div>
   </div>
 </section>

@@ -46,7 +46,7 @@ $('qz-opts').onclick=e=>{const b=e.target.closest('button[data-k]');if(!b||!qz||
   qz.answers.push({...q,picked:k,ok});
   logEvent({drill:q.drill,spot:q.spot,hand:q.hand,answer:q.opts[k],expected:q.opts[q.correct],correct:ok,detail:'Assessment',ms:Date.now()-q.t0});
   qz.i++;if(qz.i<qz.plan.length)showQ();else endQuiz()};
-const TRAIN_HASH={'Preflop':'preflop','Matchups':'matchups','Pot odds':'pot-odds','Counting outs':'call-or-fold','Call or fold':'call-or-fold','Street equity':'street-equity','Range builder':'ranges','Bet sizing':'sizing','Range vs board':'board','Full hand':'hand','Hand vs range':'hvr','Range vs range':'rvr','Combinatorics':'combos','Board texture':'texture','Hand reading':'reading','3-bet & multiway':'pots'};
+const TRAIN_HASH={'Preflop':'preflop','Matchups':'matchups','Pot odds':'pot-odds','Counting outs':'call-or-fold','Call or fold':'call-or-fold','Street equity':'street-equity','Range builder':'ranges','Bet sizing':'sizing','Range vs board':'board','Full hand':'hand','Hand vs range':'hvr','Range vs range':'rvr','Combinatorics':'combos','Board texture':'texture','Hand reading':'reading','3-bet & multiway':'pots','Exploit':'exploit'};
 function endQuiz(){$('qz-run').hidden=true;$('qz-result').hidden=false;const A=qz.answers,total=A.filter(a=>a.ok).length;
   const areas=Object.keys(QPLAN).map(a=>{const xs=A.filter(x=>x.area===a),c=xs.filter(x=>x.ok).length;return{a,n:xs.length,c,acc:xs.length?c/xs.length:0}});
   const st=acc=>acc>=.9?'good':acc>=.7?'ok':'bad';
