@@ -31,28 +31,40 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-train]');i
 function applyModeLook(m){document.documentElement.dataset.mode=m==='cash'?'cash':'tour';
   $('m-cash').setAttribute('aria-pressed',m==='cash');$('m-tour').setAttribute('aria-pressed',m!=='cash');
   $('qz-game').textContent=m==='cash'?'cash (100 BB, 6-max)':'tournament'}
-function setMode(m){mode=m;applyModeLook(m);buildPfSetup();newPF();newPO();newCF();rbBuildSelects()}
+function setMode(m){mode=m;applyModeLook(m);buildPfSetup();newPF();newPO();newCF();rbBuildSelects();buildPresets();if(currentView==='hand')$('fh-tour-note').hidden=mode==='cash'}
 $('m-cash').onclick=()=>{if(mode!=='cash')setMode('cash')};$('m-tour').onclick=()=>{if(mode==='cash')setMode('tour')};
-const VIEWS=['daily','preflop','ranges','matchups','pot-odds','call-or-fold','street-equity','sizing','board','hand','replay','log','calculator','icm','assessment','progress'];
-const SECTIONS={home:['daily'],preflop:['preflop','ranges','matchups'],postflop:['pot-odds','call-or-fold','street-equity','sizing','board'],play:['hand','replay','log'],tools:['calculator','icm','assessment','progress']};
-const VIEW_LABEL={daily:'Daily challenge',preflop:'Charts',ranges:'Range builder',matchups:'Matchups','pot-odds':'Pot odds','call-or-fold':'Call or fold','street-equity':'Street equity',
-  sizing:'Bet sizing',board:'Range vs board',hand:'Full hand',replay:'Replayer',log:'Hand log',calculator:'Calculator',icm:'ICM',assessment:'Assessment',progress:'Progress'};
+const VIEWS=['daily','assessment','progress','pot-odds','call-or-fold','matchups','street-equity','calculator','board','sizing','icm','preflop','ranges','hand','replay','log'];
+/* sections: Odds and EV ideas are the same in cash and tournaments; Equity ranges, charts and play differ, so those views show the Cash/Tournament switch */
+const SECTIONS={home:['daily','assessment','progress'],odds:['pot-odds','call-or-fold'],equity:['matchups','street-equity','calculator','board'],ev:['sizing','icm'],ranges:['preflop','ranges'],play:['hand','replay','log']};
+const VIEW_LABEL={daily:'Today',assessment:'Assessment',progress:'Progress','pot-odds':'Pot odds','call-or-fold':'Call or fold',matchups:'Hand vs hand','street-equity':'Street by street',
+  calculator:'Hand or range vs range',board:'Range vs board',sizing:'Bet sizing',icm:'ICM (tournament)',preflop:'Preflop charts',ranges:'Range builder',hand:'Full hand',replay:'Replayer',log:'Hand log'};
+const MODE_VIEWS=['calculator','board','preflop','ranges','hand'];
+const UNIT_VIEWS=['pot-odds','call-or-fold','log'];
 const secOf=v=>Object.keys(SECTIONS).find(k=>SECTIONS[k].includes(v));
 const lastInSec={};
+function unitsSeg(){const bb=cfg.units==='bb';return `<div class="seg units" role="group" aria-label="Show amounts as"><button type="button" data-units="money" aria-pressed="${!bb}">$ / chips</button><button type="button" data-units="bb" aria-pressed="${bb}">BB</button></div>`}
 function route(){const h=location.hash.slice(1),v=VIEWS.includes(h)?h:'daily';currentView=v;const sec=secOf(v);
   VIEWS.forEach(x=>$('v-'+x).hidden=x!==v);
   if(sec!=='home'){lastInSec[sec]=v;try{localStorage.setItem(LASTVIEWKEY,v)}catch(e){}}
   document.querySelectorAll('.secnav a').forEach(a=>{const s=a.dataset.sec;a.href='#'+(s==='home'?'home':lastInSec[s]||SECTIONS[s][0]);
     if(s===sec)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
-  const sn=$('subnav');sn.hidden=sec==='home';
-  if(sec!=='home')sn.innerHTML=SECTIONS[sec].map(x=>`<a href="#${x}"${x===v?' aria-current="page"':''}>${VIEW_LABEL[x]}</a>`).join('');
+  document.querySelector('.seg.mode').hidden=!MODE_VIEWS.includes(v);
+  const sn=$('subnav');sn.hidden=false;
+  sn.innerHTML=`<div class="subtabs">${SECTIONS[sec].map(x=>`<a href="#${x==='daily'?'home':x}"${x===v?' aria-current="page"':''}>${VIEW_LABEL[x]}</a>`).join('')}</div>${UNIT_VIEWS.includes(v)?unitsSeg():''}`;
+  const cur=sn.querySelector('[aria-current]');if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:'nearest',inline:'nearest'});
   if(v==='progress')renderProgress();if(v==='daily'&&!daily)dailyHome();if(v==='replay')rpList();if(v==='log')lgRender();
+  if(v==='hand')$('fh-tour-note').hidden=mode==='cash';
   window.scrollTo(0,0)}
+/* $ / BB switch: a fresh spot in the drills, redrawn in the log */
+$('subnav').addEventListener('click',e=>{const b=e.target.closest('[data-units]');if(!b)return;cfg.units=b.dataset.units;
+  try{localStorage.setItem(CFGKEY,JSON.stringify(cfg))}catch(err){}
+  $('subnav').querySelectorAll('[data-units]').forEach(x=>x.setAttribute('aria-pressed',x===b));
+  if(currentView==='pot-odds')newPO();if(currentView==='call-or-fold')newCF();if(currentView==='log')lgRender()});
 window.addEventListener('hashchange',route);
 
 /* ---------- start ---------- */
 poStats();pfStats();muStats();$('cf-score').textContent=`${stats.cf.c}/${stats.cf.n}`;
 buildPfSetup();buildPresets();rbInit();rvbInit();fhInit();rpInit();lgInit();icmInit();
 newPF();newMU();newPO();newCF();newSE();newSZ();szStats();
-$('rpreset').value='cash-bb-vs-btn-open|all';$('rpreset').dispatchEvent(new Event('change'));setVmode('range');
+$('rpreset').value=presetDef('calc');$('rpreset').dispatchEvent(new Event('change'));setVmode('range');
 applyModeLook(mode);route();runCalc();updateQ();sync();

@@ -29,6 +29,7 @@
 <script defer src="js/assessment.js"></script>
 <script defer src="js/hand-log.js"></script>
 <script defer src="js/daily.js"></script>
+<script defer src="js/feedback.js"></script>
 <script defer src="js/app.js"></script>
 <script type="module" src="js/cloud.js"></script>
 </head>
@@ -37,10 +38,11 @@
   <a class="brand" href="#home"><img src="assets/logo.webp" alt="YeahBuddy Poker logo"><span>Hold'em <b>Trainer</b></span></a>
   <nav class="secnav" aria-label="Sections">
     <a href="#home" data-sec="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
-    <a href="#preflop" data-sec="preflop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Preflop</a>
-    <a href="#pot-odds" data-sec="postflop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="6" height="10" rx="1"/><rect x="9" y="7" width="6" height="10" rx="1"/><rect x="16" y="7" width="6" height="10" rx="1"/></svg>Postflop</a>
+    <a href="#pot-odds" data-sec="odds"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></svg>Odds</a>
+    <a href="#matchups" data-sec="equity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M5 21h14M6 7h12"/><path d="M6 7l-3 7h6zM18 7l-3 7h6z"/></svg>Equity</a>
+    <a href="#sizing" data-sec="ev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>EV</a>
+    <a href="#preflop" data-sec="ranges"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Ranges</a>
     <a href="#hand" data-sec="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/></svg>Play</a>
-    <a href="#calculator" data-sec="tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>Tools</a>
   </nav>
   <div class="seg mode" role="group" aria-label="Game type">
     <button id="m-tour" aria-pressed="true">Tournament</button>
@@ -81,10 +83,12 @@
       <section class="panel span2" aria-labelledby="hm-jump-h">
         <h2 class="ph" id="hm-jump-h">Jump to</h2>
         <div class="jump">
-          <a href="#preflop"><b>Preflop</b><span>Charts, range builder, matchups</span></a>
-          <a href="#pot-odds"><b>Postflop</b><span>Pot odds, call or fold, bet sizing, range vs board</span></a>
+          <a href="#pot-odds"><b>Odds</b><span>Pot odds and call or fold</span></a>
+          <a href="#matchups"><b>Equity</b><span>Hand vs hand, hand or range vs range, range vs board</span></a>
+          <a href="#sizing"><b>EV</b><span>Bet sizing and ICM</span></a>
+          <a href="#preflop"><b>Ranges</b><span>Preflop charts and your range builder</span></a>
           <a href="#hand"><b>Play</b><span>Full hands, replays and your hand log</span></a>
-          <a href="#calculator"><b>Tools</b><span>Calculator, ICM, assessment, progress</span></a>
+          <a href="#progress"><b>Progress</b><span>Scores by trainer and spot</span></a>
         </div>
       </section>
     </div>
@@ -136,7 +140,7 @@
       </div>
       <div class="ptable" id="pf-table" role="img"></div>
       <div><h3 id="pf-name"></h3><p class="spot-text" id="pf-text"></p></div>
-      <div class="hand-row"><div class="cards" id="pf-hand"></div><div class="row" id="pf-acts"></div></div>
+      <div class="hand-row"><div class="cards table-cards-only" id="pf-hand"></div><div class="row" id="pf-acts"></div></div>
     </div>
     <div class="panel">
       <h3>Session</h3>
@@ -286,7 +290,7 @@
     <div class="panel stage">
       <div class="ptable" id="cf-table" role="img"></div>
       <p class="spot-text" id="cf-text"></p>
-      <div class="hands">
+      <div class="hands table-cards-only">
         <div><span class="lbl muted">You</span><div class="cards" id="cf-hero"></div></div>
         <div><span class="lbl muted">Villain shows</span><div class="cards" id="cf-vil"></div></div>
       </div>
@@ -360,7 +364,7 @@
       </div>
       <div class="ptable" id="sz-table" role="img"></div>
       <div><h3 id="sz-name"></h3><p class="spot-text" id="sz-text"></p></div>
-      <div class="hand-row"><div><span class="lbl muted small">Board</span><div class="cards" id="sz-board"></div></div><div><span class="lbl muted small">You</span><div class="cards" id="sz-hand"></div></div></div>
+      <div class="hand-row table-cards-only"><div><span class="lbl muted small">Board</span><div class="cards" id="sz-board"></div></div><div><span class="lbl muted small">You</span><div class="cards" id="sz-hand"></div></div></div>
       <div class="row szacts" id="sz-acts"></div>
     </div>
     <div class="panel">
@@ -399,6 +403,7 @@
 
 <!-- FULL HAND -->
 <section class="view" id="v-hand" hidden>
+  <p class="intro" id="fh-tour-note" hidden><b>Full hands are cash games (100 BB deep) for now.</b> Tournament hands with shorter stacks and antes are coming next; switch to Cash to hide this note.</p>
   <details class="learn"><summary>How this works <span>Opponent types, how decisions are graded, what the numbers mean</span></summary><div class="learn-body">
     <p>Play one heads-up hand from preflop to the river, 100 BB deep. Everyone else folds. You choose the opponent type and your seat (button, cutoff or big blind), or let them be random.</p>
     <ul>
@@ -419,7 +424,7 @@
       </div>
       <p class="small" id="fh-opp"></p>
       <div class="ptable" id="fh-table" role="img"></div>
-      <div class="hand-row"><div><span class="lbl muted small">You</span><div class="cards" id="fh-hand"></div></div><div><span class="lbl muted small">Opponent</span><div class="cards" id="fh-vil"></div></div></div>
+      <div class="hand-row table-cards-only"><div><span class="lbl muted small">You</span><div class="cards" id="fh-hand"></div></div><div><span class="lbl muted small">Opponent</span><div class="cards" id="fh-vil"></div></div></div>
       <div class="row" id="fh-acts"></div>
       <ol class="fh-log" id="fh-log"></ol>
       <div><button class="linkbtn" id="fh-deal" style="color:var(--muted)">Deal a new hand</button></div>
@@ -450,7 +455,7 @@
       <div id="rp-view" hidden style="display:grid;gap:12px">
         <div class="qhead"><h3 id="rp-title" style="margin:0"></h3><span class="small muted" id="rp-pos"></span></div>
         <div class="ptable" id="rp-table" role="img"></div>
-        <div class="hand-row"><div><span class="lbl muted small">You</span><div class="cards" id="rp-hero"></div></div><div><span class="lbl muted small">Opponent</span><div class="cards" id="rp-vil"></div></div>
+        <div class="hand-row table-cards-only"><div><span class="lbl muted small">You</span><div class="cards" id="rp-hero"></div></div><div><span class="lbl muted small">Opponent</span><div class="cards" id="rp-vil"></div></div>
           <label class="row small" for="rp-vil-show" style="gap:6px;cursor:pointer"><input type="checkbox" id="rp-vil-show"> Show their cards</label></div>
         <div class="row rp-ctl"><button class="act ghost" id="rp-first" aria-label="First step">⏮</button><button class="act ghost" id="rp-prev" aria-label="Previous step">◀ Back</button><button class="act" id="rp-next" aria-label="Next step">Next ▶</button><button class="act ghost" id="rp-last" aria-label="Last step">⏭</button><button class="act ghost" id="rp-jump">Next decision</button></div>
         <div id="rp-dec" style="display:grid;gap:8px"></div>
@@ -470,7 +475,6 @@
   <p class="intro">Log hands from real games: the action street by street with every bet size, the result, and who was in it. Keep notes on the players you face and see every hand you logged with them.</p>
   <div class="row lg-top">
     <div class="seg" id="lg-tabs" role="group" aria-label="Show"><button type="button" data-tab="hands" aria-pressed="true">Hands</button><button type="button" data-tab="players" aria-pressed="false">Players</button></div>
-    <div class="seg" id="lg-units" role="group" aria-label="Show amounts as"><button type="button" data-u="money" aria-pressed="true">$ / chips</button><button type="button" data-u="bb" aria-pressed="false">Big blinds</button></div>
     <button type="button" class="act lg-newbtn" id="lg-new">+ Log a hand</button>
   </div>
   <div id="lg-body"></div>
@@ -595,6 +599,14 @@
   </div>
 </section>
 </div>
+
+<!-- ANSWER EXPLANATIONS (js/feedback.js) -->
+<dialog class="modal fb-modal" id="fb-dlg" aria-label="Explanation">
+  <div class="modal-in">
+    <div id="fb-body"></div>
+    <div class="row"><button type="button" class="act" id="fb-next">Next</button><button type="button" class="act ghost" id="fb-close">Close</button></div>
+  </div>
+</dialog>
 
 <!-- CARD PICKER for the hand log -->
 <dialog class="modal" id="lg-cards" aria-label="Choose a card">

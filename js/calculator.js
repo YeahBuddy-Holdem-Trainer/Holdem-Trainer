@@ -18,19 +18,23 @@ function setVmode(m){vmode=m;['exact','range','random'].forEach(x=>$('vm-'+x).se
 
 /* range editor */
 /* option list shared by the calculator and range vs board */
-function presetOptionsHTML(){const groups={cash:'Cash, 100 BB',tour:'Tournament'};let h='<option value="">Choose a chart range…</option><option value="any">Any two cards</option>';
+function presetOptionsHTML(only){const groups={cash:'Cash, 100 BB',tour:'Tournament'};let h='<option value="">Choose a chart range…</option><option value="any">Any two cards</option>';
   if(myRanges.length){h+='<optgroup label="My ranges">';
     for(const r of myRanges.slice().sort((a,b)=>a.name.localeCompare(b.name))){const opts=r.acts.map((a,k)=>[`my|${r.id}|${k}`,`${r.name}: ${a}`]);
       if(r.acts.length>1)opts.push([`my|${r.id}|all`,`${r.name}: ${r.acts.join(' or ')}`]);h+=opts.map(([v,t])=>`<option value="${v}">${esc(t)}</option>`).join('')}
     h+='</optgroup>'}
-  for(const g of['cash','tour']){h+=`<optgroup label="${groups[g]}">`;
+  for(const g of(only?[only]:[mode==='cash'?'cash':'tour'])){h+=`<optgroup label="${groups[g]}">`;
     for(const s of SPOTS.filter(x=>x.game===g)){const opts=s.acts.slice(0,-1).map((a,k)=>[`${s.id}|${k}`,`${s.name}: ${a}`]);
       if(s.acts.length>2)opts.push([`${s.id}|all`,`${s.name}: ${s.acts.slice(0,-1).join(' or ')}`]);
       h+=opts.map(([v,t])=>`<option value="${v}">${esc(t)}</option>`).join('')}
     h+='</optgroup>'}
   return h}
+/* default chart ranges for each game type, used when switching Cash/Tournament */
+const PRESET_DEF={cash:{calc:'cash-bb-vs-btn-open|all',a:'cash-btn-open|0',b:'cash-bb-vs-btn-open|1'},tour:{calc:'tour-bb-vs-btn-open-40-bb|all',a:'tour-btn-open-40-bb|0',b:'tour-bb-vs-btn-open-40-bb|1'}};
+const presetDef=k=>PRESET_DEF[mode==='cash'?'cash':'tour'][k];
 function buildPresets(){const keep=$('rpreset').value,h=presetOptionsHTML();
   $('rpreset').innerHTML=h;if([...$('rpreset').options].some(o=>o.value===keep))$('rpreset').value=keep;
+  else if(keep&&keep!=='any'){$('rpreset').value=presetDef('calc');$('rpreset').dispatchEvent(new Event('change'))}
   if(typeof rvbSelects==='function')rvbSelects()}
 function setRange(set,src){vRange=set;$('rtext').value=rangeToText(set);renderRangeGrid();if(src!=null)$('rpreset').value=src}
 function renderRangeGrid(){let h='';for(let i=12;i>=0;i--)for(let j=12;j>=0;j--){const l=gridLabel(i,j);h+=`<button type="button" class="${vRange.has(l)?'a0':''}" data-l="${l}" aria-pressed="${vRange.has(l)}" title="${l}">${l}</button>`}

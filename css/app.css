@@ -331,7 +331,7 @@ dialog.modal::backdrop{background:rgba(10,18,32,.6)}
 .brand span{white-space:nowrap}
 @media (max-width:440px){.brand span{display:none}.topbar-in{gap:8px}}
 @media (max-width:370px){.brand span{display:none}}
-@media (min-width:761px) and (max-width:1240px){.brand span{display:none}.secnav a{padding:9px 11px}.secnav a svg{display:none}.acct-btn .lbl{display:none}.acct-btn{padding:0;width:44px}.topbar-in{gap:12px}}
+@media (min-width:761px) and (max-width:1360px){.brand span{display:none}.secnav a{padding:9px 11px}.secnav a svg{display:none}.acct-btn .lbl{display:none}.acct-btn{padding:0;width:44px}.topbar-in{gap:12px}}
 
 /* ---------- hand log ---------- */
 .lg-top{justify-content:space-between;gap:10px}
@@ -377,3 +377,35 @@ dialog.modal::backdrop{background:rgba(10,18,32,.6)}
 @media (max-width:480px){.lg-suit{grid-template-columns:repeat(7,minmax(0,1fr))}}
 dialog#lg-cards{width:min(620px,calc(100vw - 16px))}
 .lg-grid .seg,.field .seg{flex-wrap:nowrap;justify-self:start;align-self:start;width:max-content}
+.phole{position:absolute;transform:translate(-50%,-50%);display:flex;gap:2px;z-index:2;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35))}
+.phole.me .card.xs{width:34px;height:48px;border-radius:5px}.phole.me .card.xs b{font-size:15px}.phole.me .card.xs i{font-size:13px}
+@media (max-width:560px){.phole.me .card.xs{width:28px;height:40px}.phole.me .card.xs b{font-size:13px}.phole.me .card.xs i{font-size:11px}}
+.table-cards-only{display:none!important}
+
+/* ---------- answer pop-ups ---------- */
+.fb-wrap{display:grid;gap:10px}
+.fb-wrap.fb-on>:not(.fb-chip){display:none!important}
+.fb-chip{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-radius:12px;background:var(--sand);font-weight:700}
+.fb-chip.good{background:color-mix(in srgb,var(--good) 14%,var(--surface));color:var(--good)}
+.fb-chip.bad{background:color-mix(in srgb,var(--bad) 12%,var(--surface));color:var(--bad)}
+.fb-chip .linkbtn{font-size:14px;white-space:nowrap}
+dialog.fb-modal{width:min(560px,calc(100vw - 20px))}
+#fb-body{max-height:min(70vh,640px);overflow-y:auto;display:grid;gap:10px}
+#fb-body .verdict strong{font-size:26px}
+@media (max-width:600px){dialog.fb-modal{margin:auto auto 0;width:100%;max-width:none;border-radius:18px 18px 0 0;max-height:88vh}}
+/* section tabs + $/BB switch */
+.subnav{display:flex;align-items:center;justify-content:space-between;gap:10px;overflow:visible;margin:0;padding:0}
+.subtabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px;min-width:0}
+.subtabs::-webkit-scrollbar{display:none}
+.subtabs a{flex:none;padding:8px 15px;border-radius:999px;border:1px solid rgba(251,246,234,.55);color:var(--ivory);text-decoration:none;font:700 14px var(--body);white-space:nowrap}
+.subtabs a:hover{background:rgba(251,246,234,.12)}
+.subtabs a[aria-current="page"]{background:var(--ivory);color:var(--navy);border-color:var(--ivory)}
+.seg.units{flex:none;background:var(--surface);border-color:var(--surface)}
+.seg.units button{padding:6px 12px}
+.seg.units button[aria-pressed="true"]{background:var(--navy);color:var(--ivory)}
+.jump{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:760px){.secnav{grid-template-columns:repeat(6,minmax(0,1fr))}.secnav a{font-size:10.5px}}
+@media (max-width:600px){.subnav{flex-wrap:wrap}.seg.units{order:-1;margin-left:auto}}
+.subtabs{flex:1 1 auto;max-width:100%}
+@media (max-width:600px){.subtabs{flex-basis:100%}}
+.wrap>*{min-width:0}

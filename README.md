@@ -22,7 +22,8 @@ A Texas Hold'em training app that runs on GitHub Pages, with Firebase sign-in so
 | `js/assessment.js` | Assessment quiz. |
 | `js/hand-log.js` | Hand log and player notes. |
 | `js/daily.js` | Daily challenge and the Home screen. |
-| `js/app.js` | Progress page, navigation and start-up. |
+| `js/feedback.js` | Answer explanations in a pop-up. |
+| `js/app.js` | Progress page, sections (Home, Odds, Equity, EV, Ranges, Play) and start-up. |
 | `js/cloud.js` | Sign-in and saving to Firebase. |
 | `js/firebase-config.js` | Your Firebase project's settings (step 2 below). |
 | `firestore.rules` | Security rules: each person can read and write only their own data. |

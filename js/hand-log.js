@@ -102,7 +102,6 @@ const lgSlot = (c, key) => `<button type="button" class="lg-slot" data-slot="${k
 /* ---------- top-level render ---------- */
 function lgRender() {
   document.querySelectorAll('#lg-tabs button').forEach(b => b.setAttribute('aria-pressed', b.dataset.tab === lg.tab));
-  document.querySelectorAll('#lg-units button').forEach(b => b.setAttribute('aria-pressed', (cfg.units === 'bb') === (b.dataset.u === 'bb')));
   const el = $('lg-body');
   if (lg.screen === 'edit') return lgEditor(el);
   if (lg.screen === 'hand') return lgHandPage(el);
@@ -110,10 +109,7 @@ function lgRender() {
   return lg.tab === 'players' ? lgPlayersList(el) : lgHandsList(el);
 }
 $('lg-tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; lg = { ...lg, tab: b.dataset.tab, screen: 'list', id: null }; lgRender(); });
-$('lg-units').addEventListener('click', e => {
-  const b = e.target.closest('[data-u]'); if (!b) return; cfg.units = b.dataset.u;
-  try { localStorage.setItem(CFGKEY, JSON.stringify(cfg)); } catch (err) {} lgRender();
-});
+
 $('lg-new').onclick = () => lgOpenEditor(null);
 function lgGo(screen, id) { lg = { ...lg, screen, id, confirm: null }; lgRender(); window.scrollTo(0, 0); }
 

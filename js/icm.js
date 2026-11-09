@@ -66,5 +66,5 @@ $('icm-eqcalc').onclick=()=>{const hand=icmLabelCombo($('icm-hand').value),rng=p
   if(!hand){msg.textContent='Enter a hand like AKs, 77 or AhKd.';return}if(!rng.size){msg.textContent='Choose their shoving range.';return}
   msg.textContent='Working…';setTimeout(()=>{const e=equityVsRange(hand,[...rng].flatMap(labelCombos),[],30000);
     if(!e){msg.textContent='Your hand blocks that whole range.';return}$('icm-eq').value=(e.eq*100).toFixed(1);msg.textContent=`${names(hand)} has ${pct(e.eq)} against that range.`;icmCalc()},20)};
-function icmInit(){icmRows();icmAutoCall();const h=presetOptionsHTML().replace('Choose a chart range…','Choose their shoving range…');$('icm-range').innerHTML=h;
+function icmInit(){icmRows();icmAutoCall();const h=presetOptionsHTML('tour').replace('Choose a chart range…','Choose their shoving range…');$('icm-range').innerHTML=h;
   const shove=SPOTS.find(s=>s.type==='shove'&&s.hero==='BTN');if(shove)$('icm-range').value=shove.id+'|0';icmCalc()}

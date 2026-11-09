@@ -42,7 +42,7 @@ function cfTable(c){const seats={};POS.forEach(p=>seats[p]={state:'folded',bet:'
   return{hero:c.hp,seats,center:`<div class="cards">${cardsHTML(c.board,'xs')}</div><span>Pot ${money(c.pot)}</span>`}}
 let cf;
 function newCF(){cf={...genCF(),done:false,t0:Date.now()};
-  renderTable($('cf-table'),cfTable(cf));
+  renderTable($('cf-table'),{...cfTable(cf),heroCards:cf.hero,shown:{[cf.vp]:cf.vil}});
   $('cf-hero').innerHTML=cardsHTML(cf.hero);$('cf-vil').innerHTML=cardsHTML(cf.vil);
   $('cf-text').textContent=`${cf.street===3?'Flop':'Turn'}. The ${POSNAME[cf.vp]} ${cf.street===3?'shoves all in for':'bets'} ${money(cf.bet)} into ${money(cf.pot)}. You are on the ${POSNAME[cf.hp]}.`;
   ['cf-call','cf-fold'].forEach(id=>{$(id).disabled=false;$(id).classList.remove('pickok','pickbad')});

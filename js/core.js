@@ -9,8 +9,8 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 let mode='tour',bb=200;
 const LEVELS=[[100,200],[200,400],[300,600],[500,1000],[1000,2000],[2500,5000]];
 function newStakes(){bb=mode==='cash'?2:pick(LEVELS)[1]}
-function money(x){return mode==='cash'?'$'+x.toLocaleString():x.toLocaleString()}
-function bbs(x){return mode==='cash'?`$1/$2 game · ${(x/bb).toFixed(1)} BB`:`Blinds ${(bb/2).toLocaleString()}/${bb.toLocaleString()} · ${(x/bb).toFixed(1)} BB`}
+function money(x){if(cfg.units==='bb'&&bb>0)return fmtBB(x/bb)+' BB';return mode==='cash'?'$'+x.toLocaleString():x.toLocaleString()}
+function bbs(x){const g=mode==='cash'?'$1/$2 game':`Blinds ${(bb/2).toLocaleString()}/${bb.toLocaleString()}`;return cfg.units==='bb'?g:`${g} · ${(x/bb).toFixed(1)} BB`}
 function makePot(lo,hi){return mode==='cash'?roundTo(randInt(lo*bb,hi*bb),5):roundTo(bb*randInt(lo,hi)+bb*0.5*randInt(0,1),bb/2)}
 function makeBet(pot,frac){return mode==='cash'?roundTo(pot*frac,5):roundTo(pot*frac,bb/2)}
 const fmtBB=x=>(Math.round(x*10)/10).toString();
@@ -98,6 +98,12 @@ function renderTable(el,t){
     h+=`<div class="pseat ${s.state||''}" style="left:${x}%;top:${y}%">${p}<small>${s.stack??''}</small>${s.tag?`<em>${s.tag}</em>`:''}</div>`;
     if(s.bet)h+=`<div class="pbet" style="left:${50+26*cx}%;top:${50+23*cy}%"><i></i>${s.bet}</div>`;
     if(p==='BTN'){const b=a+.42;h+=`<div class="dbtn" style="left:${50+31*Math.cos(b)}%;top:${50+30*Math.sin(b)}%" title="Dealer button">D</div>`}});
+  /* hole cards sit beside the player who holds them: t.heroCards, and t.shown = {POS:[cards]} for others */
+  const holes=[[t.hero,t.heroCards],...Object.entries(t.shown||{})];
+  for(const [p,cards] of holes){if(!cards||!cards.length)continue;const k=(POS.indexOf(p)-hi+6)%6,a=(90+k*60)*Math.PI/180,cx=Math.cos(a),cy=Math.sin(a);
+    const sx=50+43*cx,sy=50+41*cy;   /* beside the hero; above side seats; inward from the top seats */
+    const [x,y]=k===0?[sx+19,sy]:k===1||k===5?[sx,sy-17]:k===3?[sx+15,sy]:[sx+(cx<0?15:-15),sy];
+    h+=`<div class="phole${p===t.hero?' me':''}" style="left:${x}%;top:${y}%">${cardsHTML(cards,'xs')}</div>`}
   h+=`<div class="center">${t.center||''}</div>`;
   el.innerHTML=h;
   el.setAttribute('aria-label',`Table: you are in the ${POSNAME[t.hero]}. `+POS.filter(p=>t.seats[p]&&t.seats[p].tag).map(p=>`${p}: ${t.seats[p].tag}${t.seats[p].bet?' '+t.seats[p].bet:''}`).join(', '));

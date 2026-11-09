@@ -118,7 +118,7 @@ function newPF(){const pool=pfPool(),sel=$('pf-spot').value;
   const spot=sel==='focus'?focusSpot(pool):sel==='random'?pick(pool):SPOTS.find(s=>s.id===sel)||pick(pool);
   const {label,cards}=dealSpotHand(spot);
   pf={spot,label,cards,exp:spot.map.get(label)??spot.fold,done:false,t0:Date.now()};
-  renderTable($('pf-table'),spotTable(spot));
+  renderTable($('pf-table'),{...spotTable(spot),heroCards:cards});
   $('pf-name').textContent=spot.name;$('pf-text').textContent=spotText(spot);$('pf-hand').innerHTML=cardsHTML(cards);
   $('pf-acts').innerHTML=spot.acts.map((a,i)=>`<button class="act ${i===spot.fold?'ghost':''}" data-a="${i}">${a}</button>`).join('')+`<button class="act ghost" data-next="1">Skip</button>`;
   $('pf-out').innerHTML=`<p class="small muted">Answer to see the full ${spot.name} chart.</p>`}

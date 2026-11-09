@@ -20,7 +20,7 @@ function rpDraw(){const h=rpCur,L=h.log,e=L[rpStep],S=FH_SEATS[h.seat],sn=e.s||n
   const seats={};POS.forEach(p=>seats[p]={state:'folded'});
   seats[S.hero]={state:'hero',stack:sn?fmtBB(sn.h)+' BB':'',tag:'You',bet:sn&&sn.bh?fmtBB(sn.bh)+' BB':''};
   seats[S.vil]={state:'vil',stack:sn?fmtBB(sn.v)+' BB':'',tag:{rec:'Rec',station:'Station',nit:'Nit',aggro:'Aggro'}[h.type],bet:sn&&sn.bv?fmtBB(sn.bv)+' BB':''};
-  renderTable($('rp-table'),{hero:S.hero,seats,center:`<div class="cards">${e.board.length?cardsHTML(e.board,'xs'):''}</div><b>${fmtBB(e.pot)} BB</b><span>pot</span>`});
+  renderTable($('rp-table'),{hero:S.hero,seats,heroCards:h.hero,shown:showV?{[S.vil]:h.vil}:{},center:`<div class="cards">${e.board.length?cardsHTML(e.board,'xs'):''}</div><b>${fmtBB(e.pot)} BB</b><span>pot</span>`});
   $('rp-title').textContent=`${S.hero} vs ${FH_TYPES[h.type].name} · ${rpWhen(h.ts)}`;
   $('rp-hero').innerHTML=cardsHTML(h.hero);$('rp-vil').innerHTML=showV?cardsHTML(h.vil):cardsHTML([null,null]);
   $('rp-pos').textContent=`Step ${rpStep+1} of ${L.length} · ${e.street}`;

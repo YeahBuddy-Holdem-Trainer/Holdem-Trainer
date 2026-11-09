@@ -66,7 +66,10 @@ function texture(b){const f=b.slice(0,3),suits=new Set(f.map(c=>c&3)).size,ranks
 /* ---------- output ---------- */
 function rvbSelects(){const a=$('rvb-a'),b=$('rvb-b');if(!a)return;const ka=a.value,kb=b.value,h=presetOptionsHTML();
   a.innerHTML=h;b.innerHTML=h.replace('<option value="">Choose a chart range…</option>','<option value="">None (one range only)</option>');
-  if([...a.options].some(o=>o.value===ka))a.value=ka;if([...b.options].some(o=>o.value===kb))b.value=kb}
+  const has=(s,v)=>[...s.options].some(o=>o.value===v);let moved=false;
+  if(has(a,ka))a.value=ka;else{a.value=presetDef('a');moved=!!ka}
+  if(has(b,kb))b.value=kb;else{b.value=kb?presetDef('b'):'';moved=moved||!!kb}
+  if(moved&&typeof rvbBoard!=='undefined'&&rvbBoard)rvbRun()}
 const optText=sel=>sel.value?sel.options[sel.selectedIndex].text:'';
 let rvbMax=1;
 function rvbRow(key,label,A,B,kind){const pa=A?(kind==='m'?A.m:A.d)[key]||0:0,pb=B?(kind==='m'?B.m:B.d)[key]||0:0;
@@ -103,4 +106,4 @@ function rvbCompare(A,B){const s=x=>x.strong/x.n,t=x=>x.tpplus/x.n,na=optText($(
 $('rvb-out').onclick=e=>{const tr=e.target.closest('tr[data-k]');if(!tr)return;rvbSel=tr.dataset.k;rvbRun()};
 $('rvb-a').onchange=$('rvb-b').onchange=()=>{rvbGuess=null;rvbRun()};
 $('rvb-guess').onchange=()=>{rvbGuess=null;rvbRun()};
-function rvbInit(){rvbSelects();$('rvb-a').value='cash-btn-open|0';$('rvb-b').value='cash-bb-vs-btn-open|1';rvbBoard=shuffled().slice(0,3);rvbActive=3;rvbSlots();rvbRun()}
+function rvbInit(){rvbSelects();$('rvb-a').value=presetDef('a');$('rvb-b').value=presetDef('b');rvbBoard=shuffled().slice(0,3);rvbActive=3;rvbSlots();rvbRun()}

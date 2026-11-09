@@ -146,7 +146,7 @@ function szMake(sc){let d=szDeal(sc);if(!d)d=szDeal(sc);
   const avail=SZB.map((b,i)=>b.id==='jam'?spr<=3:b.id==='over'?amts[i]<stack:true);
   const seats={};POS.forEach(p=>seats[p]={state:'folded'});seats[line.hero]={state:'hero',stack:fmtBB(stack)+' BB',tag:'You'};seats[line.vil]={state:'vil',stack:fmtBB(stack)+' BB',tag:sc.line==='oop'?'Waiting':'Checks'};
   const nb=sc.street==='Flop'?3:sc.street==='Turn'?4:5;
-  const table={hero:line.hero,seats,center:`<span>${sc.street}</span><b>${fmtBB(pot)} BB</b><span>pot</span>`};
+  const table={hero:line.hero,seats,heroCards:d.hero,center:`<div class="cards">${cardsHTML(d.board.slice(0,nb),'xs')}</div><b>${fmtBB(pot)} BB</b><span>${sc.street} pot</span>`};
   const text=`Cash game, 100 BB deep, against a typical live recreational player. ${line.text} ${hist.join(' ')} ${sc.line==='oop'?'You act first on the flop.':`The ${POSNAME[line.vil]} checks to you.`}`;
   return{sc,...d,line,pot,stack,amts,avail,nb,table,text}}
 /* the buttons that count as best / correct for a spot under a key (all in and overbet merge when stacks are short) */

@@ -243,7 +243,7 @@ function fhRender(showVil){const S=fh.S,seats={};POS.forEach(p=>seats[p]={state:
   seats[S.hero]={state:'hero',stack:fmtBB(fh.stack.hero)+' BB',tag:'You',bet:bet('hero')};
   seats[S.vil]={state:'vil',stack:fmtBB(fh.stack.vil)+' BB',tag:{rec:'Rec',station:'Station',nit:'Nit',aggro:'Aggro'}[fh.type],bet:bet('vil')};
   const board=fh.street?fh.board.slice(0,[0,3,4,5][fh.street]):[];
-  renderTable($('fh-table'),{hero:S.hero,seats,center:`<div class="cards">${board.length?cardsHTML(board,'xs'):''}</div><b>${fmtBB(fh.pot)} BB</b><span>pot</span>`});
+  renderTable($('fh-table'),{hero:S.hero,seats,heroCards:fh.hero,shown:fh.done&&showVil?{[S.vil]:fh.vil}:{},center:`<div class="cards">${board.length?cardsHTML(board,'xs'):''}</div><b>${fmtBB(fh.pot)} BB</b><span>pot</span>`});
   $('fh-hand').innerHTML=cardsHTML(fh.hero);$('fh-vil').innerHTML=fh.done&&showVil?cardsHTML(fh.vil):cardsHTML([null,null]);
   $('fh-opp').innerHTML=`<b>${FH_TYPES[fh.type].name}.</b> ${FH_TYPES[fh.type].desc}`;
   $('fh-log').innerHTML=fh.log.map(l=>`<li class="${l.who}">${esc(l.text)}</li>`).join('');$('fh-log').scrollTop=1e6;
