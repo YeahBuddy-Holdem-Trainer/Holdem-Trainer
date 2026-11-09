@@ -27,6 +27,7 @@
 <script defer src="js/replay.js"></script>
 <script defer src="js/icm.js"></script>
 <script defer src="js/assessment.js"></script>
+<script defer src="js/hand-log.js"></script>
 <script defer src="js/daily.js"></script>
 <script defer src="js/app.js"></script>
 <script type="module" src="js/cloud.js"></script>
@@ -82,7 +83,7 @@
         <div class="jump">
           <a href="#preflop"><b>Preflop</b><span>Charts, range builder, matchups</span></a>
           <a href="#pot-odds"><b>Postflop</b><span>Pot odds, call or fold, bet sizing, range vs board</span></a>
-          <a href="#hand"><b>Play</b><span>Full hands and replays</span></a>
+          <a href="#hand"><b>Play</b><span>Full hands, replays and your hand log</span></a>
           <a href="#calculator"><b>Tools</b><span>Calculator, ICM, assessment, progress</span></a>
         </div>
       </section>
@@ -464,6 +465,17 @@
   </div>
 </section>
 
+<!-- HAND LOG -->
+<section class="view" id="v-log" hidden>
+  <p class="intro">Log hands from real games: the action street by street with every bet size, the result, and who was in it. Keep notes on the players you face and see every hand you logged with them.</p>
+  <div class="row lg-top">
+    <div class="seg" id="lg-tabs" role="group" aria-label="Show"><button type="button" data-tab="hands" aria-pressed="true">Hands</button><button type="button" data-tab="players" aria-pressed="false">Players</button></div>
+    <div class="seg" id="lg-units" role="group" aria-label="Show amounts as"><button type="button" data-u="money" aria-pressed="true">$ / chips</button><button type="button" data-u="bb" aria-pressed="false">Big blinds</button></div>
+    <button type="button" class="act lg-newbtn" id="lg-new">+ Log a hand</button>
+  </div>
+  <div id="lg-body"></div>
+</section>
+
 <!-- CALCULATOR -->
 <section class="view" id="v-calculator" hidden>
   <details class="learn"><summary>How this works <span>Exact vs simulated, and studying against ranges</span></summary><div class="learn-body">
@@ -583,6 +595,16 @@
   </div>
 </section>
 </div>
+
+<!-- CARD PICKER for the hand log -->
+<dialog class="modal" id="lg-cards" aria-label="Choose a card">
+  <div class="modal-in">
+    <form method="dialog" class="modal-x"><button aria-label="Close">✕</button></form>
+    <h2 style="font-size:20px;text-align:left">Choose a card</h2>
+    <div id="lg-cards-grid" class="lg-cgrid"></div>
+    <button type="button" class="linkbtn" id="lg-cards-clear">Clear this card</button>
+  </div>
+</dialog>
 
 <!-- ACCOUNT -->
 <dialog class="modal" id="acct" aria-labelledby="acct-h">

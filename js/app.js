@@ -33,10 +33,10 @@ function applyModeLook(m){document.documentElement.dataset.mode=m==='cash'?'cash
   $('qz-game').textContent=m==='cash'?'cash (100 BB, 6-max)':'tournament'}
 function setMode(m){mode=m;applyModeLook(m);buildPfSetup();newPF();newPO();newCF();rbBuildSelects()}
 $('m-cash').onclick=()=>{if(mode!=='cash')setMode('cash')};$('m-tour').onclick=()=>{if(mode==='cash')setMode('tour')};
-const VIEWS=['daily','preflop','ranges','matchups','pot-odds','call-or-fold','street-equity','sizing','board','hand','replay','calculator','icm','assessment','progress'];
-const SECTIONS={home:['daily'],preflop:['preflop','ranges','matchups'],postflop:['pot-odds','call-or-fold','street-equity','sizing','board'],play:['hand','replay'],tools:['calculator','icm','assessment','progress']};
+const VIEWS=['daily','preflop','ranges','matchups','pot-odds','call-or-fold','street-equity','sizing','board','hand','replay','log','calculator','icm','assessment','progress'];
+const SECTIONS={home:['daily'],preflop:['preflop','ranges','matchups'],postflop:['pot-odds','call-or-fold','street-equity','sizing','board'],play:['hand','replay','log'],tools:['calculator','icm','assessment','progress']};
 const VIEW_LABEL={daily:'Daily challenge',preflop:'Charts',ranges:'Range builder',matchups:'Matchups','pot-odds':'Pot odds','call-or-fold':'Call or fold','street-equity':'Street equity',
-  sizing:'Bet sizing',board:'Range vs board',hand:'Full hand',replay:'Replayer',calculator:'Calculator',icm:'ICM',assessment:'Assessment',progress:'Progress'};
+  sizing:'Bet sizing',board:'Range vs board',hand:'Full hand',replay:'Replayer',log:'Hand log',calculator:'Calculator',icm:'ICM',assessment:'Assessment',progress:'Progress'};
 const secOf=v=>Object.keys(SECTIONS).find(k=>SECTIONS[k].includes(v));
 const lastInSec={};
 function route(){const h=location.hash.slice(1),v=VIEWS.includes(h)?h:'daily';currentView=v;const sec=secOf(v);
@@ -46,13 +46,13 @@ function route(){const h=location.hash.slice(1),v=VIEWS.includes(h)?h:'daily';cu
     if(s===sec)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   const sn=$('subnav');sn.hidden=sec==='home';
   if(sec!=='home')sn.innerHTML=SECTIONS[sec].map(x=>`<a href="#${x}"${x===v?' aria-current="page"':''}>${VIEW_LABEL[x]}</a>`).join('');
-  if(v==='progress')renderProgress();if(v==='daily'&&!daily)dailyHome();if(v==='replay')rpList();
+  if(v==='progress')renderProgress();if(v==='daily'&&!daily)dailyHome();if(v==='replay')rpList();if(v==='log')lgRender();
   window.scrollTo(0,0)}
 window.addEventListener('hashchange',route);
 
 /* ---------- start ---------- */
 poStats();pfStats();muStats();$('cf-score').textContent=`${stats.cf.c}/${stats.cf.n}`;
-buildPfSetup();buildPresets();rbInit();rvbInit();fhInit();rpInit();icmInit();
+buildPfSetup();buildPresets();rbInit();rvbInit();fhInit();rpInit();lgInit();icmInit();
 newPF();newMU();newPO();newCF();newSE();newSZ();szStats();
 $('rpreset').value='cash-bb-vs-btn-open|all';$('rpreset').dispatchEvent(new Event('change'));setVmode('range');
 applyModeLook(mode);route();runCalc();updateQ();sync();

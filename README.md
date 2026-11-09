@@ -20,6 +20,7 @@ A Texas Hold'em training app that runs on GitHub Pages, with Firebase sign-in so
 | `js/replay.js` | Hand replayer. |
 | `js/icm.js` | ICM calculator. |
 | `js/assessment.js` | Assessment quiz. |
+| `js/hand-log.js` | Hand log and player notes. |
 | `js/daily.js` | Daily challenge and the Home screen. |
 | `js/app.js` | Progress page, navigation and start-up. |
 | `js/cloud.js` | Sign-in and saving to Firebase. |
@@ -51,7 +52,7 @@ The app works at this point, saving on each device. The next step turns on accou
 Reload the app: the account button in the top right now opens sign-in.
 
 ## How saving works
-- Signed in: answers, saved ranges, played hands, daily progress and your name save to your account and appear on any device you sign in on. You stay signed in until you choose **Sign out**.
+- Signed in: answers, saved ranges, played hands, logged hands, player notes, daily progress and your name save to your account and appear on any device you sign in on. You stay signed in until you choose **Sign out**.
 - Not signed in: everything stays on that device. The first time you sign in there, it moves into your account.
 - Signing out removes the training from that device (it stays in the account), so a shared device doesn't show your data to the next person.
 - To keep within the free limits, answers are saved in one document per day, and each visit only downloads what changed since the last visit (usually 2 reads).
