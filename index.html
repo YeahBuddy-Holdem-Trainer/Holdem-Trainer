@@ -30,6 +30,7 @@
 <script defer src="js/hand-reading.js"></script>
 <script defer src="js/pots.js"></script>
 <script defer src="js/exploit.js"></script>
+<script defer src="js/leaks.js"></script>
 <script defer src="js/replay.js"></script>
 <script defer src="js/icm.js"></script>
 <script defer src="js/assessment.js"></script>
@@ -95,7 +96,7 @@
           <a href="#sizing"><b>EV</b><span>Bet sizing, board texture, 3-bet and multiway pots, ICM</span></a>
           <a href="#preflop"><b>Ranges</b><span>Preflop charts, range builder and combinatorics</span></a>
           <a href="#hand"><b>Play</b><span>Full hands, hand reading, exploit drills, replays and your hand log</span></a>
-          <a href="#progress"><b>Progress</b><span>Scores by trainer and spot</span></a>
+          <a href="#leaks"><b>Leak finder</b><span>Patterns in your mistakes and your logged hands</span></a>
         </div>
       </section>
     </div>
@@ -766,6 +767,20 @@
       <h3>Prize-money value</h3><div id="icm-out"></div>
       <h3>Call or fold</h3><div id="icm-allin" style="display:grid;gap:10px"></div>
     </div>
+  </div>
+</section>
+
+<!-- LEAK FINDER -->
+<section class="view" id="v-leaks" hidden>
+  <p class="intro">Patterns in your answers and your logged hands: which way you lean when you're wrong, and where your real hands lose. Each leak links to the trainer that fixes it.</p>
+  <div class="row lk-filters">
+    <label class="field" for="lk-window"><span>Period</span><select id="lk-window"><option value="all">All time</option><option value="30">Last 30 days</option><option value="7">Last 7 days</option></select></label>
+    <label class="field" for="lk-game"><span>Game</span><select id="lk-game"><option value="all">Cash and tournament</option><option value="cash">Cash</option><option value="tour">Tournament</option></select></label>
+  </div>
+  <div class="panel"><h2 class="ph">Your biggest leaks</h2><div id="lk-top" class="lk-list"></div><div id="lk-more" class="lk-list"></div></div>
+  <div class="cols">
+    <div class="panel"><h2 class="ph">Your logged hands</h2><div id="lk-log" style="display:grid;gap:12px"></div></div>
+    <div class="panel"><h2 class="ph">Weakest trainer spots</h2><div id="lk-train"></div></div>
   </div>
 </section>
 

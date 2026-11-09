@@ -437,3 +437,12 @@ dialog.fb-modal{width:min(560px,calc(100vw - 20px))}
 .pt-opts button.right{background:var(--good);border-color:var(--good);color:#fff}
 .pt-opts button.wrong{border-color:var(--bad);color:var(--bad)}
 #pt-table[hidden]{display:none}
+
+/* leak finder */
+.lk-filters{gap:12px}
+.lk-filters .field span{color:var(--ivory)}
+.lk-list{display:grid;gap:10px}
+.lk-item{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:12px;background:var(--sand)}
+.lk-item p{margin-top:2px}
+.lk-item .act{flex:none}
+.stat .n.good{color:var(--good)}.stat .n.bad{color:var(--bad)}

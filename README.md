@@ -29,6 +29,7 @@ A Texas Hold'em training app that runs on GitHub Pages, with Firebase sign-in so
 | `js/combos.js` | Combinatorics trainer: combos, card removal, range counting, bluff share. |
 | `js/hand-log.js` | Hand log and player notes. |
 | `js/daily.js` | Daily challenge and the Home screen. |
+| `js/leaks.js` | Leak finder: patterns in your answers and logged hands. |
 | `js/feedback.js` | Answer explanations in a pop-up. |
 | `js/app.js` | Progress page, sections (Home, Odds, Equity, EV, Ranges, Play) and start-up. |
 | `js/cloud.js` | Sign-in and saving to Firebase. |
