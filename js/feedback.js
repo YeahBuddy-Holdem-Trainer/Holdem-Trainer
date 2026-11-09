@@ -4,7 +4,7 @@
    explanation moves into a pop-up: it opens by itself when the answer is wrong, and from "Why?" when right. */
 const FB_BOXES = {
   'po-out': '#po-next', 'cf-out': '#cf-next', 'mu-out': '#mu-next', 'pf-out': '#pf-acts [data-next]',
-  'sz-out': '#sz-acts [data-znext]', 'hvr-out': '#hvr-next', 'cb-out': '#cb-next', 'tx-out': '#tx-next', 'rd-out': '#rd-next', 'rvr-out': '#rvr-next', 'dl-fb': '#dl-next', 'rb-test-out': null, 'fh-out': null
+  'sz-out': '#sz-acts [data-znext]', 'hvr-out': '#hvr-next', 'cb-out': '#cb-next', 'tx-out': '#tx-next', 'rd-out': '#rd-next', 'pt-out': '#pt-next', 'rvr-out': '#rvr-next', 'dl-fb': '#dl-next', 'rb-test-out': null, 'fh-out': null
 };
 const fbDlg = $('fb-dlg'), fbBody = $('fb-body');
 let fbOpenId = null;

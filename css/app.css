@@ -431,3 +431,9 @@ dialog.fb-modal{width:min(560px,calc(100vw - 20px))}
 .rd-fb.good>b{color:var(--good)}.rd-fb.bad>b{color:var(--bad)}
 .rd-read{flex-wrap:wrap;border-radius:14px}
 .rd-read button{flex:1 1 45%}
+
+/* 3-bet & multiway */
+.pt-opts{gap:8px}
+.pt-opts button.right{background:var(--good);border-color:var(--good);color:#fff}
+.pt-opts button.wrong{border-color:var(--bad);color:var(--bad)}
+#pt-table[hidden]{display:none}

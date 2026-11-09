@@ -28,6 +28,7 @@
 <script defer src="js/equity-drills.js"></script>
 <script defer src="js/texture.js"></script>
 <script defer src="js/hand-reading.js"></script>
+<script defer src="js/pots.js"></script>
 <script defer src="js/replay.js"></script>
 <script defer src="js/icm.js"></script>
 <script defer src="js/assessment.js"></script>
@@ -90,7 +91,7 @@
         <div class="jump">
           <a href="#pot-odds"><b>Odds</b><span>Pot odds and call or fold</span></a>
           <a href="#matchups"><b>Equity</b><span>Hand vs hand, hand vs range, range vs range, range vs board</span></a>
-          <a href="#sizing"><b>EV</b><span>Bet sizing, board texture and ICM</span></a>
+          <a href="#sizing"><b>EV</b><span>Bet sizing, board texture, 3-bet and multiway pots, ICM</span></a>
           <a href="#preflop"><b>Ranges</b><span>Preflop charts, range builder and combinatorics</span></a>
           <a href="#hand"><b>Play</b><span>Full hands, hand reading, replays and your hand log</span></a>
           <a href="#progress"><b>Progress</b><span>Scores by trainer and spot</span></a>
@@ -658,6 +659,35 @@
     <div class="panel">
       <h3>Session</h3>
       <div class="stats"><div class="stat"><div class="n" id="tx-n">0</div><span class="small muted">flops</span></div><div class="stat"><div class="n" id="tx-acc">–</div><span class="small muted">answers right</span></div><div class="stat"><div class="n" id="tx-all">–</div><span class="small muted">all 3 right</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3-BET AND MULTIWAY POTS -->
+<section class="view" id="v-pots" hidden>
+  <details class="learn"><summary>How this works <span>Bigger pots, more players</span></summary><div class="learn-body">
+    <p><b>3-bet pots</b> are bigger and shallower: less money behind compared with the pot. <b>Multiway pots</b> have three or more players, so somebody is much more likely to have a strong hand.</p>
+    <ul>
+      <li><b>3-bet size:</b> about 3× the open in position, 4× from the blinds, plus one open's worth for each caller.</li>
+      <li><b>Facing a 3-bet</b> (cash): fold hands that play badly in a big pot, call good suited hands and pairs in position, 4-bet the best hands and a few blockers. In tournaments at 20 BB the question becomes whether to 3-bet all in.</li>
+      <li><b>SPR</b> (stack-to-pot ratio) = money behind ÷ pot on the flop. Low SPR (about 3 or less): top pair is happy to get it in. High SPR (6+): you want two pair or better.</li>
+      <li><b>Multiway equity</b> drops with every extra player; one-pair hands lose the most.</li>
+      <li><b>Someone has it:</b> the more players, the likelier at least one has two pair or better. Bluff less and value bet thinner hands less.</li>
+    </ul>
+  </div></details>
+  <div class="cols">
+    <div class="panel stage">
+      <div class="setup"><label class="field" for="pt-group"><span>Questions</span><select id="pt-group"><option value="mixed">Mixed</option><option value="three">3-bet pots</option><option value="multi">Multiway pots</option></select></label></div>
+      <h3 id="pt-kind"></h3>
+      <div class="ptable" id="pt-table"></div>
+      <p id="pt-q" style="font-size:16px"></p>
+      <div id="pt-ans" style="display:grid;gap:8px"></div>
+      <div id="pt-out" style="display:grid;gap:10px"></div>
+      <div class="row"><button class="act ghost" type="button" id="pt-next">Next question</button></div>
+    </div>
+    <div class="panel">
+      <h3>Session</h3>
+      <div class="stats"><div class="stat"><div class="n" id="pt-n">0</div><span class="small muted">answered</span></div><div class="stat"><div class="n" id="pt-acc">–</div><span class="small muted">right or close</span></div></div>
     </div>
   </div>
 </section>

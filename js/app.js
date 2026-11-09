@@ -31,14 +31,14 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-train]');i
 function applyModeLook(m){document.documentElement.dataset.mode=m==='cash'?'cash':'tour';
   $('m-cash').setAttribute('aria-pressed',m==='cash');$('m-tour').setAttribute('aria-pressed',m!=='cash');
   $('qz-game').textContent=m==='cash'?'cash (100 BB, 6-max)':'tournament'}
-function setMode(m){mode=m;applyModeLook(m);buildPfSetup();newPF();newPO();newCF();rbBuildSelects();buildPresets();fhtSeatOptions();fhDeal();newHVR();newRVR();newTX();newRD()}
+function setMode(m){mode=m;applyModeLook(m);buildPfSetup();newPF();newPO();newCF();rbBuildSelects();buildPresets();fhtSeatOptions();fhDeal();newHVR();newRVR();newTX();newRD();newPT()}
 $('m-cash').onclick=()=>{if(mode!=='cash')setMode('cash')};$('m-tour').onclick=()=>{if(mode==='cash')setMode('tour')};
-const VIEWS=['daily','assessment','progress','pot-odds','call-or-fold','matchups','street-equity','hvr','rvr','calculator','board','sizing','texture','icm','preflop','ranges','combos','hand','reading','replay','log'];
+const VIEWS=['daily','assessment','progress','pot-odds','call-or-fold','matchups','street-equity','hvr','rvr','calculator','board','sizing','texture','pots','icm','preflop','ranges','combos','hand','reading','replay','log'];
 /* sections: Odds and EV ideas are the same in cash and tournaments; Equity ranges, charts and play differ, so those views show the Cash/Tournament switch */
-const SECTIONS={home:['daily','assessment','progress'],odds:['pot-odds','call-or-fold'],equity:['matchups','street-equity','hvr','rvr','calculator','board'],ev:['sizing','texture','icm'],ranges:['preflop','ranges','combos'],play:['hand','reading','replay','log']};
+const SECTIONS={home:['daily','assessment','progress'],odds:['pot-odds','call-or-fold'],equity:['matchups','street-equity','hvr','rvr','calculator','board'],ev:['sizing','texture','pots','icm'],ranges:['preflop','ranges','combos'],play:['hand','reading','replay','log']};
 const VIEW_LABEL={daily:'Today',assessment:'Assessment',progress:'Progress','pot-odds':'Pot odds','call-or-fold':'Call or fold',matchups:'Hand vs hand','street-equity':'Street by street',
-  hvr:'Hand vs range',rvr:'Range vs range',calculator:'Calculator',board:'Range vs board',sizing:'Bet sizing',texture:'Board texture',icm:'ICM (tournament)',preflop:'Preflop charts',ranges:'Range builder',combos:'Combinatorics',hand:'Full hand',reading:'Hand reading',replay:'Replayer',log:'Hand log'};
-const MODE_VIEWS=['reading','texture','hvr','rvr','calculator','board','preflop','ranges','hand'];
+  hvr:'Hand vs range',rvr:'Range vs range',calculator:'Calculator',board:'Range vs board',sizing:'Bet sizing',texture:'Board texture',pots:'3-bet & multiway',icm:'ICM (tournament)',preflop:'Preflop charts',ranges:'Range builder',combos:'Combinatorics',hand:'Full hand',reading:'Hand reading',replay:'Replayer',log:'Hand log'};
+const MODE_VIEWS=['pots','reading','texture','hvr','rvr','calculator','board','preflop','ranges','hand'];
 const UNIT_VIEWS=['pot-odds','call-or-fold','log'];
 const secOf=v=>Object.keys(SECTIONS).find(k=>SECTIONS[k].includes(v));
 const lastInSec={};
@@ -63,7 +63,7 @@ window.addEventListener('hashchange',route);
 
 /* ---------- start ---------- */
 poStats();pfStats();muStats();$('cf-score').textContent=`${stats.cf.c}/${stats.cf.n}`;
-buildPfSetup();buildPresets();rbInit();rvbInit();fhInit();rpInit();lgInit();eqDrillsInit();cbInit();txInit();rdInit();icmInit();
+buildPfSetup();buildPresets();rbInit();rvbInit();fhInit();rpInit();lgInit();eqDrillsInit();cbInit();txInit();rdInit();ptInit();icmInit();
 newPF();newMU();newPO();newCF();newSE();newSZ();szStats();
 $('rpreset').value=presetDef('calc');$('rpreset').dispatchEvent(new Event('change'));setVmode('range');
 applyModeLook(mode);route();runCalc();updateQ();sync();

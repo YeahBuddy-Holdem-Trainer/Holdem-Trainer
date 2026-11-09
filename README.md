@@ -22,6 +22,7 @@ A Texas Hold'em training app that runs on GitHub Pages, with Firebase sign-in so
 | `js/full-hand-tour.js` | Tournament full hands: antes, 10-40 BB stacks, push or fold. |
 | `js/hand-reading.js` | Hand reading: narrow an opponent's range street by street. |
 | `js/replay.js` | Hand replayer. |
+| `js/pots.js` | 3-bet pots (sizing, facing a 3-bet, SPR) and multiway pots. |
 | `js/icm.js` | ICM calculator. |
 | `js/assessment.js` | Assessment quiz. |
 | `js/combos.js` | Combinatorics trainer: combos, card removal, range counting, bluff share. |
