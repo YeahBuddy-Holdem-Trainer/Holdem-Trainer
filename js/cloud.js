@@ -68,7 +68,10 @@ const nm = u => u.displayName || 'your Google account';
 /* ---------- start ---------- */
 const configured = firebaseConfig && firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('PASTE');
 if (!configured) { renderButton(); }
-else start().catch(e => { console.error(e); cloud.enabled = false; renderButton(); });
+else start().catch(e => {
+  console.error(e); cloud.enabled = false; renderButton();
+  const off = $('acct-off'); if (off) off.innerHTML = '<h2>Couldn\'t reach sign-in</h2><p class="small">The sign-in service didn\'t load (' + (e && (e.code || e.message) || 'unknown error') + '). Check your connection and reload. Until then everything is saved on this device.</p>';
+});
 
 async function start() {
   const [{ initializeApp }, A, F] = await Promise.all([
