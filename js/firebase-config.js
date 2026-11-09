@@ -3,10 +3,10 @@
    These values are not secret: they only say which Firebase project to talk to. What protects each person's
    data is the security rules in firestore.rules, which let a signed-in person read and write only their own data. */
 export const firebaseConfig = {
-  apiKey: "PASTE_API_KEY",
-  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT_ID.firebasestorage.app",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID"
+  apiKey: "AIzaSyC-n0x6fx4hdY6QivuKceuGSsJtDYacWPM",
+  authDomain: "holdemtrainer.firebaseapp.com",
+  projectId: "holdemtrainer",
+  storageBucket: "holdemtrainer.firebasestorage.app",
+  messagingSenderId: "314607088027",
+  appId: "1:314607088027:web:62a4e9dbfe0fafefe1b13e"
 };
