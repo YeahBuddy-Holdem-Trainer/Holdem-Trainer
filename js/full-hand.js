@@ -56,7 +56,7 @@ const FHKEY='holdem-hands-v1';
 stats.fh=stats.fh||{hands:0,dec:0,good:0,net:0};
 
 /* ---------- dealing and preflop ---------- */
-function fhDeal(){
+function fhDeal(){$('fh-out').innerHTML='<p class="small muted">Feedback on each decision appears here.</p>';if(mode!=='cash')return fhtDeal();
   const type=$('fh-type').value==='random'?pick(Object.keys(FH_TYPES)):$('fh-type').value;
   const seat=$('fh-seat').value==='random'?pick(['BTN','CO','BB']):$('fh-seat').value,S=FH_SEATS[seat],playable=$('fh-play').checked;
   let hero,vil,deck;
@@ -86,10 +86,11 @@ function fhVilOpen(){fhTo('vil',2.5);fh.pfr='vil';fhLog('Preflop','Folds to the 
 /* ---------- hero decision points ---------- */
 function fhAsk(kind){fh.ask=kind;fhRender();
   const b=$('fh-acts'),toCall=fh.streetIn?Math.max(0,fh.streetIn.vil-fh.streetIn.hero):0;let h='';
-  if(kind==='pre-open')h=`<button class="act" data-a="raise">Raise to 2.5 BB</button><button class="act ghost" data-a="fold">Fold</button>`;
+  if(kind.startsWith('t-'))h=fhtButtons(kind);
+  else if(kind==='pre-open')h=`<button class="act" data-a="raise">Raise to 2.5 BB</button><button class="act ghost" data-a="fold">Fold</button>`;
   else if(kind==='pre-def')h=`<button class="act" data-a="3bet">3-bet to 10 BB</button><button class="act" data-a="call">Call 1.5 BB</button><button class="act ghost" data-a="fold">Fold</button>`;
   else if(kind==='pre-vs3')h=`<button class="act" data-a="4bet">4-bet to ${fh.seat==='CO'?20:22} BB</button><button class="act" data-a="call">Call ${fmtBB(toCall)} BB</button><button class="act ghost" data-a="fold">Fold</button>`;
-  else if(kind==='pre-jam')h=`<button class="act" data-a="call">Call all in (${fmtBB(toCall)} BB)</button><button class="act ghost" data-a="fold">Fold</button>`;
+  else if(kind==='pre-jam')h=`<button class="act" data-a="call">Call all in (${fmtBB(Math.min(toCall,fh.stack.hero))} BB)</button><button class="act ghost" data-a="fold">Fold</button>`;
   else{const opts=fhOptions();h=opts.map(o=>`<button class="act ${o.id==='fold'||o.id==='check'?'ghost':''}" data-a="${o.id}">${o.label}</button>`).join('')}
   b.innerHTML=h}
 function fhOptions(){const P=fh.pot,toCall=Math.max(0,fh.streetIn.vil-fh.streetIn.hero),st=fh.stack.hero,o=[];
@@ -101,7 +102,7 @@ function fhOptions(){const P=fh.pot,toCall=Math.max(0,fh.streetIn.vil-fh.streetI
       if(add<st*.6)o.push({id:'raise',label:`Raise to ${fmtBB(R)} BB`,kind:'raise',to:R});o.push({id:'jam',label:`All in ${fmtBB(st+fh.streetIn.hero)} BB`,kind:'raise',to:st+fh.streetIn.hero})}}
   return o}
 $('fh-acts').onclick=e=>{const b=e.target.closest('button[data-a]');if(!b||!fh||fh.done)return;$('fh-acts').innerHTML='';const a=b.dataset.a;
-  if(fh.ask.startsWith('pre'))fhPre(a);else fhPost(a)};
+  if(fh.ask.startsWith('t-'))fhtPre(a);else if(fh.ask.startsWith('pre'))fhPre(a);else fhPost(a)};
 
 /* chart grading for preflop */
 const handLabel=c=>{const a=c[0]>>2,b=c[1]>>2,hi=Math.max(a,b),lo=Math.min(a,b);return a===b?R[a]+R[b]:R[hi]+R[lo]+((c[0]&3)===(c[1]&3)?'s':'o')};
@@ -129,9 +130,9 @@ function fhPre(a){const S=fh.S,pre=FH_PRE[fh.type],l=handLabel(fh.hero);
     const x=fh.seat==='CO'?20:22;fhTo('hero',x);fh.pfr='hero';fhLog('Preflop',`You 4-bet to ${x} BB.`,'hero');
     if(parseRange(pre.j4).has(handLabel(fh.vil))){fhTo('vil',100);fhLog('Preflop',`The ${POSNAME[S.vil]} moves all in.`,'vil');fh.vw=fhRange(pre.j4,fh.hero);return fhAsk('pre-jam')}
     fhLog('Preflop',`The ${POSNAME[S.vil]} folds.`,'vil');return fhEnd('vilfold')}
-  if(fh.ask==='pre-jam'){const toCall=fh.streetIn.vil-fh.streetIn.hero,eq=fhEq(fh.vw,[],5000),evC=eq*(fh.pot+toCall)-toCall,best=evC>0?'call':'fold',ok=a===best;
+  if(fh.ask==='pre-jam'){const raw=fh.streetIn.vil-fh.streetIn.hero,toCall=Math.min(raw,fh.stack.hero),eq=fhEq(fh.vw,[],5000),evC=eq*(fh.pot-(raw-toCall)+toCall)-toCall,best=evC>0?'call':'fold',ok=a===best;
     const loss=Math.abs(evC);fhGrade({street:'Preflop',spot:'Facing an all-in',choice:a==='call'?'Call':'Fold',best:best==='call'?'Call':'Fold',ok,cost:ok?'best':fhCostTier(loss,fh.pot),
-      why:`You need ${pct(toCall/(fh.pot+toCall))} equity to call; against this player's all-in range you have about ${pct(eq)}. Calling is worth ${evC>=0?'+':''}${fmtBB(Math.round(evC*10)/10)} BB.`,ev:[['Call',evC],['Fold',0]]});
+      why:`You need ${pct(toCall/(fh.pot-(raw-toCall)+toCall))} equity to call; against this player's all-in range you have about ${pct(eq)}. Calling is worth ${evC>=0?'+':''}${fmtBB(Math.round(evC*10)/10)} BB.`,ev:[['Call',evC],['Fold',0]]});
     if(a==='fold'){fhLog('Preflop','You fold.','hero');return fhEnd('fold')}
     fhTo('hero',fh.streetIn.vil);fhLog('Preflop','You call all in.','hero');return fhRunout()}}
 
@@ -218,7 +219,7 @@ function fhGrade(g){g.logIdx=fh.log.length;fh.dec.push(g);stats.fh.dec++;if(g.ok
   $('fh-out').innerHTML=`<div class="verdict ${cls}"><strong>${t}</strong><span class="small muted">${g.spot}: you chose ${g.choice}${g.ok&&g.cost==='best'?'':` · best: ${g.best}`}</span></div><p class="small">${g.why}</p>${g.ev?fhEvTable(g.ev):''}`;
   fhRender()}
 function fhEvTable(ev){const has=ev.some(r=>r[2]!=null);return `<table class="ref fh-ev"><thead><tr><th>Option</th><th>EV</th>${has?'<th>They fold</th><th>Your equity when called</th>':''}</tr></thead><tbody>${ev.map(r=>`<tr><td class="t">${r[0]}</td><td>${r[1]>=0?'+':''}${fmtBB(Math.round(r[1]*10)/10)} BB</td>${has?`<td>${r[2]!=null?pct(r[2],0):'–'}</td><td>${r[3]!=null?pct(r[3],0):'–'}</td>`:''}</tr>`).join('')}</tbody></table>`}
-function fhRunout(){fh.street=3;fhLog('River',`Board runs out: ${names(fh.board)}`);fhShowdown()}
+function fhRunout(){fhRefund();fh.street=3;fhLog('River',`Board runs out: ${names(fh.board)}`);fhShowdown()}
 function fhShowdown(){const a=evalHand(fh.hero.concat(fh.board)),b=evalHand(fh.vil.concat(fh.board));
   fhLog('Showdown',`Showdown: you have ${catName(a).toLowerCase()}, the ${POSNAME[fh.S.vil]} shows ${names(fh.vil)} (${catName(b).toLowerCase()}).`);
   fhEnd(a>b?'win':a===b?'chop':'lose')}
@@ -232,7 +233,7 @@ function fhEnd(how){fh.done=true;const P=fh.pot;let net;
     ${fh.dec.length?`<ol class="dl-list">${fh.dec.map(d=>`<li class="${d.ok?'ok':'no'}"><span>${d.ok?'✓':'✗'}</span><span><b>${d.spot}</b>: ${d.choice}${d.ok?'':` <span class="small muted">(best: ${d.best}; ${FH_COST[d.cost][0].toLowerCase()})</span>`}</span></li>`).join('')}</ol>`:''}
     <p class="small muted">Results swing with the cards; judge yourself by the decisions, not the chips. <button class="linkbtn" id="fh-replay">Replay this hand</button></p>`;
   fhSave();fhRender(true);$('fh-replay').onclick=()=>{rpOpen(0);location.hash='#replay'}}
-function fhSave(){try{const a=JSON.parse(localStorage.getItem(FHKEY))||[];a.push({ts:fh.ts,type:fh.type,seat:fh.seat,hero:fh.hero,vil:fh.vil,board:fh.board,log:fh.log,dec:fh.dec.map(d=>({street:d.street,spot:d.spot,choice:d.choice,best:d.best,ok:d.ok,cost:d.cost,why:d.why,ev:d.ev?d.ev.map(r=>[r[0],Math.round(r[1]*100)/100,r[2]==null?null:Math.round(r[2]*1000)/1000,r[3]==null?null:Math.round(r[3]*1000)/1000]):null,logIdx:d.logIdx})),result:fh.result});
+function fhSave(){try{const a=JSON.parse(localStorage.getItem(FHKEY))||[];a.push({ts:fh.ts,type:fh.type,seat:fh.seat,S:fh.S,tour:!!fh.tour,depth:fh.depth||100,hero:fh.hero,vil:fh.vil,board:fh.board,log:fh.log,dec:fh.dec.map(d=>({street:d.street,spot:d.spot,choice:d.choice,best:d.best,ok:d.ok,cost:d.cost,why:d.why,ev:d.ev?d.ev.map(r=>[r[0],Math.round(r[1]*100)/100,r[2]==null?null:Math.round(r[2]*1000)/1000,r[3]==null?null:Math.round(r[3]*1000)/1000]):null,logIdx:d.logIdx})),result:fh.result});
   if(typeof rpList==='function')rpList();
   localStorage.setItem(FHKEY,JSON.stringify(a.slice(-50)))}catch(e){}}
 function fhStats(){$('fh-hands').textContent=stats.fh.hands;$('fh-good').textContent=stats.fh.dec?pct(stats.fh.good/stats.fh.dec,0):'–';$('fh-net').textContent=(stats.fh.net>=0?'+':'')+fmtBB(Math.round((stats.fh.net||0)*10)/10)}
@@ -248,5 +249,5 @@ function fhRender(showVil){const S=fh.S,seats={};POS.forEach(p=>seats[p]={state:
   $('fh-opp').innerHTML=`<b>${FH_TYPES[fh.type].name}.</b> ${FH_TYPES[fh.type].desc}`;
   $('fh-log').innerHTML=fh.log.map(l=>`<li class="${l.who}">${esc(l.text)}</li>`).join('');$('fh-log').scrollTop=1e6;
   if(!fh.done)$('fh-sum').innerHTML=''}
-function fhInit(){fhStats();fhDeal()}
+function fhInit(){fhtSeatOptions();fhStats();fhDeal()}
 $('fh-deal').onclick=fhDeal;

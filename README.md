@@ -16,7 +16,8 @@ A Texas Hold'em training app that runs on GitHub Pages, with Firebase sign-in so
 | `js/sizing.js` | Bet sizing trainer. |
 | `js/calculator.js` | Equity calculator. |
 | `js/board.js` | Range vs board. |
-| `js/full-hand.js` | Play a full hand against an opponent type. |
+| `js/full-hand.js` | Play a full hand against an opponent type (cash, and the shared engine). |
+| `js/full-hand-tour.js` | Tournament full hands: antes, 10-40 BB stacks, push or fold. |
 | `js/replay.js` | Hand replayer. |
 | `js/icm.js` | ICM calculator. |
 | `js/assessment.js` | Assessment quiz. |

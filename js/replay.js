@@ -10,13 +10,13 @@ function rpList(){rpLoad();const only=$('rp-miss').checked,el=$('rp-list');
   if(!rpHands.length){el.innerHTML='<p class="small muted">No saved hands yet. Play a few in <a href="#hand">Full hand</a> and they will show up here.</p>';return}
   if(!list.length){el.innerHTML='<p class="small muted">No hands with mistakes. Nice.</p>';return}
   el.innerHTML=list.map(({h,i})=>{const bad=h.dec.filter(d=>!d.ok).length,net=h.result?h.result.net:0;
-    return `<button type="button" class="rp-item ${rpCur===h?'on':''}" data-i="${i}"><span class="cards">${cardsHTML(h.hero,'xs')}</span><span><b>${FH_SEATS[h.seat].hero} vs ${FH_TYPES[h.type].name}</b><small>${rpWhen(h.ts)} · ${h.dec.length} decision${h.dec.length===1?'':'s'}${bad?`, <span class="bad">${bad} to review</span>`:''}</small></span><span class="rp-net ${net>=0?'good':'bad'}">${net>=0?'+':''}${fmtBB(Math.round(net*10)/10)}</span></button>`}).join('')}
+    return `<button type="button" class="rp-item ${rpCur===h?'on':''}" data-i="${i}"><span class="cards">${cardsHTML(h.hero,'xs')}</span><span><b>${(h.S||FH_SEATS[h.seat]).hero}${h.tour?` · ${h.depth} BB`:''} vs ${FH_TYPES[h.type].name}</b><small>${rpWhen(h.ts)} · ${h.dec.length} decision${h.dec.length===1?'':'s'}${bad?`, <span class="bad">${bad} to review</span>`:''}</small></span><span class="rp-net ${net>=0?'good':'bad'}">${net>=0?'+':''}${fmtBB(Math.round(net*10)/10)}</span></button>`}).join('')}
 $('rp-list').onclick=e=>{const b=e.target.closest('.rp-item');if(!b)return;rpOpen(+b.dataset.i)};
 $('rp-miss').onchange=rpList;
 
 function rpOpen(i){rpLoad();rpCur=rpHands[i]||null;rpStep=0;rpShowVil=false;$('rp-vil-show').checked=false;
   $('rp-view').hidden=!rpCur;$('rp-empty').hidden=!!rpCur;rpList();if(rpCur){rpDraw();if(window.innerWidth<780)$('rp-view').scrollIntoView({behavior:'smooth'})}}
-function rpDraw(){const h=rpCur,L=h.log,e=L[rpStep],S=FH_SEATS[h.seat],sn=e.s||null,last=rpStep===L.length-1,showV=rpShowVil||last;
+function rpDraw(){const h=rpCur,L=h.log,e=L[rpStep],S=h.S||FH_SEATS[h.seat],sn=e.s||null,last=rpStep===L.length-1,showV=rpShowVil||last;
   const seats={};POS.forEach(p=>seats[p]={state:'folded'});
   seats[S.hero]={state:'hero',stack:sn?fmtBB(sn.h)+' BB':'',tag:'You',bet:sn&&sn.bh?fmtBB(sn.bh)+' BB':''};
   seats[S.vil]={state:'vil',stack:sn?fmtBB(sn.v)+' BB':'',tag:{rec:'Rec',station:'Station',nit:'Nit',aggro:'Aggro'}[h.type],bet:sn&&sn.bv?fmtBB(sn.bv)+' BB':''};

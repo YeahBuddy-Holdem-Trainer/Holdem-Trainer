@@ -24,6 +24,7 @@
 <script defer src="js/calculator.js"></script>
 <script defer src="js/board.js"></script>
 <script defer src="js/full-hand.js"></script>
+<script defer src="js/full-hand-tour.js"></script>
 <script defer src="js/replay.js"></script>
 <script defer src="js/icm.js"></script>
 <script defer src="js/assessment.js"></script>
@@ -403,12 +404,11 @@
 
 <!-- FULL HAND -->
 <section class="view" id="v-hand" hidden>
-  <p class="intro" id="fh-tour-note" hidden><b>Full hands are cash games (100 BB deep) for now.</b> Tournament hands with shorter stacks and antes are coming next; switch to Cash to hide this note.</p>
   <details class="learn"><summary>How this works <span>Opponent types, how decisions are graded, what the numbers mean</span></summary><div class="learn-body">
-    <p>Play one heads-up hand from preflop to the river, 100 BB deep. Everyone else folds. You choose the opponent type and your seat (button, cutoff or big blind), or let them be random.</p>
+    <p>Play one heads-up hand from preflop to the river against one opponent; everyone else folds. <b>Cash</b> hands are 100 BB deep from the button, cutoff or big blind. <b>Tournament</b> hands use a big-blind ante and shorter stacks: 40 BB hands with opens and defends, 20-25 BB opens and re-shoves, and 10-15 BB push or fold. Pick the opponent type and spot, or let them be random.</p>
     <ul>
       <li><b>Opponent types</b> follow the patterns in your notes. A typical recreational player calls too much, stabs small and bets big only with strong hands. A calling station rarely folds. A nit only bets real hands. An aggressive player bluffs and raises a lot.</li>
-      <li><b>Preflop</b> decisions are graded against the trainer's charts. Calling an all-in is graded by your equity against their all-in range.</li>
+      <li><b>Preflop</b> decisions are graded against the trainer's charts (cash or tournament). Calling an all-in is graded by your equity against their all-in range. Tournament values are in chips, not prize money; use the ICM tool for bubble spots.</li>
       <li><b>After the flop</b>, every option is scored by expected value (EV) in big blinds, one street ahead. The trainer works out the opponent's likely range from how this type played the hand so far, how often they would fold, call or raise each size, and your equity against them. The table after each decision shows the numbers.</li>
       <li><b>Mistake cost:</b> within about 5% of the pot of the best option counts as fine. Beyond that it's a small, medium or big mistake depending on how much of the pot it gives up.</li>
       <li>One-street EV ignores later streets, so slow-plays and implied odds aren't rewarded. Treat close calls as close.</li>
@@ -419,7 +419,7 @@
     <div class="panel stage">
       <div class="setup">
         <label class="field" for="fh-type"><span>Opponent</span><select id="fh-type"><option value="random">Random type</option><option value="rec">Typical recreational player</option><option value="station">Calling station</option><option value="nit">Nit</option><option value="aggro">Aggressive player</option></select></label>
-        <label class="field" for="fh-seat"><span>Your seat</span><select id="fh-seat"><option value="random">Random</option><option value="BTN">Button (vs big blind)</option><option value="CO">Cutoff (vs button)</option><option value="BB">Big blind (vs button)</option></select></label>
+        <label class="field" for="fh-seat"><span id="fh-seat-lbl">Your seat</span><select id="fh-seat"><option value="random">Random</option><option value="BTN">Button (vs big blind)</option><option value="CO">Cutoff (vs button)</option><option value="BB">Big blind (vs button)</option></select></label>
         <label class="row small" for="fh-play" style="gap:6px;cursor:pointer;align-self:end;padding-bottom:10px"><input type="checkbox" id="fh-play" checked> Only deal hands the chart plays</label>
       </div>
       <p class="small" id="fh-opp"></p>

@@ -67,7 +67,7 @@ function homeRender(){const h=new Date().getHours(),name=(cfg.player||'').trim()
   const L=hs[hs.length-1];
   if(!L)$('hm-last').innerHTML='<p class="small muted">No hands played yet.</p><div class="row"><button class="act" data-go="#hand">Play a hand</button></div>';
   else{const net=L.result?L.result.net:0,bad=L.dec.filter(d=>!d.ok).length;
-    $('hm-last').innerHTML=`<div class="cards">${cardsHTML(L.hero,'sm')}</div><div><b>${FH_SEATS[L.seat].hero} vs ${FH_TYPES[L.type].name}</b><div class="small muted"><span style="color:var(--${net>=0?'good':'bad'});font-weight:700">${net>=0?'+':''}${fmtBB(Math.round(net*10)/10)} BB</span> · ${bad?`${bad} decision${bad===1?'':'s'} to review`:'no mistakes'}</div></div>
+    $('hm-last').innerHTML=`<div class="cards">${cardsHTML(L.hero,'sm')}</div><div><b>${(L.S||FH_SEATS[L.seat]).hero} vs ${FH_TYPES[L.type].name}</b><div class="small muted"><span style="color:var(--${net>=0?'good':'bad'});font-weight:700">${net>=0?'+':''}${fmtBB(Math.round(net*10)/10)} BB</span> · ${bad?`${bad} decision${bad===1?'':'s'} to review`:'no mistakes'}</div></div>
       <div class="row"><button class="act ghost" id="hm-replay">Replay</button><button class="act" data-go="#hand">Play a hand</button></div>`;
     $('hm-replay').onclick=()=>{rpOpen(0);location.hash='#replay'}}
   let lv='';try{lv=localStorage.getItem(LASTVIEWKEY)||''}catch(e){}
