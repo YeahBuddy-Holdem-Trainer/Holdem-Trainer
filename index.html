@@ -27,6 +27,7 @@
 <script defer src="js/full-hand-tour.js"></script>
 <script defer src="js/equity-drills.js"></script>
 <script defer src="js/texture.js"></script>
+<script defer src="js/hand-reading.js"></script>
 <script defer src="js/replay.js"></script>
 <script defer src="js/icm.js"></script>
 <script defer src="js/assessment.js"></script>
@@ -91,7 +92,7 @@
           <a href="#matchups"><b>Equity</b><span>Hand vs hand, hand vs range, range vs range, range vs board</span></a>
           <a href="#sizing"><b>EV</b><span>Bet sizing, board texture and ICM</span></a>
           <a href="#preflop"><b>Ranges</b><span>Preflop charts, range builder and combinatorics</span></a>
-          <a href="#hand"><b>Play</b><span>Full hands, replays and your hand log</span></a>
+          <a href="#hand"><b>Play</b><span>Full hands, hand reading, replays and your hand log</span></a>
           <a href="#progress"><b>Progress</b><span>Scores by trainer and spot</span></a>
         </div>
       </section>
@@ -437,6 +438,39 @@
       <div class="stats"><div class="stat"><div class="n" id="fh-hands">0</div><span class="small muted">hands</span></div><div class="stat"><div class="n" id="fh-good">–</div><span class="small muted">decisions best or fine</span></div><div class="stat"><div class="n" id="fh-net">0</div><span class="small muted">BB won</span></div></div>
       <div id="fh-sum" style="display:grid;gap:10px"></div>
       <div id="fh-out" style="display:grid;gap:10px"><p class="small muted">Feedback on each decision appears here.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- HAND READING -->
+<section class="view" id="v-reading" hidden>
+  <details class="learn"><summary>How this works <span>Narrowing a range street by street</span></summary><div class="learn-body">
+    <p>Hand reading means updating a <b>range</b>, not guessing one hand. Start with what they open preflop, then ask on every street: <i>which of these hands would bet here, and which would check?</i></p>
+    <ul>
+      <li><b>Bets</b> keep strong hands, good draws and some bluffs, and drop weak pairs. <b>Checks</b> keep weak and medium hands and drop most strong ones.</li>
+      <li>Each street you estimate what share of their remaining range is <b>top pair or better</b>. The slider starts at the share before the action, so think about which way the action moves it.</li>
+      <li>After you answer, the grid shows the range re-weighted: darker hands are more likely to have played this way.</li>
+      <li>On the river you put them on a hand. A good read can still lose to the actual hand; what matters is the range.</li>
+      <li>Opponents: a solid regular, an aggressive player who bluffs more, or a tight player who bluffs less. Their opening range comes from the Cash or Tournament charts.</li>
+    </ul>
+    <p class="small muted">The betting model is simplified: real players mix more, and sizes vary. It's built to train the habit of updating, not to match one player.</p>
+  </div></details>
+  <div class="cols">
+    <div class="panel stage">
+      <p id="rd-type" style="font-weight:700"></p>
+      <div class="ptable" id="rd-table"></div>
+      <ol class="small rd-log" id="rd-log"></ol>
+      <div id="rd-step"></div>
+      <div id="rd-ask" style="display:grid;gap:8px"></div>
+      <div id="rd-out" style="display:grid;gap:10px"></div>
+      <div class="row"><button class="act ghost" type="button" id="rd-next">New hand</button></div>
+    </div>
+    <div style="display:grid;gap:16px;align-content:start">
+      <div class="panel"><h3 id="rd-grid-lbl">Their range</h3><div id="rd-grid"></div></div>
+      <div class="panel">
+        <h3>Session</h3>
+        <div class="stats"><div class="stat"><div class="n" id="rd-n">0</div><span class="small muted">hands</span></div><div class="stat"><div class="n" id="rd-avg">–</div><span class="small muted">avg miss (pts)</span></div><div class="stat"><div class="n" id="rd-reads">–</div><span class="small muted">final reads right</span></div></div>
+      </div>
     </div>
   </div>
 </section>

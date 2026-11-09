@@ -424,3 +424,10 @@ dialog.fb-modal{width:min(560px,calc(100vw - 20px))}
 .tx-q .seg{flex-wrap:wrap}
 .tx-r{padding:10px 12px;border-radius:12px;background:var(--sand);display:grid;gap:4px}
 .tx-r.good b{color:var(--good)}.tx-r.bad>p>b{color:var(--bad)}
+
+/* hand reading */
+.rd-log{margin:0;padding-left:20px;display:grid;gap:3px}
+.rd-fb{padding:10px 12px;border-radius:12px;background:var(--sand);display:grid;gap:6px}
+.rd-fb.good>b{color:var(--good)}.rd-fb.bad>b{color:var(--bad)}
+.rd-read{flex-wrap:wrap;border-radius:14px}
+.rd-read button{flex:1 1 45%}

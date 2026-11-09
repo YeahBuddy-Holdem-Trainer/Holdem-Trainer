@@ -74,7 +74,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 /* answer history for focus mode */
 const historyRows=()=>log;
 const cv=x=>x===true||x==='TRUE'||x==='true'?true:x===false||x==='FALSE'||x==='false'?false:null;
-const ERR_DRILLS=['Street equity','Range vs board','Hand vs range','Range vs range'];
+const ERR_DRILLS=['Street equity','Range vs board','Hand vs range','Range vs range','Hand reading'];
 function aggregate(rows){const m=new Map();
   for(const r of rows){const k=r.drill+'|'+r.spot;let a=m.get(k);if(!a){a={drill:r.drill,spot:r.spot,n:0,c:0,graded:0,errSum:0,errN:0,miss:{},ms:0};m.set(k,a)}
     a.n++;a.ms+=+r.ms||0;const c=cv(r.correct);
