@@ -5,8 +5,8 @@ function numOpts(correct,cands){const opts=[correct];for(const c of shuffle(cand
   const s=shuffle(opts);return{opts:s,correct:s.indexOf(correct)}}
 const QGEN={
   'Preflop'(){const spot=pick(SPOTS.filter(s=>s.game===mode)),{label,cards}=dealSpotHand(spot,0),exp=spot.map.get(label)??spot.fold;
-    return{drill:'Preflop',spot:spot.name,hand:label,visual:tableSnap(spotTable(spot)),
-      prompt:`<p class="spot-text">${spotText(spot)}</p><div class="hand-row"><span class="lbl">Your hand</span><div class="cards">${cardsHTML(cards)}</div></div>`,
+    return{drill:'Preflop',spot:spot.name,hand:label,visual:tableSnap({...spotTable(spot),heroCards:cards}),
+      prompt:`<p class="spot-text">${spotText(spot)}</p>`,
       opts:spot.acts,correct:exp,short:`${spot.name}, ${label}`,explain:pfWhy(spot,label,exp)}},
   'Matchups'(){const [h0,h1,c]=dealMatchup(pick(MU).id),first=Math.random()<.5,hero=first?h0:h1,vil=first?h1:h0,eq=equity(hero,vil,[],20000).eq;
     const v=Math.min(95,Math.max(5,Math.round(eq*20)*5)),{opts,correct}=numOpts(v,[v-20,v-10,v+10,v+20,v-15,v+15].filter(x=>x>0&&x<100)),m=MUBY[c.id];
@@ -29,8 +29,8 @@ const QGEN={
         explain:`${n} outs: <span class="outs">${cardsHTML(outs,'xs')}</span>`}}},
   'Call or fold'(){const c=genCF(.03),v=cfReview(c);
     return{drill:'Call or fold',spot:(c.street===3?'Flop shove':'Turn bet')+(c.behind?', drawing':', ahead'),hand:names(c.hero)+' vs '+names(c.vil),
-      visual:tableSnap(cfTable(c)),
-      prompt:`<p class="spot-text">${c.street===3?'Flop':'Turn'}. Villain ${c.street===3?'shoves':'bets'} ${money(c.bet)} into ${money(c.pot)}.</p><div class="hands"><div><span class="lbl">You</span><div class="cards">${cardsHTML(c.hero)}</div></div><div><span class="lbl">Villain</span><div class="cards">${cardsHTML(c.vil)}</div></div></div>`,
+      visual:tableSnap({...cfTable(c),heroCards:c.hero,shown:{[c.vp]:c.vil}}),
+      prompt:`<p class="spot-text">${c.street===3?'Flop':'Turn'}. Villain ${c.street===3?'shoves':'bets'} ${money(c.bet)} into ${money(c.pot)}.</p>`,
       opts:['Call','Fold'],correct:v.best==='Call'?0:1,short:`${names(c.hero)} vs ${names(c.vil)} on ${names(c.board)}`,
       explain:`You need ${pct(c.req)} and have ${pct(c.e.eq)}${c.behind?` (${v.hOuts.length} outs)`:''}.`}},
 };

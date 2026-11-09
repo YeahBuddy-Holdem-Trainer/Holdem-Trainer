@@ -412,3 +412,8 @@ dialog.fb-modal{width:min(560px,calc(100vw - 20px))}
 .rvr-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 @media (max-width:600px){.rvr-two{grid-template-columns:1fr}}
 .eq-grid{font-size:8.5px}
+
+/* room above and below the table for the top seats, the hero seat and hole cards */
+.ptable{margin:14px 0 30px}
+@media (max-width:560px){.ptable{margin:18px 0 34px}.phole.me{top:auto!important;bottom:-6%}}
+.pseat{z-index:1}.pseat.folded{opacity:1;background:color-mix(in srgb,var(--seat) 45%,var(--felt-2));color:rgba(251,246,234,.55);border-color:transparent}

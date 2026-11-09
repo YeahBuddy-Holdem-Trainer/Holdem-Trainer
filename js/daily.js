@@ -13,7 +13,7 @@ QGEN['Bet sizing']=function(){const sc=pick(SZ_SC),s=szMake(sc),key=szKey(),g=sz
   const ids=SZB.filter((b,i)=>s.avail[i]).map(b=>b.id),opts=ids.map(id=>{const i=SZI[id];return SZB[i].name+(id==='check'?'':` (${fmtBB(s.amts[i])} BB)`)});
   const okIdx=ids.map((id,k)=>g.best.includes(id)||g.ok.includes(id)?k:-1).filter(k=>k>=0);
   return{drill:'Bet sizing',spot:sc.label,hand:names(s.hero),visual:tableSnap(s.table),
-    prompt:`<p class="spot-text">${s.text}</p><div class="hand-row"><div><span class="lbl">Board</span><div class="cards">${cardsHTML(s.board.slice(0,s.nb))}</div></div><div><span class="lbl">You</span><div class="cards">${cardsHTML(s.hero)}</div></div></div><p>What size do you bet? <span class="small muted">(${key==='g'?'GTO baseline':'Exploit'} key; switch it on the Bet sizing tab)</span></p>`,
+    prompt:`<p class="spot-text">${s.text}</p><p>What size do you bet? <span class="small muted">(${key==='g'?'GTO baseline':'Exploit'} key; switch it on the Bet sizing tab)</span></p>`,
     opts,correct:ids.indexOf(g.best.find(x=>ids.includes(x))),okIdx,short:`${sc.label}, ${SZCAT_SHORT[s.cat]}`,
     explain:`Your hand: ${SZCAT[s.cat]}. ${g.ans.why}`}};
 QGEN['Range vs board']=function(){const r=pick([['cash-btn-open|0','BTN open'],['cash-bb-vs-btn-open|1','BB call vs a BTN open'],['cash-co-open|0','CO open'],['cash-bb-vs-co-open|1','BB call vs a CO open']]);
