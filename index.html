@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hold'em Trainer</title>
+<meta name="description" content="Texas Hold'em training: odds, equity, EV, ranges and full hands.">
+<meta name="theme-color" content="#14223A">
+<link rel="icon" type="image/webp" href="assets/logo.webp">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Hold'em Trainer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<!-- The app's code, one file per part. They load in this order and share their names with each other. -->
+<script defer src="js/engine.js"></script>
+<script defer src="js/core.js"></script>
+<script defer src="js/preflop.js"></script>
+<script defer src="js/drills.js"></script>
+<script defer src="js/ranges.js"></script>
+<script defer src="js/sizing.js"></script>
+<script defer src="js/calculator.js"></script>
+<script defer src="js/board.js"></script>
+<script defer src="js/full-hand.js"></script>
+<script defer src="js/replay.js"></script>
+<script defer src="js/icm.js"></script>
+<script defer src="js/assessment.js"></script>
+<script defer src="js/daily.js"></script>
+<script defer src="js/app.js"></script>
+<script type="module" src="js/cloud.js"></script>
+</head>
+<body>
+<header class="topbar"><div class="topbar-in">
+  <a class="brand" href="#home"><img src="assets/logo.webp" alt="YeahBuddy Poker logo"><span>Hold'em <b>Trainer</b></span></a>
+  <nav class="secnav" aria-label="Sections">
+    <a href="#home" data-sec="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+    <a href="#preflop" data-sec="preflop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Preflop</a>
+    <a href="#pot-odds" data-sec="postflop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="6" height="10" rx="1"/><rect x="9" y="7" width="6" height="10" rx="1"/><rect x="16" y="7" width="6" height="10" rx="1"/></svg>Postflop</a>
+    <a href="#hand" data-sec="play"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z"/></svg>Play</a>
+    <a href="#calculator" data-sec="tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>Tools</a>
+  </nav>
+  <div class="seg mode" role="group" aria-label="Game type">
+    <button id="m-tour" aria-pressed="true">Tournament</button>
+    <button id="m-cash" aria-pressed="false">Cash</button>
+  </div>
+  <button type="button" class="acct-btn" id="acct-btn" aria-label="Sign in"></button>
+</div></header>
+<div class="wrap">
+<nav class="subnav" id="subnav" aria-label="Trainers in this section" hidden></nav>
+
+<!-- DAILY -->
+<section class="view" id="v-daily" hidden>
+  <div id="dl-home" style="display:grid;gap:16px">
+    <div class="home-hi"><h1 id="hm-hi">Good morning</h1><p id="hm-date"></p></div>
+    <div class="home-grid">
+      <section class="hero span2" aria-labelledby="hm-dl-h">
+        <div class="hero-top">
+          <div style="display:grid;gap:6px">
+            <span class="eyebrow">Daily challenge</span>
+            <h2 id="hm-dl-h">10 questions · about 5 minutes</h2>
+            <p id="dl-status" style="max-width:56ch"></p>
+          </div>
+          <div class="streak"><b id="dl-streak">0</b><span>day streak</span><div class="note">Best <span id="dl-best">0</span></div></div>
+        </div>
+        <div class="week" id="dl-cal" aria-label="Last 7 days"></div>
+        <p class="note" id="dl-streak-note"></p>
+        <div class="row"><button class="act" id="dl-go">Start today's challenge</button><button class="act ghost" id="hm-continue" hidden>Continue last trainer</button></div>
+      </section>
+      <section class="panel" aria-labelledby="hm-next-h">
+        <h2 class="ph" id="hm-next-h">Work on next</h2>
+        <div class="nextlist" id="hm-next"></div>
+        <a href="#progress" class="small" style="font-weight:700">All progress</a>
+      </section>
+      <section class="panel" aria-labelledby="hm-last-h">
+        <h2 class="ph" id="hm-last-h">Last hand</h2>
+        <div id="hm-last" style="display:grid;gap:12px"></div>
+      </section>
+      <section class="panel span2" aria-labelledby="hm-jump-h">
+        <h2 class="ph" id="hm-jump-h">Jump to</h2>
+        <div class="jump">
+          <a href="#preflop"><b>Preflop</b><span>Charts, range builder, matchups</span></a>
+          <a href="#pot-odds"><b>Postflop</b><span>Pot odds, call or fold, bet sizing, range vs board</span></a>
+          <a href="#hand"><b>Play</b><span>Full hands and replays</span></a>
+          <a href="#calculator"><b>Tools</b><span>Calculator, ICM, assessment, progress</span></a>
+        </div>
+      </section>
+    </div>
+    <details class="learn"><summary>How the daily challenge works <span>What's in it and how the streak counts</span></summary><div class="learn-body">
+      <ul>
+        <li>Ten questions from every trainer: preflop charts, matchups, pot odds, outs, call or fold, bet sizing and range vs board. Areas where you score worst come up more often.</li>
+        <li>You see the answer and the reason after each question, so it's a short lesson as well as a test.</li>
+        <li>Finish all ten to count the day. You can stop and come back later the same day on this device.</li>
+        <li>The streak counts days in a row. It reads your answer history, so it follows you across devices when you are signed in.</li>
+        <li>After today's set you can play practice rounds. They count in Progress but not toward the streak.</li>
+      </ul>
+    </div></details>
+  </div>
+  <div class="panel" id="dl-run" hidden>
+    <div class="qhead"><h3 id="dl-area" style="margin:0"></h3><span class="small muted" id="dl-count"></span></div>
+    <div class="qbar"><i id="dl-bar"></i></div>
+    <div id="dl-visual"></div>
+    <div id="dl-prompt" style="display:grid;gap:10px"></div>
+    <div class="opts" id="dl-opts"></div>
+    <div id="dl-fb"></div>
+    <div class="row"><button class="act" id="dl-next" hidden>Next question</button><button class="linkbtn" id="dl-quit" style="color:var(--muted)">Stop for now</button></div>
+  </div>
+  <div class="panel" id="dl-done" hidden>
+    <h2>Today's results</h2>
+    <div id="dl-result" style="display:grid;gap:12px"></div>
+    <div><button class="act ghost" id="dl-home-btn">Back</button></div>
+  </div>
+</section>
+
+<!-- PREFLOP -->
+<section class="view" id="v-preflop" hidden>
+  <details class="learn"><summary>How this works <span>Reading a range chart, position, stack depth</span></summary><div class="learn-body">
+    <p>A <b>range chart</b> lists every starting hand and the action to take with it in one spot. The 13 × 13 grid has pairs on the diagonal, suited hands above and to the right, and offsuit hands below and to the left. AKs sits in the top row; AKo sits in the first column.</p>
+    <ul>
+      <li><b>Position decides width.</b> UTG has five players left to act, so it opens about 19% of hands. The button has only the blinds behind, so it opens almost half.</li>
+      <li><b>Facing a raise, there are three choices.</b> 3-bet your strongest hands for value, plus a few bluffs like A5s that block aces and can still make straights and flushes. Call with hands that play well after the flop. Fold the rest.</li>
+      <li><b>In tournaments, stack depth in big blinds drives everything.</b> At 40 BB you open a little tighter than in a cash game. At 20 BB you re-shove over opens. At 15 BB and below most spots become shove or fold.</li>
+      <li><b>The table shows the action.</b> Your seat is outlined in gold at the bottom, villain in red, folded seats are faded, and chips show what each player has put in. Action moves clockwise.</li>
+    </ul>
+    <p><b>Focus mode</b> picks the spots where you score worst more often, and about 1 hand in 5 is one you have missed before. Use the filters to drill one type of spot or one stack depth.</p>
+    <p class="small muted">Tournament charts here are chip-EV approximations. Near the money and at final tables, payout pressure (ICM) makes calling ranges tighter.</p>
+  </div></details>
+  <div class="cols">
+    <div class="panel stage">
+      <div class="setup">
+        <label class="field" for="pf-type"><span>Spot type</span><select id="pf-type"></select></label>
+        <label class="field" for="pf-stack" id="pf-stack-wrap"><span>Stack</span><select id="pf-stack"></select></label>
+        <label class="field" for="pf-spot"><span>Spot</span><select id="pf-spot"></select></label>
+      </div>
+      <div class="ptable" id="pf-table" role="img"></div>
+      <div><h3 id="pf-name"></h3><p class="spot-text" id="pf-text"></p></div>
+      <div class="hand-row"><div class="cards" id="pf-hand"></div><div class="row" id="pf-acts"></div></div>
+    </div>
+    <div class="panel">
+      <h3>Session</h3>
+      <div class="stats"><div class="stat"><div class="n" id="pf-score">0/0</div><span class="small muted">correct</span></div><div class="stat"><div class="n" id="pf-streak">0</div><span class="small muted">streak</span></div></div>
+      <div id="pf-out" style="display:grid;gap:10px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- RANGE BUILDER -->
+<section class="view" id="v-ranges" hidden>
+  <details class="learn"><summary>How this works <span>Painting ranges, counting combos, testing yourself</span></summary><div class="learn-body">
+    <p><b>Build</b> mode is for making your own ranges: a chart you are memorizing, a version adjusted for your game, or a guess at what a specific player does. <b>Test yourself</b> hides a chart and asks you to paint it from memory.</p>
+    <ul>
+      <li><b>Painting:</b> pick a brush, then click or drag across the grid. Starting a drag on a hand that already has that action erases instead. Pairs run down the diagonal, suited hands sit above it, offsuit hands below.</li>
+      <li><b>Combos:</b> each pair has 6 combinations, each suited hand 4 and each offsuit hand 12, out of 1,326 total. That is why adding KTo widens a range three times as much as adding KTs.</li>
+      <li><b>Compare</b> marks every hand where your range differs from a chart, so you can see exactly how your adjustment changes it.</li>
+      <li><b>Saved ranges</b> stay on this device and appear in the equity calculator under "My ranges", so you can test hands against the ranges you build.</li>
+      <li><b>Test yourself</b> scores the match on the hands either range plays, so an empty grid does not get credit for all the folds. 90% or better counts as correct in Progress.</li>
+    </ul>
+    <p class="small muted">Both coaches in your notes adjust charts to the table. Hungry Horse, for example, 3-bets wider in position against recreational openers and folds more against passive 3-bettors. Building an adjusted copy and comparing it to the chart is a good way to see those changes.</p>
+  </div></details>
+  <div class="row"><div class="seg" role="group" aria-label="Range builder mode"><button id="rb-m-build" aria-pressed="true">Build</button><button id="rb-m-test" aria-pressed="false">Test yourself</button></div></div>
+  <div class="cols">
+    <div class="panel">
+      <div id="rb-test-head" hidden>
+        <div class="setup"><label class="field" for="rb-test-spot"><span>Chart to recall</span><select id="rb-test-spot"></select></label></div>
+        <h3 id="rb-test-name"></h3><p class="spot-text" id="rb-test-text"></p>
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <div class="seg" role="group" aria-label="Brush" id="rb-brush"></div>
+        <div class="row" style="gap:8px"><button class="act ghost" type="button" id="rb-undo">Undo</button><button class="act ghost" type="button" id="rb-clear">Clear</button></div>
+      </div>
+      <div class="rgrid rb" id="rb-grid" aria-label="Range grid. Click or drag to paint hands."></div>
+      <div class="legend" id="rb-legend"></div>
+      <div id="rb-test-actions" class="row" hidden><button class="act" type="button" id="rb-check">Check</button><button class="act ghost" type="button" id="rb-next">New chart</button></div>
+    </div>
+    <div class="panel" id="rb-side-build">
+      <label class="field" for="rb-load"><span>Start from</span><select id="rb-load"></select></label>
+      <div class="row" style="align-items:end;gap:8px"><label class="field" for="rb-name" style="flex:1 1 200px"><span>Name</span><input type="text" id="rb-name" placeholder="e.g. BTN vs rec CO open" autocomplete="off"></label><button class="act" type="button" id="rb-save">Save</button></div>
+      <p class="small" id="rb-save-msg"></p>
+      <div id="rb-notation" style="display:grid;gap:8px"></div>
+      <label class="field" for="rb-cmp"><span>Compare with chart</span><select id="rb-cmp"></select></label>
+      <div id="rb-cmp-out" class="small"></div>
+      <h3>My ranges</h3>
+      <div id="rb-saved" class="rb-saved"></div>
+    </div>
+    <div class="panel" id="rb-side-test" hidden>
+      <h3>Result</h3>
+      <div id="rb-test-out"><p class="small muted">Paint the chart from memory, then press Check. Fold is anything left empty.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- MATCHUPS -->
+<section class="view" id="v-matchups" hidden>
+  <details class="learn" open><summary>How this works <span>Estimating preflop equity without a calculator</span></summary><div class="learn-body">
+    <p>You cannot count outs before the flop, so players memorize a handful of <b>matchup types</b> instead. Name the type, recall its number, then adjust a few points for suits and connectedness.</p>
+    <ol>
+      <li><b>Is either hand a pair?</b> Compare the pair to the other hand's two cards: both lower, one higher and one lower, or both higher.</li>
+      <li><b>No pairs?</b> Look for a shared card first (domination). Otherwise line the four cards up by rank and see whose cards are higher.</li>
+      <li><b>Adjust.</b> Suited adds about 2 to 3 points. Connected cards (like 76) add a point or two of straight equity. Sharing a suit with the other hand takes a little away.</li>
+    </ol>
+    <div class="worked"><b>Worked example: 88 vs A7</b><span>8 is a pair. Villain's A is higher and 7 is lower, so this is <i>pair vs one higher, one lower</i>. Favorite ≈ 70%, so 88 ≈ 70%. Exact: about 71%.</span></div>
+    <p>The cheat sheet below has every type. Learn it, then drill until you name the type in a second.</p>
+  </div></details>
+  <div class="cols">
+    <div class="table">
+      <label class="field" for="mu-cat"><span style="color:var(--felt-ink);opacity:.75">Matchup type</span><select id="mu-cat"></select></label>
+      <div class="hands">
+        <div><span class="lbl">You</span><div class="cards" id="mu-hero"></div></div>
+        <div><span class="lbl">Villain</span><div class="cards" id="mu-vil"></div></div>
+      </div>
+      <div><span class="lbl">1. What type of matchup is this?</span><div class="mu-cats" id="mu-cats" style="margin-top:6px"></div></div>
+      <form id="mu-form" style="display:grid;gap:8px">
+        <div id="mu-step2" hidden style="display:grid;gap:8px">
+          <label for="mu-guess"><span class="lbl">2. Your equity: <b id="mu-gv" style="font-family:var(--mono)">50</b>%</span></label>
+          <input type="range" id="mu-guess" min="0" max="100" value="50">
+        </div>
+        <div class="row"><button class="act" type="submit" id="mu-sub">Lock in</button><button class="act ghost" type="button" id="mu-next">Next matchup</button></div>
+      </form>
+    </div>
+    <div class="panel">
+      <h3>Session</h3>
+      <div class="stats"><div class="stat"><div class="n" id="mu-score">0/0</div><span class="small muted">types named</span></div><div class="stat"><div class="n" id="mu-avg">–</div><span class="small muted">avg miss (pts)</span></div></div>
+      <div id="mu-out" style="display:grid;gap:10px"></div>
+    </div>
+  </div>
+  <div class="panel"><h3>Cheat sheet: preflop all-in matchups</h3><div style="overflow-x:auto"><table class="ref" id="mu-sheet"></table></div>
+    <p class="small muted">Averages measured with this app's equity engine across many deals of each type. Suited hands add about 2 to 3 points.</p></div>
+</section>
+
+<!-- POT ODDS -->
+<section class="view" id="v-pot-odds" hidden>
+  <details class="learn"><summary>How this works <span>The break-even formula, step by step</span></summary><div class="learn-body">
+    <p>A call is profitable when you win often enough to pay for it. The break-even point is:</p>
+    <p><span class="formula">equity needed = your call ÷ (pot + villain's bet + your call)</span></p>
+    <div class="worked"><b>Worked example</b><span>Pot $100, villain bets $50. You call $50 to win the $150 already there. Final pot $200. $50 ÷ $200 = <b>25%</b>.</span><span>Ratio method: the pot offers $150 to your $50, or 3 : 1. Then 1 ÷ (3 + 1) = 25%.</span></div>
+    <ul>
+      <li>The most common slip is dividing by the pot <i>before</i> your call ($50 ÷ $150 = 33%). Your own call is part of what you win back.</li>
+      <li>Bet sizes repeat, so memorize the table below. A half-pot bet always needs 25%, a pot bet always 33%.</li>
+      <li>This is the price only. Whether to call depends on comparing it with your equity, which the Call or fold trainer drills.</li>
+    </ul>
+  </div></details>
+  <div class="cols">
+    <div class="table">
+      <div class="row">
+        <div><span class="lbl">Pot before bet</span><span class="big" id="po-pot"></span><div class="sub" id="po-pot-bb"></div></div>
+        <div><span class="lbl">Villain bets</span><span class="big chipnum" id="po-bet"></span><div class="sub" id="po-bet-bb"></div></div>
+      </div>
+      <form class="row" id="po-form">
+        <label for="po-ans"><span class="lbl">Your break-even equity %</span></label>
+        <input type="number" id="po-ans" min="0" max="100" step="0.1" inputmode="decimal" placeholder="25">
+        <button class="act" type="submit">Check</button>
+        <button class="act ghost" type="button" id="po-next">Next spot</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h3>Session</h3>
+      <div class="stats"><div class="stat"><div class="n" id="po-score">0/0</div><span class="small muted">correct (within 2.5 pts)</span></div><div class="stat"><div class="n" id="po-streak">0</div><span class="small muted">streak</span></div></div>
+      <div id="po-out"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h3>Memorize these: bet size → equity needed to call</h3>
+    <div style="overflow-x:auto"><table class="ref"><thead><tr><th>Bet size</th><th>Pot odds</th><th>Equity needed</th></tr></thead><tbody id="ref"></tbody></table></div>
+  </div>
+</section>
+
+<!-- CALL OR FOLD -->
+<section class="view" id="v-call-or-fold" hidden>
+  <details class="learn"><summary>How this works <span>Outs, the rule of 2 and 4, and the decision</span></summary><div class="learn-body">
+    <ol>
+      <li><b>Find the price</b> with the pot odds formula.</li>
+      <li><b>Count your outs</b>: the unseen cards that put you ahead. A flush draw has 9, an open-ended straight draw 8, a gutshot 4, two overcards about 6.</li>
+      <li><b>Convert outs to equity.</b> With two cards to come (all in on the flop), multiply by 4. With one card to come, multiply by 2.</li>
+      <li><b>Compare.</b> If your equity is above the price, call. If below, fold.</li>
+    </ol>
+    <div class="worked"><b>Worked example</b><span>Turn. Villain bets $50 into $100, so you need 25%. You have a flush draw: 9 outs × 2 = 18%. 18% is below 25%, so fold.</span></div>
+    <ul>
+      <li>Watch for <b>dirty outs</b>: a card that completes your draw but gives villain a better hand does not count. The trainer counts only clean outs.</li>
+      <li>Villain's cards are face up here so you can check your counting. In real play you estimate against a range; the Calculator tab handles that.</li>
+      <li>Not modeled: implied odds (money you win on later streets) and fold equity from raising.</li>
+    </ul>
+  </div></details>
+  <div class="cols">
+    <div class="panel stage">
+      <div class="ptable" id="cf-table" role="img"></div>
+      <p class="spot-text" id="cf-text"></p>
+      <div class="hands">
+        <div><span class="lbl muted">You</span><div class="cards" id="cf-hero"></div></div>
+        <div><span class="lbl muted">Villain shows</span><div class="cards" id="cf-vil"></div></div>
+      </div>
+      <div class="row">
+        <button class="act" id="cf-call">Call</button>
+        <button class="act" id="cf-fold">Fold</button>
+        <button class="act ghost" id="cf-next">Next hand</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Session</h3>
+      <div class="stats"><div class="stat"><div class="n" id="cf-score">0/0</div><span class="small muted">correct</span></div></div>
+      <div id="cf-out" style="display:grid;gap:10px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- STREET EQUITY -->
+<section class="view" id="v-street-equity" hidden>
+  <details class="learn"><summary>How this works <span>What equity is and how it moves street to street</span></summary><div class="learn-body">
+    <p><b>Equity</b> is your share of the pot if every remaining card were dealt with no more betting. The app deals every possible remaining board, counts how often you win, and counts a tie as half a win.</p>
+    <ul>
+      <li><b>Preflop:</b> use the matchup types from the Matchups tab. Name the type, recall the number.</li>
+      <li><b>Flop:</b> if you are behind, count outs × 4. If you are ahead, count villain's outs × 4 and subtract from 100.</li>
+      <li><b>Turn:</b> the same, × 2. Draws lose about half their value when the turn misses.</li>
+      <li><b>River:</b> no cards to come, so equity is 100%, 50% or 0%.</li>
+      <li><b>Split pots count as half.</b> Equity = win % + half of split %. A card that ties you with villain is worth half an out.</li>
+      <li><b>Runner-runner:</b> when you need both the turn and the river, the rule of 4 counts nothing. These draws are usually worth 1 to 4%, so add about 1 out for each one.</li>
+    </ul>
+    <p>After each guess the trainer shows the shortcut you could have used, so you can see whether the miss came from the method or the arithmetic.</p>
+  </div></details>
+  <div class="cols">
+    <div class="table">
+      <div class="hands">
+        <div><span class="lbl">You</span><div class="cards" id="se-hero"></div></div>
+        <div><span class="lbl">Villain</span><div class="cards" id="se-vil"></div></div>
+      </div>
+      <div><span class="lbl" id="se-street">Preflop</span><div class="cards" id="se-board"></div></div>
+      <form id="se-form" style="display:grid;gap:8px">
+        <label for="se-guess"><span class="lbl">Your equity guess: <b id="se-gv" style="font-family:var(--mono)">50</b>%</span></label>
+        <input type="range" id="se-guess" min="0" max="100" value="50">
+        <div class="row"><button class="act" type="submit" id="se-sub">Lock in guess</button><button class="act ghost" type="button" id="se-adv" disabled>Next street</button><button class="act ghost" type="button" id="se-new">New hand</button></div>
+      </form>
+    </div>
+    <div class="panel">
+      <h3>Session</h3>
+      <div class="stats"><div class="stat"><div class="n" id="se-avg">–</div><span class="small muted">avg miss (pts)</span></div><div class="stat"><div class="n" id="se-n">0</div><span class="small muted">guesses</span></div></div>
+      <div class="streets" id="se-log"></div>
+    </div>
+  </div>
+</section>
+
+<!-- BET SIZING -->
+<section class="view" id="v-sizing" hidden>
+  <details class="learn"><summary>How this works <span>Size buckets, the two answer keys, and mistake costs</span></summary><div class="learn-body">
+    <p>You raised before the flop and it's your turn to act. Pick a size: <b>check, small (about ⅓ pot), medium (½–⅔), large (¾–pot), overbet (about 1.5× pot)</b> or, when stacks are short enough, <b>all in</b>. The amounts in big blinds show on each button.</p>
+    <ul>
+      <li><b>Exploit key:</b> what the coaches in your notes do against a typical live recreational player. Most answers link to the video moment they come from.</li>
+      <li><b>GTO baseline:</b> simplified rules of thumb for how a balanced solver strategy plays the spot. These are not solver outputs; they show the direction a balanced player leans, so you can see where the exploit departs from it.</li>
+      <li>You're graded on the key you pick, and you always see both after you answer.</li>
+      <li><b>Mistake cost:</b> "best size" and "also fine" count as correct. Otherwise it's a small, medium or big mistake. Big mistakes give up clear value (checking a strong hand on the river) or put a lot of money in with the wrong hand (bluffing big into a range that just made flushes).</li>
+    </ul>
+    <p>The four questions behind most answers: <b>Flop:</b> will they raise their strong hands and call with their weak ones? <b>Turn:</b> are they capped? Did the card change the nuts? <b>River:</b> what would I do with the opposite hand? If my bluff wants big, my value wants small, and the other way round.</p>
+    <p class="small muted">Spots are 100 BB cash, heads-up after the flop. More spots, including facing bets, will be added over time.</p>
+  </div></details>
+  <div class="cols">
+    <div class="panel stage">
+      <div class="setup">
+        <label class="field" for="sz-street"><span>Street</span><select id="sz-street"><option value="mixed">Mixed (weak spots first)</option><option value="Flop">Flop</option><option value="Turn">Turn</option><option value="River">River</option></select></label>
+        <div class="field" style="flex:1 1 250px"><span>Answer key</span><div class="seg" style="flex-wrap:nowrap;align-self:start;justify-self:start" role="group" aria-label="Answer key"><button id="sz-k-x" aria-pressed="true">Exploit (notes)</button><button id="sz-k-gto" aria-pressed="false">GTO baseline</button></div></div>
+      </div>
+      <div class="ptable" id="sz-table" role="img"></div>
+      <div><h3 id="sz-name"></h3><p class="spot-text" id="sz-text"></p></div>
+      <div class="hand-row"><div><span class="lbl muted small">Board</span><div class="cards" id="sz-board"></div></div><div><span class="lbl muted small">You</span><div class="cards" id="sz-hand"></div></div></div>
+      <div class="row szacts" id="sz-acts"></div>
+    </div>
+    <div class="panel">
+      <h3>Session</h3>
+      <div class="stats"><div class="stat"><div class="n" id="sz-score">0/0</div><span class="small muted">correct</span></div><div class="stat"><div class="n" id="sz-streak">0</div><span class="small muted">streak</span></div></div>
+      <div id="sz-out" style="display:grid;gap:10px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- RANGE VS BOARD -->
+<section class="view" id="v-board" hidden>
+  <details class="learn"><summary>How this works <span>How a range hits a board, capped ranges, guessing first</span></summary><div class="learn-body">
+    <p>Pick a range and a board. Every combo in the range that the board doesn't block is sorted into its best made hand (two pair, top pair, and so on). Hands weaker than two pair are also checked for draws. Percentages are of the live combos.</p>
+    <ul>
+      <li><b>Compare two ranges</b> to see who the board favors. The preflop raiser usually has more overpairs and top pairs on high boards; the caller often has more two pair and straights on low, connected boards.</li>
+      <li><b>Capped ranges:</b> when a player's line removes their strongest hands (they would have raised sets and two pair on a wet flop), their "two pair or better" share shrinks. That's the "are they capped?" question from the bet-sizing trainer and your notes.</li>
+      <li><b>Turn and river:</b> add cards to watch the numbers change. A flush card raises the flush share and turns flush draws into made hands.</li>
+      <li><b>Guess first</b> hides the numbers until you estimate how often the range has top pair or better. Within 7.5 points counts as correct, and your average miss shows in Progress.</li>
+      <li>Draws are counted once, at their strongest: a flush draw plus a straight draw is a combo draw. Backdoor draws aren't counted.</li>
+    </ul>
+    <p class="small muted">Saved ranges from the range builder show up under "My ranges".</p>
+  </div></details>
+  <div class="cols">
+    <div class="panel">
+      <label class="field" for="rvb-a"><span>Range</span><select id="rvb-a"></select></label>
+      <label class="field" for="rvb-b"><span>Compare with (optional)</span><select id="rvb-b"></select></label>
+      <div><span class="lbl muted">Board <span id="rvb-tex" style="text-transform:none;letter-spacing:0"></span></span><div class="slots" id="rvb-slots" style="margin-top:6px"></div></div>
+      <div class="grid" id="rvb-grid"></div>
+      <div class="row"><button class="act" type="button" id="rvb-rand">New random flop</button><button class="act ghost" type="button" id="rvb-card">Deal next card</button>
+        <label class="row small" for="rvb-guess" style="gap:6px;cursor:pointer"><input type="checkbox" id="rvb-guess"> Guess first</label></div>
+    </div>
+    <div class="panel"><h3>How the range hits</h3><div id="rvb-out" style="display:grid;gap:12px"></div></div>
+  </div>
+</section>
+
+<!-- FULL HAND -->
+<section class="view" id="v-hand" hidden>
+  <details class="learn"><summary>How this works <span>Opponent types, how decisions are graded, what the numbers mean</span></summary><div class="learn-body">
+    <p>Play one heads-up hand from preflop to the river, 100 BB deep. Everyone else folds. You choose the opponent type and your seat (button, cutoff or big blind), or let them be random.</p>
+    <ul>
+      <li><b>Opponent types</b> follow the patterns in your notes. A typical recreational player calls too much, stabs small and bets big only with strong hands. A calling station rarely folds. A nit only bets real hands. An aggressive player bluffs and raises a lot.</li>
+      <li><b>Preflop</b> decisions are graded against the trainer's charts. Calling an all-in is graded by your equity against their all-in range.</li>
+      <li><b>After the flop</b>, every option is scored by expected value (EV) in big blinds, one street ahead. The trainer works out the opponent's likely range from how this type played the hand so far, how often they would fold, call or raise each size, and your equity against them. The table after each decision shows the numbers.</li>
+      <li><b>Mistake cost:</b> within about 5% of the pot of the best option counts as fine. Beyond that it's a small, medium or big mistake depending on how much of the pot it gives up.</li>
+      <li>One-street EV ignores later streets, so slow-plays and implied odds aren't rewarded. Treat close calls as close.</li>
+    </ul>
+    <p class="small muted">Results swing with the cards. The decisions are what you're practicing. Your last 50 hands are saved on this device for the hand replayer.</p>
+  </div></details>
+  <div class="cols">
+    <div class="panel stage">
+      <div class="setup">
+        <label class="field" for="fh-type"><span>Opponent</span><select id="fh-type"><option value="random">Random type</option><option value="rec">Typical recreational player</option><option value="station">Calling station</option><option value="nit">Nit</option><option value="aggro">Aggressive player</option></select></label>
+        <label class="field" for="fh-seat"><span>Your seat</span><select id="fh-seat"><option value="random">Random</option><option value="BTN">Button (vs big blind)</option><option value="CO">Cutoff (vs button)</option><option value="BB">Big blind (vs button)</option></select></label>
+        <label class="row small" for="fh-play" style="gap:6px;cursor:pointer;align-self:end;padding-bottom:10px"><input type="checkbox" id="fh-play" checked> Only deal hands the chart plays</label>
+      </div>
+      <p class="small" id="fh-opp"></p>
+      <div class="ptable" id="fh-table" role="img"></div>
+      <div class="hand-row"><div><span class="lbl muted small">You</span><div class="cards" id="fh-hand"></div></div><div><span class="lbl muted small">Opponent</span><div class="cards" id="fh-vil"></div></div></div>
+      <div class="row" id="fh-acts"></div>
+      <ol class="fh-log" id="fh-log"></ol>
+      <div><button class="linkbtn" id="fh-deal" style="color:var(--muted)">Deal a new hand</button></div>
+    </div>
+    <div class="panel">
+      <h3>Session</h3>
+      <div class="stats"><div class="stat"><div class="n" id="fh-hands">0</div><span class="small muted">hands</span></div><div class="stat"><div class="n" id="fh-good">–</div><span class="small muted">decisions best or fine</span></div><div class="stat"><div class="n" id="fh-net">0</div><span class="small muted">BB won</span></div></div>
+      <div id="fh-sum" style="display:grid;gap:10px"></div>
+      <div id="fh-out" style="display:grid;gap:10px"><p class="small muted">Feedback on each decision appears here.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- REPLAYER -->
+<section class="view" id="v-replay" hidden>
+  <details class="learn"><summary>How this works <span>Stepping through saved hands and reviewing decisions</span></summary><div class="learn-body">
+    <ul>
+      <li>Hands you finish in <b>Full hand</b> are saved here, the last 50 on this device.</li>
+      <li>Step with the buttons, the left and right arrow keys, or by clicking a line in the action list. "Next decision" jumps to the next point where you acted.</li>
+      <li>At each of your decisions you see the grade, the reason and the EV table from when you played it.</li>
+      <li>The opponent's cards stay hidden until the last step, so you can replay a hand and think it through again. Tick "Show their cards" to see them earlier.</li>
+      <li>Send any step to the <b>calculator</b> (against their actual cards once shown, or a random hand) or to <b>range vs board</b> to see how ranges hit that board.</li>
+    </ul>
+  </div></details>
+  <div class="cols">
+    <div class="panel" id="rp-view-wrap">
+      <div id="rp-empty"><h3>Pick a hand</h3><p class="small muted">Choose a hand from the list to replay it.</p></div>
+      <div id="rp-view" hidden style="display:grid;gap:12px">
+        <div class="qhead"><h3 id="rp-title" style="margin:0"></h3><span class="small muted" id="rp-pos"></span></div>
+        <div class="ptable" id="rp-table" role="img"></div>
+        <div class="hand-row"><div><span class="lbl muted small">You</span><div class="cards" id="rp-hero"></div></div><div><span class="lbl muted small">Opponent</span><div class="cards" id="rp-vil"></div></div>
+          <label class="row small" for="rp-vil-show" style="gap:6px;cursor:pointer"><input type="checkbox" id="rp-vil-show"> Show their cards</label></div>
+        <div class="row rp-ctl"><button class="act ghost" id="rp-first" aria-label="First step">⏮</button><button class="act ghost" id="rp-prev" aria-label="Previous step">◀ Back</button><button class="act" id="rp-next" aria-label="Next step">Next ▶</button><button class="act ghost" id="rp-last" aria-label="Last step">⏭</button><button class="act ghost" id="rp-jump">Next decision</button></div>
+        <div id="rp-dec" style="display:grid;gap:8px"></div>
+        <ol class="fh-log rp-log" id="rp-log"></ol>
+        <div class="row"><button class="act ghost" id="rp-calc">Calculator</button><button class="act ghost" id="rp-board">Range vs board</button><button class="linkbtn" id="rp-del" style="color:var(--muted)">Delete this hand</button><span class="small muted" id="rp-board-msg"></span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="qhead"><h3 style="margin:0">Saved hands</h3><label class="row small" for="rp-miss" style="gap:6px;cursor:pointer"><input type="checkbox" id="rp-miss"> Only hands to review</label></div>
+      <div id="rp-list" class="rp-list"></div>
+    </div>
+  </div>
+</section>
+
+<!-- CALCULATOR -->
+<section class="view" id="v-calculator" hidden>
+  <details class="learn"><summary>How this works <span>Exact vs simulated, and studying against ranges</span></summary><div class="learn-body">
+    <p>Pick a slot, then a card. Click a filled slot to clear it. The calculator shows your equity at every street you have dealt.</p>
+    <ul>
+      <li><b>Exact hand:</b> on the flop and later, every remaining board is checked, so the number is exact. Preflop it simulates tens of thousands of boards, accurate to within about half a point.</li>
+      <li><b>Range:</b> this is how to study real hands. Ask what villain could hold given their action (for example "BB vs BTN open: 3-bet or call"), load that chart, and see how your hand does against all of it. Cards on the board remove the combos they block.</li>
+      <li><b>Random hand:</b> equity against any two cards. Useful as a baseline, but real opponents rarely play every hand.</li>
+    </ul>
+    <p class="small muted">Use this for review after a session. Most online sites prohibit equity tools while you are playing.</p>
+  </div></details>
+  <div class="cols">
+    <div class="panel">
+      <div class="row"><span class="small muted">Villain holds</span><div class="seg" role="group" aria-label="Villain holds"><button id="vm-exact" aria-pressed="false">Exact hand</button><button id="vm-range" aria-pressed="true">Range</button><button id="vm-random" aria-pressed="false">Random hand</button></div></div>
+      <div class="slots" id="slots"></div>
+      <div class="grid" id="grid"></div>
+      <div id="range-box" style="display:grid;gap:10px">
+        <label class="field" for="rpreset"><span>Load a chart range</span><select id="rpreset"></select></label>
+        <div class="row" style="align-items:end;gap:8px"><label class="field" for="rtext" style="flex:1 1 220px"><span>Range notation</span><input type="text" id="rtext" spellcheck="false" autocomplete="off"></label><button class="act ghost" type="button" id="rapply">Apply</button></div>
+        <div class="rgrid" id="rgrid" aria-label="Villain range, click a hand to toggle it"></div>
+        <p class="small muted" id="rinfo"></p>
+      </div>
+      <div class="row"><button class="act" id="calc">Calculate</button><button class="act ghost" id="clr">Clear cards</button></div>
+    </div>
+    <div class="panel">
+      <h3>Equity by street</h3>
+      <div class="legend"><span><i style="background:var(--range)"></i>You win</span><span><i style="background:var(--chip)"></i>Split</span><span><i style="background:var(--line)"></i>Villain wins</span></div>
+      <div class="streets" id="calc-out"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ICM -->
+<section class="view" id="v-icm" hidden>
+  <details class="learn"><summary>How this works <span>Why tournament chips aren't money, and what the numbers mean</span></summary><div class="learn-body">
+    <p>In a cash game a chip is worth its face value. In a tournament it isn't: doubling your stack doesn't double your prize money, because you can only win first place once. <b>ICM</b> (the Independent Chip Model) turns stacks into prize money: your chance to finish first is your share of the chips, and the remaining places follow the same rule.</p>
+    <ul>
+      <li><b>Stacks table:</b> enter everyone still in, mark which player is you and who shoved. The results show each player's prize-money value.</li>
+      <li><b>Calling an all-in:</b> enter the chips already in the pot (blinds and antes) and how much you have to call. The tool compares folding with calling, in prize money.</li>
+      <li><b>Equity needed with ICM</b> is the win rate that makes calling worth as much as folding. <b>Needed in chips only</b> is the normal pot-odds number. The gap is the <b>risk premium</b>: the extra equity the payouts demand.</li>
+      <li><b>Bubble factor</b> compares losing with winning: a bubble factor of 1.5 means losing this pot hurts you 1.5 times as much as winning it helps. It is highest near the money and when a bigger stack covers you.</li>
+      <li>This is why calling ranges tighten near the money and at final tables, which the preflop trainer's tournament notes mention.</li>
+    </ul>
+    <p class="small muted">Enter stacks as the chips each player has behind right now, after blinds and antes are posted. ICM ignores skill and future hands, so treat it as a guide for big all-in decisions, not every pot.</p>
+  </div></details>
+  <div class="cols">
+    <div class="panel">
+      <h3>Stacks</h3>
+      <div style="overflow-x:auto"><table class="ref icm-t"><thead><tr><th>Player</th><th>Chips</th><th class="c">You</th><th class="c">Shoves</th><th></th></tr></thead><tbody id="icm-rows"></tbody></table></div>
+      <div><button class="act ghost" id="icm-add">Add player</button></div>
+      <div class="setup">
+        <label class="field" for="icm-pool"><span>Prize pool ($)</span><input type="text" inputmode="decimal" id="icm-pool" value="100"></label>
+        <label class="field" for="icm-pay"><span>Payouts (%)</span><select id="icm-pay"><option value="50/30/20">Top 3: 50 / 30 / 20</option><option value="65/35">Top 2: 65 / 35</option><option value="40/30/20/10">Top 4: 40 / 30 / 20 / 10</option><option value="45/27/18/10">Top 4: 45 / 27 / 18 / 10</option><option value="35/25/18/12/10">Top 5: 35 / 25 / 18 / 12 / 10</option><option value="100">Winner takes all</option><option value="custom">Custom…</option></select></label>
+        <label class="field" for="icm-custom" id="icm-custom-wrap" hidden><span>Custom payouts (e.g. 50, 30, 20)</span><input type="text" id="icm-custom" value="50, 30, 20"></label>
+      </div>
+      <h3>Calling an all-in</h3>
+      <div class="setup">
+        <label class="field" for="icm-pot"><span>Already in the pot (blinds + antes)</span><input type="text" inputmode="decimal" id="icm-pot" value="300"></label>
+        <label class="field" for="icm-call"><span>You have to call</span><input type="text" inputmode="decimal" id="icm-call"></label>
+        <label class="field" for="icm-eq"><span>Your equity (%)</span><input type="text" inputmode="decimal" id="icm-eq" placeholder="e.g. 45"></label>
+      </div>
+      <div class="setup" style="align-items:end">
+        <label class="field" for="icm-hand" style="flex:0 1 120px"><span>Your hand</span><input type="text" id="icm-hand" placeholder="AKs or AhKd" autocomplete="off"></label>
+        <label class="field" for="icm-range"><span>Their shoving range</span><select id="icm-range"></select></label>
+        <button class="act ghost" id="icm-eqcalc" style="flex:0 0 auto">Work out equity</button>
+      </div>
+      <p class="small muted" id="icm-eqmsg"></p>
+    </div>
+    <div class="panel">
+      <h3>Prize-money value</h3><div id="icm-out"></div>
+      <h3>Call or fold</h3><div id="icm-allin" style="display:grid;gap:10px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ASSESSMENT -->
+<section class="view" id="v-assessment" hidden>
+  <div class="panel" id="qz-start">
+    <h2>Assessment</h2>
+    <p style="max-width:68ch">30 questions across five areas: 10 preflop chart spots, 5 matchup estimates, 5 pot odds prices, 5 outs counts and 5 call-or-fold decisions. There is no feedback until the end, so it measures what you know rather than what you just learned. It takes about 10 minutes.</p>
+    <p class="small muted">Preflop questions use the <b id="qz-game">tournament</b> charts. Switch Cash or Tournament at the top to test the other set.</p>
+    <div><button class="act" id="qz-go">Start assessment</button></div>
+  </div>
+  <div class="panel" id="qz-run" hidden>
+    <div class="qhead"><h3 id="qz-area" style="margin:0"></h3><span class="small muted" id="qz-count"></span></div>
+    <div class="qbar"><i id="qz-bar"></i></div>
+    <div id="qz-visual"></div>
+    <div id="qz-prompt" style="display:grid;gap:10px"></div>
+    <div class="opts" id="qz-opts"></div>
+    <div><button class="linkbtn" id="qz-quit" style="color:var(--muted)">Quit assessment</button></div>
+  </div>
+  <div id="qz-result" hidden style="display:grid;gap:16px">
+    <div class="panel"><h2>Results</h2><div id="qz-summary" style="display:grid;gap:14px"></div><div><button class="act" id="qz-again">Retake</button></div></div>
+    <div class="panel"><h3>Review your misses</h3><div class="review" id="qz-review"></div></div>
+  </div>
+</section>
+
+<!-- PROGRESS -->
+<section class="view" id="v-progress" hidden>
+  <details class="learn"><summary>How this works <span>Sessions, scoring and focus mode</span></summary><div class="learn-body">
+    <ul>
+      <li>Every answer is logged with its trainer, spot, hand, your answer, the correct answer and how long you took.</li>
+      <li><b>A session</b> is one sitting. A new one starts after 30 minutes without an answer, or on a new day, even if the page stays open.</li>
+      <li>Areas are ranked once they have 5 attempts: under 75% needs work, 75 to 89% is getting there, 90% and up is strong. Street equity is scored by average miss instead.</li>
+      <li>Focus mode in the preflop and matchup trainers uses this history to serve weak spots more often. Assessment answers count too.</li>
+    </ul>
+  </div></details>
+  <p class="small intro" id="src-note"></p>
+  <div class="panel"><h3>Work on next</h3><div id="pg-next"></div></div>
+  <div class="panel"><h3>All areas</h3><div style="overflow-x:auto"><table class="ref" id="pg-table"></table></div></div>
+  <div class="panel">
+    <h3>Your account</h3>
+    <p class="small" id="pg-who"></p>
+    <div class="row"><button class="act" type="button" id="pg-account">Account</button><button class="act ghost" type="button" id="sync-now">Save now</button></div>
+    <p class="small syncmsg" id="sync-msg"></p>
+    <p class="small muted" id="sync-q"></p>
+  </div>
+</section>
+</div>
+
+<!-- ACCOUNT -->
+<dialog class="modal" id="acct" aria-labelledby="acct-h">
+  <div class="modal-in">
+    <form method="dialog" class="modal-x"><button aria-label="Close">✕</button></form>
+    <img class="logo" src="assets/logo.webp" alt="">
+    <div id="acct-out" style="display:grid;gap:14px">
+      <h2 id="acct-h">Save your training</h2>
+      <p class="small muted" style="text-align:center">Sign in so your progress, ranges and hands are kept in your account and follow you to any device. You stay signed in on this device until you sign out.</p>
+      <button type="button" class="btn-google" id="au-google"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.2C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.6 28.5c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.9-6.2C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.2z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.1-13.4-9.9l-7.9 6.2C6.6 42.6 14.6 48 24 48z"/></svg>Continue with Google</button>
+      <div class="or">or use email</div>
+      <form id="au-form" novalidate>
+        <div class="seg" role="group" aria-label="Sign in or create an account"><button type="button" id="au-tab-in" aria-pressed="true">Sign in</button><button type="button" id="au-tab-up" aria-pressed="false">Create account</button></div>
+        <label class="field" id="au-name-wrap" for="au-name" hidden><span>First name</span><input type="text" id="au-name" autocomplete="given-name"></label>
+        <label class="field" for="au-email"><span>Email</span><input type="email" id="au-email" autocomplete="email" required></label>
+        <label class="field" for="au-pass"><span>Password</span><input type="password" id="au-pass" autocomplete="current-password" minlength="6" required></label>
+        <button class="act" type="submit" id="au-submit">Sign in</button>
+        <button class="linkbtn" type="button" id="au-forgot">Forgot password?</button>
+        <p class="small" id="au-msg" role="status"></p>
+      </form>
+      <button class="linkbtn" type="button" id="au-guest" style="color:var(--muted)">Use without an account on this device</button>
+    </div>
+    <div id="acct-in" style="display:grid;gap:14px" hidden>
+      <h2>Your account</h2>
+      <p class="small muted" style="text-align:center" id="acct-email"></p>
+      <label class="field" for="acct-name"><span>Name shown on Home</span><input type="text" id="acct-name" autocomplete="given-name"></label>
+      <div class="row"><button class="act ghost" type="button" id="acct-save-name">Save name</button><span class="small muted" id="acct-name-msg" role="status"></span></div>
+      <button class="act" type="button" id="acct-signout">Sign out</button>
+      <p class="small muted">Signing out removes your training from this device. It stays in your account for next time.</p>
+    </div>
+    <div id="acct-off" style="display:grid;gap:10px" hidden>
+      <h2>Sign-in isn't set up yet</h2>
+      <p class="small">Add your Firebase settings to <code>js/firebase-config.js</code> (see README). Until then everything is saved on this device.</p>
+    </div>
+  </div>
+</dialog>
+
+</body>
+</html>
