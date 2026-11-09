@@ -26,6 +26,7 @@
 <script defer src="js/full-hand.js"></script>
 <script defer src="js/full-hand-tour.js"></script>
 <script defer src="js/equity-drills.js"></script>
+<script defer src="js/texture.js"></script>
 <script defer src="js/replay.js"></script>
 <script defer src="js/icm.js"></script>
 <script defer src="js/assessment.js"></script>
@@ -88,7 +89,7 @@
         <div class="jump">
           <a href="#pot-odds"><b>Odds</b><span>Pot odds and call or fold</span></a>
           <a href="#matchups"><b>Equity</b><span>Hand vs hand, hand vs range, range vs range, range vs board</span></a>
-          <a href="#sizing"><b>EV</b><span>Bet sizing and ICM</span></a>
+          <a href="#sizing"><b>EV</b><span>Bet sizing, board texture and ICM</span></a>
           <a href="#preflop"><b>Ranges</b><span>Preflop charts, range builder and combinatorics</span></a>
           <a href="#hand"><b>Play</b><span>Full hands, replays and your hand log</span></a>
           <a href="#progress"><b>Progress</b><span>Scores by trainer and spot</span></a>
@@ -596,6 +597,33 @@
       <h3>Equity by street</h3>
       <div class="legend"><span><i style="background:var(--range)"></i>You win</span><span><i style="background:var(--chip)"></i>Split</span><span><i style="background:var(--line)"></i>Villain wins</span></div>
       <div class="streets" id="calc-out"></div>
+    </div>
+  </div>
+</section>
+
+<!-- BOARD TEXTURE -->
+<section class="view" id="v-texture" hidden>
+  <details class="learn"><summary>How this works <span>Range advantage, nut advantage and c-bet plans</span></summary><div class="learn-body">
+    <p>On the flop, think about <b>ranges</b> before your own hand. Three questions decide most c-bet plans:</p>
+    <ul>
+      <li><b>Range advantage:</b> whose whole range has more equity. High boards (A, K, Q) usually favor the preflop raiser, who has more big cards. Low, connected boards hit the caller's small pairs and suited connectors.</li>
+      <li><b>Nut advantage:</b> who has more of the very strongest hands (two pair, sets, straights, flushes). A range can be ahead overall but short on nuts, or the other way round.</li>
+      <li><b>Texture:</b> dry boards (rainbow, disconnected, like K-7-2) change little on later streets. Wet boards (two-tone, connected, like 9-8-6 with two hearts) have many draws.</li>
+      <li><b>Rule of thumb:</b> range edge on a dry board, bet small with most of the range. Range and nut edge on a wet board, bet bigger with fewer hands. Caller has the edge, check a lot.</li>
+    </ul>
+    <p>Ranges come from the Cash or Tournament charts, so switch the game type to practise either. One spot is a 3-bet pot, where the 3-bettor's range is much stronger.</p>
+  </div></details>
+  <div class="cols">
+    <div class="panel stage">
+      <p id="tx-spot" style="font-weight:700"></p>
+      <div class="ptable" id="tx-table"></div>
+      <div id="tx-qs" style="display:grid;gap:12px"></div>
+      <div class="row"><button class="act" type="button" id="tx-sub" disabled>Check answers</button><button class="act ghost" type="button" id="tx-next">Next flop</button></div>
+      <div id="tx-out" style="display:grid;gap:10px"></div>
+    </div>
+    <div class="panel">
+      <h3>Session</h3>
+      <div class="stats"><div class="stat"><div class="n" id="tx-n">0</div><span class="small muted">flops</span></div><div class="stat"><div class="n" id="tx-acc">–</div><span class="small muted">answers right</span></div><div class="stat"><div class="n" id="tx-all">–</div><span class="small muted">all 3 right</span></div></div>
     </div>
   </div>
 </section>

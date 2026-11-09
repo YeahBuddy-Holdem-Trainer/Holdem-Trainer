@@ -417,3 +417,10 @@ dialog.fb-modal{width:min(560px,calc(100vw - 20px))}
 .ptable{margin:14px 0 30px}
 @media (max-width:560px){.ptable{margin:18px 0 34px}.phole.me{top:auto!important;bottom:-6%}}
 .pseat{z-index:1}.pseat.folded{opacity:1;background:color-mix(in srgb,var(--seat) 45%,var(--felt-2));color:rgba(251,246,234,.55);border-color:transparent}
+
+/* board texture */
+.tx-q{border:0;margin:0;padding:0;display:grid;gap:8px}
+.tx-q legend{padding:0;margin-bottom:6px;font-size:15px}
+.tx-q .seg{flex-wrap:wrap}
+.tx-r{padding:10px 12px;border-radius:12px;background:var(--sand);display:grid;gap:4px}
+.tx-r.good b{color:var(--good)}.tx-r.bad>p>b{color:var(--bad)}
