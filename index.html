@@ -25,6 +25,7 @@
 <script defer src="js/board.js"></script>
 <script defer src="js/full-hand.js"></script>
 <script defer src="js/full-hand-tour.js"></script>
+<script defer src="js/equity-drills.js"></script>
 <script defer src="js/replay.js"></script>
 <script defer src="js/icm.js"></script>
 <script defer src="js/assessment.js"></script>
@@ -85,7 +86,7 @@
         <h2 class="ph" id="hm-jump-h">Jump to</h2>
         <div class="jump">
           <a href="#pot-odds"><b>Odds</b><span>Pot odds and call or fold</span></a>
-          <a href="#matchups"><b>Equity</b><span>Hand vs hand, hand or range vs range, range vs board</span></a>
+          <a href="#matchups"><b>Equity</b><span>Hand vs hand, hand vs range, range vs range, range vs board</span></a>
           <a href="#sizing"><b>EV</b><span>Bet sizing and ICM</span></a>
           <a href="#preflop"><b>Ranges</b><span>Preflop charts and your range builder</span></a>
           <a href="#hand"><b>Play</b><span>Full hands, replays and your hand log</span></a>
@@ -481,6 +482,61 @@
 </section>
 
 <!-- CALCULATOR -->
+<!-- HAND VS RANGE -->
+<section class="view" id="v-hvr" hidden>
+  <details class="learn"><summary>How this works <span>Guessing your equity against a whole range</span></summary><div class="learn-body">
+    <p>You get a hand and the range your opponent would play in a real spot, taken from the preflop charts. Cash uses 100 BB charts; Tournament uses the tournament charts (opens, 3-bets, shoves and calls at 10-40 BB). Guess your equity against the <b>whole range</b>, then see which hands in it you beat, flip against or trail.</p>
+    <ul><li>Split the range into a few groups (big pairs, small pairs, big aces, suited connectors…) and think about your equity against each.</li>
+    <li>Weight each group by its combos: pairs are 6, suited hands 4, offsuit hands 12. A range full of offsuit broadways is mostly offsuit combos.</li>
+    <li>Choose Flop to practise the same idea once three cards are out.</li></ul></div></details>
+  <div class="cols">
+    <div class="panel stage">
+      <div class="setup"><label class="field" for="hvr-street"><span>Street</span><select id="hvr-street"><option value="mixed">Mixed</option><option value="0">Preflop</option><option value="3">Flop</option></select></label></div>
+      <h3 id="hvr-range" style="text-transform:none;letter-spacing:0;font-size:15px;color:var(--ink)"></h3>
+      <div id="hvr-grid"></div>
+      <div><span class="lbl muted small">Your hand</span><div class="cards" id="hvr-hero"></div></div>
+      <div><span class="lbl muted small" id="hvr-street-lbl">Preflop</span><div class="cards" id="hvr-board"></div></div>
+      <form id="hvr-form" style="display:grid;gap:8px">
+        <label for="hvr-guess"><span class="lbl">Your equity: <b id="hvr-gv" style="font-family:var(--mono)">50</b>%</span></label>
+        <input type="range" id="hvr-guess" min="0" max="100" value="50">
+        <div class="row"><button class="act" type="submit" id="hvr-sub">Lock in guess</button><button class="act ghost" type="button" id="hvr-next">Next spot</button></div>
+      </form>
+      <div id="hvr-out" style="display:grid;gap:10px"></div>
+    </div>
+    <div class="panel">
+      <h3>Session</h3>
+      <div class="stats"><div class="stat"><div class="n" id="hvr-n">0</div><span class="small muted">guesses</span></div><div class="stat"><div class="n" id="hvr-avg">–</div><span class="small muted">avg miss (pts)</span></div><div class="stat"><div class="n" id="hvr-close">–</div><span class="small muted">within 6 pts</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- RANGE VS RANGE -->
+<section class="view" id="v-rvr" hidden>
+  <details class="learn"><summary>How this works <span>Which range is ahead, and by how much</span></summary><div class="learn-body">
+    <p>Two ranges from the same spot: for example a button open against the big blind's 3-bet, or a 10 BB shove against the big blind's calling range. Guess range A's equity against range B, before the flop or on a flop.</p>
+    <ul><li>Tighter ranges beat wider ones, but usually by less than people think: most preflop range battles land between 40% and 60%.</li>
+    <li>On the flop, ask which range has more strong hands (sets, two pair, overpairs) for that board. That is range advantage.</li>
+    <li>Switch Cash/Tournament to change which charts the ranges come from.</li></ul></div></details>
+  <div class="cols">
+    <div class="panel stage">
+      <div class="setup"><label class="field" for="rvr-street"><span>Street</span><select id="rvr-street"><option value="mixed">Mixed</option><option value="0">Preflop</option><option value="3">Flop</option></select></label></div>
+      <h3 id="rvr-title" style="text-transform:none;letter-spacing:0;font-size:17px;color:var(--ink)"></h3>
+      <div class="rvr-two"><div><p class="small"><b id="rvr-a-name"></b></p><div id="rvr-a-grid"></div></div><div><p class="small"><b id="rvr-b-name"></b></p><div id="rvr-b-grid"></div></div></div>
+      <div><span class="lbl muted small" id="rvr-street-lbl">Preflop</span><div class="cards" id="rvr-board"></div></div>
+      <form id="rvr-form" style="display:grid;gap:8px">
+        <label for="rvr-guess"><span class="lbl">Range A's equity: <b id="rvr-gv" style="font-family:var(--mono)">50</b>%</span></label>
+        <input type="range" id="rvr-guess" min="0" max="100" value="50">
+        <div class="row"><button class="act" type="submit" id="rvr-sub">Lock in guess</button><button class="act ghost" type="button" id="rvr-next">Next spot</button></div>
+      </form>
+      <div id="rvr-out" style="display:grid;gap:10px"></div>
+    </div>
+    <div class="panel">
+      <h3>Session</h3>
+      <div class="stats"><div class="stat"><div class="n" id="rvr-n">0</div><span class="small muted">guesses</span></div><div class="stat"><div class="n" id="rvr-avg">–</div><span class="small muted">avg miss (pts)</span></div><div class="stat"><div class="n" id="rvr-close">–</div><span class="small muted">within 6 pts</span></div></div>
+    </div>
+  </div>
+</section>
+
 <section class="view" id="v-calculator" hidden>
   <details class="learn"><summary>How this works <span>Exact vs simulated, and studying against ranges</span></summary><div class="learn-body">
     <p>Pick a slot, then a card. Click a filled slot to clear it. The calculator shows your equity at every street you have dealt.</p>

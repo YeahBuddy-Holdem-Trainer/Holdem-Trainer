@@ -409,3 +409,6 @@ dialog.fb-modal{width:min(560px,calc(100vw - 20px))}
 .subtabs{flex:1 1 auto;max-width:100%}
 @media (max-width:600px){.subtabs{flex-basis:100%}}
 .wrap>*{min-width:0}
+.rvr-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:600px){.rvr-two{grid-template-columns:1fr}}
+.eq-grid{font-size:8.5px}
