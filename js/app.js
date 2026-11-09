@@ -33,11 +33,11 @@ function applyModeLook(m){document.documentElement.dataset.mode=m==='cash'?'cash
   $('qz-game').textContent=m==='cash'?'cash (100 BB, 6-max)':'tournament'}
 function setMode(m){mode=m;applyModeLook(m);buildPfSetup();newPF();newPO();newCF();rbBuildSelects();buildPresets();fhtSeatOptions();fhDeal();newHVR();newRVR()}
 $('m-cash').onclick=()=>{if(mode!=='cash')setMode('cash')};$('m-tour').onclick=()=>{if(mode==='cash')setMode('tour')};
-const VIEWS=['daily','assessment','progress','pot-odds','call-or-fold','matchups','street-equity','hvr','rvr','calculator','board','sizing','icm','preflop','ranges','hand','replay','log'];
+const VIEWS=['daily','assessment','progress','pot-odds','call-or-fold','matchups','street-equity','hvr','rvr','calculator','board','sizing','icm','preflop','ranges','combos','hand','replay','log'];
 /* sections: Odds and EV ideas are the same in cash and tournaments; Equity ranges, charts and play differ, so those views show the Cash/Tournament switch */
-const SECTIONS={home:['daily','assessment','progress'],odds:['pot-odds','call-or-fold'],equity:['matchups','street-equity','hvr','rvr','calculator','board'],ev:['sizing','icm'],ranges:['preflop','ranges'],play:['hand','replay','log']};
+const SECTIONS={home:['daily','assessment','progress'],odds:['pot-odds','call-or-fold'],equity:['matchups','street-equity','hvr','rvr','calculator','board'],ev:['sizing','icm'],ranges:['preflop','ranges','combos'],play:['hand','replay','log']};
 const VIEW_LABEL={daily:'Today',assessment:'Assessment',progress:'Progress','pot-odds':'Pot odds','call-or-fold':'Call or fold',matchups:'Hand vs hand','street-equity':'Street by street',
-  hvr:'Hand vs range',rvr:'Range vs range',calculator:'Calculator',board:'Range vs board',sizing:'Bet sizing',icm:'ICM (tournament)',preflop:'Preflop charts',ranges:'Range builder',hand:'Full hand',replay:'Replayer',log:'Hand log'};
+  hvr:'Hand vs range',rvr:'Range vs range',calculator:'Calculator',board:'Range vs board',sizing:'Bet sizing',icm:'ICM (tournament)',preflop:'Preflop charts',ranges:'Range builder',combos:'Combinatorics',hand:'Full hand',replay:'Replayer',log:'Hand log'};
 const MODE_VIEWS=['hvr','rvr','calculator','board','preflop','ranges','hand'];
 const UNIT_VIEWS=['pot-odds','call-or-fold','log'];
 const secOf=v=>Object.keys(SECTIONS).find(k=>SECTIONS[k].includes(v));
@@ -63,7 +63,7 @@ window.addEventListener('hashchange',route);
 
 /* ---------- start ---------- */
 poStats();pfStats();muStats();$('cf-score').textContent=`${stats.cf.c}/${stats.cf.n}`;
-buildPfSetup();buildPresets();rbInit();rvbInit();fhInit();rpInit();lgInit();eqDrillsInit();icmInit();
+buildPfSetup();buildPresets();rbInit();rvbInit();fhInit();rpInit();lgInit();eqDrillsInit();cbInit();icmInit();
 newPF();newMU();newPO();newCF();newSE();newSZ();szStats();
 $('rpreset').value=presetDef('calc');$('rpreset').dispatchEvent(new Event('change'));setVmode('range');
 applyModeLook(mode);route();runCalc();updateQ();sync();

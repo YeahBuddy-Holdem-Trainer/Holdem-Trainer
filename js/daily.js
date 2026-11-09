@@ -4,7 +4,7 @@
    (detail "Daily challenge"), so the streak follows your account across devices.
    Progress through today's set is kept on this device so you can stop and come back. */
 const DAILY_N=10,DAILYKEY='holdem-daily-v1',DAILY_TAG='Daily challenge';
-const DAILY_AREAS=['Preflop','Matchups','Pot odds','Counting outs','Call or fold','Bet sizing','Range vs board'];
+const DAILY_AREAS=['Preflop','Matchups','Pot odds','Counting outs','Call or fold','Bet sizing','Range vs board','Combinatorics'];
 const dayKey=d=>{d=new Date(d);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 const addDays=(k,n)=>{const d=new Date(k+'T12:00:00');d.setDate(d.getDate()+n);return dayKey(d)};
 

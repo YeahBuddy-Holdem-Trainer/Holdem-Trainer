@@ -29,6 +29,7 @@
 <script defer src="js/replay.js"></script>
 <script defer src="js/icm.js"></script>
 <script defer src="js/assessment.js"></script>
+<script defer src="js/combos.js"></script>
 <script defer src="js/hand-log.js"></script>
 <script defer src="js/daily.js"></script>
 <script defer src="js/feedback.js"></script>
@@ -88,7 +89,7 @@
           <a href="#pot-odds"><b>Odds</b><span>Pot odds and call or fold</span></a>
           <a href="#matchups"><b>Equity</b><span>Hand vs hand, hand vs range, range vs range, range vs board</span></a>
           <a href="#sizing"><b>EV</b><span>Bet sizing and ICM</span></a>
-          <a href="#preflop"><b>Ranges</b><span>Preflop charts and your range builder</span></a>
+          <a href="#preflop"><b>Ranges</b><span>Preflop charts, range builder and combinatorics</span></a>
           <a href="#hand"><b>Play</b><span>Full hands, replays and your hand log</span></a>
           <a href="#progress"><b>Progress</b><span>Scores by trainer and spot</span></a>
         </div>
@@ -467,6 +468,37 @@
     <div class="panel">
       <div class="qhead"><h3 style="margin:0">Saved hands</h3><label class="row small" for="rp-miss" style="gap:6px;cursor:pointer"><input type="checkbox" id="rp-miss"> Only hands to review</label></div>
       <div id="rp-list" class="rp-list"></div>
+    </div>
+  </div>
+</section>
+
+<!-- COMBINATORICS -->
+<section class="view" id="v-combos" hidden>
+  <details class="learn"><summary>How this works <span>Counting combos and card removal</span></summary><div class="learn-body">
+    <p><b>Combos</b> are the exact two-card holdings a hand stands for. Counting them tells you how likely each part of a range really is: there are three times as many AKo as AKs, and a set is often far less likely than it feels.</p>
+    <ul>
+      <li><b>Pairs:</b> 6 combos (4 × 3 ÷ 2). With one of that rank visible, 3. With two visible, 1.</li>
+      <li><b>Suited hands:</b> 4 combos, one per suit. A visible card of either rank kills the suit it's in.</li>
+      <li><b>Offsuit hands:</b> 12 combos (4 × 4 − 4 suited). With cards visible: (cards left of rank 1) × (cards left of rank 2) − suited combos left.</li>
+      <li><b>Any unpaired hand</b> (AK with no s or o): 16 combos, or (left of rank 1) × (left of rank 2).</li>
+      <li><b>Bluff share:</b> count value combos and bluff combos, then bluffs ÷ total. A pot-size river bet is balanced with about 1 bluff for every 2 value hands.</li>
+    </ul>
+  </div></details>
+  <div class="cols">
+    <div class="panel stage">
+      <div class="setup"><label class="field" for="cb-type"><span>Questions</span><select id="cb-type"><option value="mixed">Mixed</option><option value="basics">Basics</option><option value="removal">Card removal</option><option value="range">Range on a board</option><option value="bluffs">Bluff share</option></select></label></div>
+      <h3 id="cb-kind"></h3>
+      <div class="hand-row" id="cb-cards"><div><span class="lbl muted small">Your hand</span><div class="cards" id="cb-hero"></div></div><div id="cb-board-wrap"><span class="lbl muted small">Board</span><div class="cards" id="cb-board"></div></div></div>
+      <p id="cb-q" style="font-size:17px"></p>
+      <form id="cb-form" class="row" style="align-items:end">
+        <label class="field" for="cb-ans"><span>Your answer (<span id="cb-unit">combos</span>)</span><input type="text" inputmode="numeric" id="cb-ans" autocomplete="off" style="width:120px"></label>
+        <button class="act" type="submit" id="cb-sub">Check</button><button class="act ghost" type="button" id="cb-next">Next question</button>
+      </form>
+      <div id="cb-out" style="display:grid;gap:10px"></div>
+    </div>
+    <div class="panel">
+      <h3>Session</h3>
+      <div class="stats"><div class="stat"><div class="n" id="cb-n">0</div><span class="small muted">answered</span></div><div class="stat"><div class="n" id="cb-acc">–</div><span class="small muted">correct</span></div><div class="stat"><div class="n" id="cb-streak">0</div><span class="small muted">in a row</span></div><div class="stat"><div class="n" id="cb-best">0</div><span class="small muted">best run</span></div></div>
     </div>
   </div>
 </section>

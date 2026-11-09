@@ -22,6 +22,7 @@ A Texas Hold'em training app that runs on GitHub Pages, with Firebase sign-in so
 | `js/replay.js` | Hand replayer. |
 | `js/icm.js` | ICM calculator. |
 | `js/assessment.js` | Assessment quiz. |
+| `js/combos.js` | Combinatorics trainer: combos, card removal, range counting, bluff share. |
 | `js/hand-log.js` | Hand log and player notes. |
 | `js/daily.js` | Daily challenge and the Home screen. |
 | `js/feedback.js` | Answer explanations in a pop-up. |
