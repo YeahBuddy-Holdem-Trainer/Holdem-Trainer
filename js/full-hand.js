@@ -191,12 +191,19 @@ function fhEvaluate(opts){const board=fhBoardNow(),P=fh.pot,hIn=fh.streetIn.hero
       ev=(A.f/N)*P+(A.cr/N)*(P+2*b)-(A.c/N)*b+(A.r/N)*evr;fold=A.f/N;eqc=A.c?A.cr/A.c:null}
     else{const put=o.to-hIn,vadd=o.to-vIn;ev=(A.f/N)*P+(A.cr/N)*(P+put+vadd)-(A.c/N)*put;fold=A.f/N;eqc=A.c?A.cr/A.c:null}
     return{...o,ev,fold,eqc,eq}})}
+function fhMath(res){const P=fh.pot,r1=x=>fmtBB(Math.round(x*10)/10);
+  const line=o=>{if(o.kind==='fold')return `<li><b>${o.label}:</b> EV = 0 (you put nothing more in).</li>`;
+    if(o.kind==='check')return `<li><b>${o.label}:</b> EV ≈ equity × pot = ${pct(o.eq,0)} × ${r1(P)} = <b>${r1(o.ev)} BB</b>.</li>`;
+    if(o.kind==='call')return `<li><b>${o.label}:</b> EV = equity × (pot + call) − call = ${pct(o.eq,0)} × (${r1(P)} + ${r1(o.amt)}) − ${r1(o.amt)} = <b>${r1(o.ev)} BB</b>.</li>`;
+    const b=o.kind==='bet'?o.amt:o.to-fh.streetIn.hero;
+    return `<li><b>${o.label}:</b> EV ≈ fold% × pot + call% × (equity when called × final pot − your bet) = ${pct(o.fold,0)} × ${r1(P)} + ${pct(1-o.fold,0)} × (${pct(o.eqc||0,0)} × ${r1(P+2*b)} − ${r1(b)}) ≈ ${r1(o.fold*P+(1-o.fold)*((o.eqc||0)*(P+2*b)-b))} BB <span class="muted">(the table's ${r1(o.ev)} BB also counts the times they raise)</span>.</li>`};
+  return mathBox(`<p class="small">Expected value (EV) is what an option wins or loses on average, in big blinds, counted from now. Your equity comes from your hand against their likely range on this board; how often they fold or call comes from the opponent type.</p><ul class="small math-steps">${res.map(line).join('')}</ul>`)}
 function fhCostTier(loss,P){if(loss<=Math.max(.3,.05*P))return 'fine';if(loss<=.15*P)return 'small';if(loss<=.35*P)return 'medium';return 'big'}
 
 function fhPost(a){const opts=fhOptions(),res=fhEvaluate(opts),pick_=res.find(o=>o.id===a),best=res.reduce((p,q)=>q.ev>p.ev?q:p),loss=best.ev-pick_.ev,cost=pick_.id===best.id?'best':fhCostTier(loss,fh.pot);
   const nm=fhStreetName(),facing=fh.streetIn.vil>fh.streetIn.hero,spot=`${nm} · ${facing?(fh.raised?'facing a raise':'facing a bet'):fh.toAct==='hero'&&fh.ip!=='hero'&&!fh.checks?'first to act':'checked to you'}`;
   const ok=cost==='best'||cost==='fine';
-  fhGrade({street:nm,spot,choice:pick_.label,best:best.label,ok,cost,ev:res.map(o=>[o.label,o.ev,o.fold,o.eqc]),why:fhWhy(pick_,best,res,facing)});
+  fhGrade({street:nm,spot,choice:pick_.label,best:best.label,ok,cost,ev:res.map(o=>[o.label,o.ev,o.fold,o.eqc]),why:fhWhy(pick_,best,res,facing),math:fhMath(res)});
   const o=pick_;
   if(o.kind==='fold'){fhLog(nm,'You fold.','hero');return fhEnd('fold')}
   if(o.kind==='check'){fh.checks++;fhLog(nm,'You check.','hero');if(fh.checks>=2||fh.ip==='hero')return fhCloseStreet();fh.toAct='vil';return fhNext()}
@@ -216,7 +223,7 @@ const FH_COST={best:['Best','good'],fine:['Fine','good'],small:['Small mistake',
 function fhGrade(g){g.logIdx=fh.log.length;fh.dec.push(g);stats.fh.dec++;if(g.ok)stats.fh.good++;save();fhStats();
   logEvent({drill:'Full hand',spot:g.spot,hand:names(fh.hero),answer:g.choice,expected:g.best,correct:g.ok,detail:`${FH_TYPES[fh.type].name} · ${g.cost} · ${fh.seat}`,ms:Date.now()-fh.t0});
   const [t,cls]=FH_COST[g.cost];
-  $('fh-out').innerHTML=`<div class="verdict ${cls}"><strong>${t}</strong><span class="small muted">${g.spot}: you chose ${g.choice}${g.ok&&g.cost==='best'?'':` · best: ${g.best}`}</span></div><p class="small">${g.why}</p>${g.ev?fhEvTable(g.ev):''}`;
+  $('fh-out').innerHTML=`<div class="verdict ${cls}"><strong>${t}</strong><span class="small muted">${g.spot}: you chose ${g.choice}${g.ok&&g.cost==='best'?'':` · best: ${g.best}`}</span></div><p class="small">${g.why}</p>${g.ev?fhEvTable(g.ev):''}${g.math||''}`;
   fhRender()}
 function fhEvTable(ev){const has=ev.some(r=>r[2]!=null);return `<table class="ref fh-ev"><thead><tr><th>Option</th><th>EV</th>${has?'<th>They fold</th><th>Your equity when called</th>':''}</tr></thead><tbody>${ev.map(r=>`<tr><td class="t">${r[0]}</td><td>${r[1]>=0?'+':''}${fmtBB(Math.round(r[1]*10)/10)} BB</td>${has?`<td>${r[2]!=null?pct(r[2],0):'–'}</td><td>${r[3]!=null?pct(r[3],0):'–'}</td>`:''}</tr>`).join('')}</tbody></table>`}
 function fhRunout(){fhRefund();fh.street=3;fhLog('River',`Board runs out: ${names(fh.board)}`);fhShowdown()}

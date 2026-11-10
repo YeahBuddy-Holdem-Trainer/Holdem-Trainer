@@ -100,8 +100,15 @@ function seRender(){const s=se.step,shown=se.board.slice(0,SHOW[s]);
   const locked=se.rows.length>s||s===3;$('se-sub').disabled=locked;$('se-guess').disabled=locked;$('se-adv').disabled=!locked||s===3;
   $('se-log').innerHTML=se.rows.map(r=>`<div class="st"><span class="nm">${r.nm}</span><div class="bar"><div class="w" style="width:${r.e.w*100}%"></div><div class="t" style="width:${r.e.t*100}%"></div></div><span class="pct">${pct(r.e.eq,0)}</span><span class="cat">You guessed ${r.g}% · ${r.err<1?'spot on':'missed by '+r.err.toFixed(0)+' pts'}<br>Shortcut: ${r.hint}</span></div>`).join('')+(s===3?seResult():'');
   $('se-avg').textContent=stats.se.n?(stats.se.err/stats.se.n).toFixed(1):'–';$('se-n').textContent=stats.se.n}
+function seMath(){const lines=se.rows.map((r,i)=>{const nb=SHOW[i],bd=se.board.slice(0,nb);
+    if(!nb)return `<li><b>${r.nm}:</b> no board yet, so use the matchup rule of thumb (Equity &gt; Hand vs hand). Exact: ${pct(r.e.eq,0)}.</li>`;
+    if(nb===5)return `<li><b>${r.nm}:</b> all five cards are out, so it's 100% or 0% (or a split).</li>`;
+    const a=evalHand(se.hero.concat(bd)),b=evalHand(se.vil.concat(bd)),behind=a<b,o=behind?outsFor(se.hero,se.vil,bd):outsFor(se.vil,se.hero,bd),m=nb===3?4:2,est=Math.min(100,o.length*m);
+    return `<li><b>${r.nm}:</b> ${behind?`you're behind with ${catName(a).toLowerCase()} against ${catName(b).toLowerCase()}. Count your outs: <b>${o.length}</b>${o.length?` (${names(o.slice(0,10))}${o.length>10?'…':''})`:''}. ${o.length} × ${m} ≈ <b>${est}%</b>`
+      :`you're ahead with ${catName(a).toLowerCase()}. Count <i>their</i> outs: <b>${o.length}</b>. ${o.length} × ${m} ≈ ${est}% for them, so you ≈ <b>${100-est}%</b>`}. Exact: ${pct(r.e.eq,0)}.</li>`}).join('');
+  return mathBox(`<p class="small">After the flop, count <b>outs</b>: cards that put the player who's behind ahead. With two cards to come, outs × 4 ≈ equity; with one card to come, outs × 2.</p><ol class="small math-steps">${lines}</ol><p class="small muted">The rule runs a little high above about 8 outs on the flop (for 15 outs it says 60%, the truth is about 54%), and it ignores outs that also help the other player.</p>`)}
 function seResult(){const a=evalHand(se.hero.concat(se.board)),b=evalHand(se.vil.concat(se.board));
-  return `<div class="verdict ${a>b?'good':a<b?'bad':''}"><strong>${a>b?'You win':a<b?'Villain wins':'Split pot'}</strong><span class="small">${catName(a)} vs ${catName(b)}</span></div>`}
+  return seMath()+`<div class="verdict ${a>b?'good':a<b?'bad':''}"><strong>${a>b?'You win':a<b?'Villain wins':'Split pot'}</strong><span class="small">${catName(a)} vs ${catName(b)}</span></div>`}
 $('se-guess').oninput=e=>$('se-gv').textContent=e.target.value;
 $('se-form').addEventListener('submit',e=>{e.preventDefault();if(se.rows.length>se.step)return;
   const g=+$('se-guess').value,eq=equity(se.hero,se.vil,se.board.slice(0,SHOW[se.step]),60000),err=Math.abs(g-eq.eq*100);

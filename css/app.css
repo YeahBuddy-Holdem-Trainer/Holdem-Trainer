@@ -452,3 +452,8 @@ dialog.fb-modal{width:min(560px,calc(100vw - 20px))}
 .tbl-scroll{overflow-x:auto}
 .hvr-math{background:var(--sand);box-shadow:none}
 label.check{display:flex;align-items:center;gap:8px;font-size:14px;min-height:44px}
+
+.math-box{background:var(--sand);box-shadow:none}
+.math-box .learn-body{display:grid;gap:8px}
+.math-always-l{min-height:36px;color:var(--muted)}
+ul.math-steps{list-style:disc}

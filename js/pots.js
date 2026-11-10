@@ -75,6 +75,7 @@ const PT_GEN = {
       prompt: `You hold <b>${handLabel(hero)}</b> against <b>${nOpp} opponent${nOpp > 1 ? 's' : ''}</b>, each holding a typical hand that calls a raise (about the top 40%)${b.length ? ' on this flop' : ', all in before the flop'}. What's your share of the pot?`,
       answer: ans,
       why: `<table class="ref"><thead><tr><th>Opponents</th><th>Your equity</th><th>Fair share</th></tr></thead><tbody>${eqs.map((e, i) => `<tr${i === nOpp - 1 ? ' class="me"' : ''}><td class="t">${i + 1}</td><td><b>${pct(e, 0)}</b></td><td>${pct(1 / (i + 2), 0)}</td></tr>`).join('')}</tbody></table>
+        ${mathBox(`<p class="small">There's no neat formula for multiway equity, but two checks help: your <b>fair share</b> is 1 ÷ (number of players), so ${pct(1 / (nOpp + 1), 0)} with ${nOpp + 1} players. Hands that are big favorites heads up usually lose about a third of their edge with each extra player; hands that make straights, flushes and sets lose less.</p>`)}
         <p class="small">Each extra player takes a slice. ${eqs[0] > .5 ? `Heads up you're a favorite at ${pct(eqs[0], 0)}, but against three you win ${pct(eqs[2], 0)} of the time.` : 'Weak hands lose even more ground.'} Hands that make the nuts (suited aces, pairs for sets, suited connectors) hold up better multiway than one-pair hands like offsuit broadways.</p>` };
   },
   someone() {
@@ -91,6 +92,8 @@ const PT_GEN = {
       prompt: `${nOpp} opponent${nOpp > 1 ? 's' : ''} called preflop with typical calling hands (about the top 40%). On this flop, what's the chance that <b>at least one of them has two pair or better</b>?`,
       answer: ans,
       why: `<table class="ref"><thead><tr><th>Opponents</th><th>Someone has two pair+</th></tr></thead><tbody>${ps.map((e, i) => `<tr${i === nOpp - 1 ? ' class="me"' : ''}><td class="t">${i + 1}</td><td><b>${pct(e, 0)}</b></td></tr>`).join('')}</tbody></table>
+        ${mathBox(`<p class="small">If one caller has two pair or better with chance <i>p</i>, the chance that at least one of <i>n</i> callers does is about <b>1 − (1 − p)<sup>n</sup></b>.</p>
+          <p class="small">Here <i>p</i> ≈ ${pct(ps[0], 0)}, so with ${nOpp} caller${nOpp > 1 ? 's' : ''}: 1 − (1 − ${(ps[0]).toFixed(2)})<sup>${nOpp}</sup> = <b>${pct(1 - Math.pow(1 - ps[0], nOpp), 0)}</b> (simulation: ${pct(ans, 0)}; cards the others hold make it slightly different).</p>`)}
         <p class="small">With more players, the chance that <i>somebody</i> connected strongly climbs fast. Multiway, bluff less (someone is likelier to have a hand that won't fold), bet thinner value less, and treat a bet or raise from one of several players as stronger than the same action heads up.</p>` };
   }
 };

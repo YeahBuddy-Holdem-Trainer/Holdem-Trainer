@@ -86,6 +86,9 @@ $('tx-sub').onclick = () => {
     };
     $('tx-out').innerHTML = `<div class="verdict ${nOk === 3 ? 'good' : 'bad'}"><strong>${nOk} of 3 right</strong><span>${T.word[0].toUpperCase() + T.word.slice(1)} flop: ${names(tx.board)}. The raiser is ${ip ? 'in position' : 'out of position'}.</span></div>
       ${parts.map(p => `<div class="tx-r ${p.ok ? 'good' : 'bad'}"><p><b>${p.ok ? '✓' : '✗'} ${TX_Q[p.k].label}: ${word(p.k, right[p.k])}</b>${p.ok ? '' : ` <span class="muted">(you said ${word(p.k, tx.ans[p.k])})</span>`}</p><p class="small">${why[p.k]}</p></div>`).join('')}
+      ${mathBox(`<ul class="small math-steps"><li><b>Range advantage</b> is a simulation of the raiser's whole range against the caller's whole range on this flop (both run out to the river): <b>${pct(eq)}</b> for the raiser. At the table, compare how much of each range has top pair or better: raiser ${aP.tpplus} of ${aP.n} combos (${pct(tP, 0)}), caller ${aC.tpplus} of ${aC.n} (${pct(tC, 0)}).</li>
+        <li><b>Nut advantage</b> counts combos: two pair or better is ${aP.strong} of the raiser's ${aP.n} combos (${pct(sP)}) and ${aC.strong} of the caller's ${aC.n} (${pct(sC)}). Here it counts as an edge when one side has at least 3 points more <i>and</i> 1.4 times as many.</li>
+        <li><b>C-bet plan</b> follows from those two answers and the board: ${T.wet ? 'this board is wet (flush or straight draws possible)' : 'this board is dry (few draws)'}, and the raiser is ${ip ? 'in position' : 'out of position'}.</li></ul>`)}
       <p class="small muted">Range and nut numbers come from the ${mode === 'cash' ? 'cash' : 'tournament'} charts. The c-bet plan is a rule of thumb from those two advantages and whether the board is ${T.wet ? 'wet (draws around)' : 'dry'}; real solver strategies mix sizes.</p>`;
     $('tx-next').focus();
   }, 20);

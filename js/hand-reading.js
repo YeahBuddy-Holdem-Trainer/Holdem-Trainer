@@ -68,7 +68,8 @@ function rdNextStreet() {
   const f = x => { const p = rdP(st, x.g, rd.type); return bets ? p : 1 - p; };
   let num = 0, den = 0; for (const x of rd.range) { const w = x.w * f(x); den += w; if (RD_TOPPLUS.has(x.g)) num += w; }
   const size = Math.round(rd.pot * RD_SIZE[st] * 2) / 2;
-  rd.cur = { st, b, bets, size, before, after: den ? num / den : 0, f };
+  const gm = {}; for (const x of rd.range) { const o = gm[x.g] = gm[x.g] || { w: 0, a: 0, p: rdP(st, x.g, rd.type) }; o.w += x.w; o.a += x.w * f(x); }
+  rd.cur = { st, b, bets, size, before, after: den ? num / den : 0, f, gm, wb: rd.range.reduce((a, x) => a + x.w, 0), wa: den };
   rd.log.push(`<b>${st[0].toUpperCase() + st.slice(1)}</b> ${names(b.slice(nb === 3 ? 0 : nb - 1))}${st === 'flop' ? '' : ''}: you check, they ${bets ? `bet ${fmtBB(size)} BB into ${fmtBB(rd.pot)} BB` : 'check behind'}.`);
   rd.asking = 'share';
   rdRender();
@@ -95,13 +96,22 @@ function rdRender() {
     ask.querySelectorAll('[data-g]').forEach(b => b.onclick = () => rdFinal(b.dataset.g));
   } else ask.innerHTML = '';
 }
+function rdMath(c) {
+  const rows = Object.entries(c.gm).filter(([, o]) => o.w > c.wb * .005).sort((a, b) => b[1].w - a[1].w);
+  const act = c.bets ? 'bets' : 'checks', topA = rows.filter(([g]) => RD_TOPPLUS.has(g)).reduce((s, [, o]) => s + o.a, 0);
+  return mathBox(`<p class="small">Each part of their range keeps only the share that would ${c.bets ? 'bet' : 'check'} here. Multiply each group's share of the range by how often that group ${act}, then see what share of the total is top pair or better.</p>
+    <div class="tbl-scroll"><table class="ref"><thead><tr><th>Group</th><th>Share before</th><th>× chance it ${act}</th><th>= what's left</th></tr></thead><tbody>
+    ${rows.map(([g, o]) => `<tr${RD_TOPPLUS.has(g) ? ' class="me"' : ''}><td class="t">${RD_GROUPS[g]}</td><td>${pct(o.w / c.wb, 0)}</td><td>${pct(c.bets ? o.p : 1 - o.p, 0)}</td><td>${(o.a / c.wb * 100).toFixed(1)}</td></tr>`).join('')}
+    <tr><td class="t"><b>Total left</b></td><td></td><td></td><td><b>${(c.wa / c.wb * 100).toFixed(1)}</b></td></tr></tbody></table></div>
+    <p class="small">Top pair or better left: ${(topA / c.wb * 100).toFixed(1)} ÷ ${(c.wa / c.wb * 100).toFixed(1)} = <b>${pct(c.after, 0)}</b>.</p>`);
+}
 function rdLockShare() {
   const c = rd.cur, g = +$('rd-guess').value, miss = Math.abs(g - c.after * 100), ok = miss <= 8;
   rd.answers.push({ st: c.st, g, a: c.after, miss });
   for (const x of rd.range) x.w *= c.f(x);
   logEvent({ drill: 'Hand reading', spot: `${c.st[0].toUpperCase() + c.st.slice(1)}, ${c.bets ? 'bet' : 'check'}`, hand: names(c.b), answer: g, expected: Math.round(c.after * 100), correct: ok, error: Math.round(miss * 10) / 10, detail: RD_TYPES[rd.type].name, ms: Date.now() - rd.t0 });
   $('rd-grid').innerHTML = rdGrid(); $('rd-grid-lbl').textContent = `Their range after the ${c.st} ${c.bets ? 'bet' : 'check'}`;
-  $('rd-step').innerHTML = `<div class="rd-fb ${ok ? 'good' : 'bad'}"><b>${ok ? '✓' : '✗'} ${c.st[0].toUpperCase() + c.st.slice(1)}: ${pct(c.after, 0)} top pair or better</b> <span class="muted">(you said ${g}%, it was ${pct(c.before, 0)} before the ${c.bets ? 'bet' : 'check'})</span>${rdBreakdown()}</div>`;
+  $('rd-step').innerHTML = `<div class="rd-fb ${ok ? 'good' : 'bad'}"><b>${ok ? '✓' : '✗'} ${c.st[0].toUpperCase() + c.st.slice(1)}: ${pct(c.after, 0)} top pair or better</b> <span class="muted">(you said ${g}%, it was ${pct(c.before, 0)} before the ${c.bets ? 'bet' : 'check'})</span>${rdBreakdown()}${rdMath(c)}</div>`;
   if (c.bets) rd.pot += c.size * 2;
   if (rd.street < 2) { rd.asking = null; rdRender(); $('rd-ask').innerHTML = `<div class="row"><button class="act" type="button" id="rd-cont">${c.bets ? 'Call and see the ' + ['turn', 'river'][rd.street] : 'See the ' + ['turn', 'river'][rd.street]}</button></div>`;
     $('rd-cont').onclick = () => { $('rd-step').innerHTML = ''; rd.street++; rdNextStreet(); }; $('rd-cont').focus(); }

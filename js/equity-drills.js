@@ -58,8 +58,6 @@ function newHVR() {
 $('hvr-guess').oninput = () => { $('hvr-gv').textContent = $('hvr-guess').value; };
 $('hvr-next').onclick = newHVR;
 $('hvr-street').onchange = newHVR;
-$('hvr-math').checked = !!cfg.hvrMath;
-$('hvr-math').onchange = () => { cfg.hvrMath = $('hvr-math').checked; try { localStorage.setItem(CFGKEY, JSON.stringify(cfg)); } catch (e) {} const d = document.querySelector('.hvr-math'); if (d) d.open = cfg.hvrMath; };
 $('hvr-form').onsubmit = e => {
   e.preventDefault(); if (!hvr || hvr.done) return; hvr.done = true; $('hvr-sub').disabled = true;
   $('hvr-out').innerHTML = '<p class="small muted">Working it out…</p>';
@@ -81,7 +79,7 @@ $('hvr-form').onsubmit = e => {
         <dt>Close to a flip vs</dt><dd>${pct(share(flip), 0)}${flip.length ? ` <span class="muted">(${list(flip)})</span>` : ''}</dd>
         <dt>Behind</dt><dd>${pct(share(behind), 0)}${behind.length ? ` <span class="muted">(${list(behind)})</span>` : ''}</dd>
       </dl>
-      <details class="learn hvr-math"${cfg.hvrMath ? ' open' : ''}><summary>Show the math <span>How to work this out at the table</span></summary><div class="learn-body">${hvrMath(rows, tot, r.eq)}</div></details>`;
+      ${mathBox(hvrMath(rows, tot, r.eq), 'How to work this out at the table')}`;
     $('hvr-grid').innerHTML = eqGrid(hvr.labels, new Set(behind.map(x => x.l)));
     $('hvr-next').focus();
   }, 20);
@@ -126,6 +124,28 @@ function hvrMath(rows, tot, exact) {
 }
 
 /* ---------- range vs range ---------- */
+function rvrGroup(l, board) {
+  if (board.length) return RD_GROUPS[rdGroup(labelCombos(l)[0], board)];
+  const ri = c => R.indexOf(c), x = ri(l[0]), y = ri(l[1]);
+  if (x === y) return x >= 8 ? 'Big pairs (TT and up)' : 'Small and middle pairs';
+  if (y >= 8) return 'Two big cards (both T or higher)';
+  if (x === 12) return 'Ace with a smaller card';
+  if (l[2] === 's' && x - y <= 3) return 'Suited connectors and gappers';
+  return 'Other hands';
+}
+function rvrMath(r) {
+  const groups = new Map();
+  for (const c of rvr.A) { const g = rvr.board.length ? RD_GROUPS[rdGroup(c, rvr.board)] : rvrGroup(handLabel(c), []); if (!groups.has(g)) groups.set(g, { cs: [], labels: new Set() }); const o = groups.get(g); o.cs.push(c); o.labels.add(handLabel(c)); }
+  const gs = [...groups].map(([g, o]) => ({ g, n: o.cs.length, eq: rvrSim(o.cs, rvr.B, rvr.board, 3000).eq, labels: [...o.labels] })).sort((p, q) => q.n - p.n);
+  const tot = gs.reduce((a, x) => a + x.n, 0), sum = gs.reduce((a, x) => a + x.n * x.eq, 0);
+  const lst = ls => ls.slice(0, 6).join(', ') + (ls.length > 6 ? '…' : '');
+  return `<p class="small">Same method as hand vs range, done for each part of range A: split A into groups, find each group's equity against <b>all of range B</b>, then take the combo-weighted average.</p>
+    <div class="tbl-scroll"><table class="ref"><thead><tr><th>Range A group</th><th>Combos</th><th>Equity vs B</th><th>Combos × equity</th></tr></thead><tbody>
+    ${gs.map(x => `<tr><td class="t">${x.g}<br><span class="muted small">${lst(x.labels)}</span></td><td>${x.n}</td><td>${pct(x.eq, 0)}</td><td>${(x.n * x.eq).toFixed(1)}</td></tr>`).join('')}
+    <tr class="me"><td class="t"><b>Total</b></td><td><b>${tot}</b></td><td></td><td><b>${sum.toFixed(1)}</b></td></tr></tbody></table></div>
+    <p class="small">${sum.toFixed(1)} ÷ ${tot} = <b>${pct(sum / tot, 1)}</b> (exact simulation: ${pct(r.eq, 1)}).</p>
+    <p class="small muted">At the table: ask which share of A is its strong part (big pairs, big cards) and how that part does against B, then do the same for the weak part. Two or three groups get you within a few points.</p>`;
+}
 const RVR_PAIRS = {
   cash: [
     [['cash-btn-open', 'Raise'], ['cash-bb-vs-btn-open', '3-bet'], 'Button open vs big blind 3-bet'],
@@ -194,7 +214,7 @@ $('rvr-form').onsubmit = e => {
       <p class="small muted">${shove ? 'The calling range is usually ahead of the shoving range: the shover makes money when the other player folds, so they can shove much wider than anyone can call.'
         : r.eq < .45 ? 'The narrower, stronger range is ahead. That is why the wider range has to fold, call or 3-bet carefully against it.'
         : r.eq > .55 ? 'Range A is ahead here, so range B has to rely on position, folds and playability.'
-        : 'These ranges are close to even, so position and skill after the flop decide who wins more.'}</p>`;
+        : 'These ranges are close to even, so position and skill after the flop decide who wins more.'}</p>${mathBox(rvrMath(r))}`;
     $('rvr-next').focus();
   }, 20);
 };

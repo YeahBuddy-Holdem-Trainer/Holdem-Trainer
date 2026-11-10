@@ -64,6 +64,11 @@ function mergeEvents(evs){const key=r=>r.id||(r.ts+'|'+r.drill+'|'+r.spot);const
   if(n){log.sort((a,b)=>a.ts<b.ts?-1:a.ts>b.ts?1:0);persistLog();updateQ();
     if(currentView==='progress')renderProgress();if(currentView==='daily'&&typeof daily!=='undefined'&&!daily)dailyHome()}
   return n}
+/* "Show the math": a fold-out worked calculation under an answer. One setting opens them all. */
+function mathBox(html,sub){const o=!!(cfg.showMath||cfg.hvrMath);return `<details class="learn math-box"${o?' open':''}><summary>Show the math <span>${sub||'How to work it out yourself'}</span></summary><div class="learn-body"><label class="check math-always-l"><input type="checkbox" class="math-always"${o?' checked':''}> Always open the math</label>${html}</div></details>`}
+document.addEventListener('change',e=>{if(!e.target.classList||!e.target.classList.contains('math-always'))return;cfg.showMath=e.target.checked;delete cfg.hvrMath;
+  try{localStorage.setItem(CFGKEY,JSON.stringify(cfg))}catch(err){}
+  document.querySelectorAll('.math-always').forEach(x=>x.checked=cfg.showMath);if(cfg.showMath)document.querySelectorAll('.math-box').forEach(d=>d.open=true)});
 function setSync(msg,cls){const m=$('sync-msg');if(!m)return;m.textContent=msg;m.className='small syncmsg '+(cls||'')}
 function updateQ(){const q=$('sync-q');if(!q)return;
   q.textContent=signedIn()?(queue.length?`${queue.length} result${queue.length>1?'s':''} waiting to upload.`:'Everything is saved to your account.')
