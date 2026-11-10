@@ -75,7 +75,7 @@ $('cf-call').onclick=()=>cfAnswer(true);$('cf-fold').onclick=()=>cfAnswer(false)
 
 /* ---------- street equity ---------- */
 let se;const STREETS=['Preflop','Flop','Turn','River'],SHOW=[0,3,4,5];
-function newSE(){const d=shuffled();se={hero:d.slice(0,2),vil:d.slice(2,4),board:d.slice(4,9),step:0,rows:[],t0:Date.now()};$('se-guess').value=50;$('se-gv').textContent=50;seRender()}
+function newSE(){const d=shuffled();se={hero:d.slice(0,2),vil:d.slice(2,4),board:d.slice(4,9),step:0,rows:[],t0:Date.now()};$('se-guess').value=50;$('se-gv').textContent='50%';seRender()}
 /* the shortcut you could have used at this street */
 function seHint(step){const b=se.board.slice(0,SHOW[step]);
   if(step===0){const c=classify(se.hero,se.vil);if(!c)return'Shared ranks: these hands often split, so equity sits closer to 50/50 than the cards suggest.';
@@ -102,10 +102,23 @@ function seRender(){const s=se.step,shown=se.board.slice(0,SHOW[s]);
   $('se-sub').hidden=locked;$('se-adv').hidden=!locked||s===3;$('se-new').hidden=s!==3;
   document.querySelectorAll('#se-form .nudge button').forEach(b=>b.disabled=locked);
   document.querySelector('#se-form .guess-top').hidden=s===3;$('se-guess').hidden=s===3;
-  /* newest result first, right under the buttons */
-  $('se-log').innerHTML=(s===3?seResult():'')+se.rows.slice().reverse().map(r=>`<div class="st"><span class="nm">${r.nm}</span><div class="bar"><div class="w" style="width:${r.e.w*100}%"></div><div class="t" style="width:${r.e.t*100}%"></div></div><span class="pct">${pct(r.e.eq,0)}</span><span class="cat">You guessed ${r.g}% · ${r.err<1?'spot on':'missed by '+r.err.toFixed(0)+' pts'}<br>Shortcut: ${r.hint}</span></div>`).join('');
-  if(se.rows.length&&locked){const f=$('se-log').firstElementChild;if(f&&f.getBoundingClientRect().bottom>innerHeight-90)f.scrollIntoView({behavior:'smooth',block:'center'})}
+  /* earlier streets, newest first, folded to one line each: tap one to see its shortcut */
+  $('se-log').innerHTML=(s===3?seResult():'')+se.rows.slice().reverse().map(r=>seRow(r,false)).join('');
   $('se-avg').textContent=stats.se.n?(stats.se.err/stats.se.n).toFixed(1):'–';$('se-n').textContent=stats.se.n}
+/* a result bar: blue fill is the real equity, the orange line and tag are your guess */
+function seBar(r){const eq=r.e.eq*100;return `<div class="sebar" role="img" aria-label="Actual ${pct(r.e.eq,0)}, your guess ${r.g}%"><div class="fill" style="width:${eq}%"></div><div class="mark" style="left:${r.g}%"><span>${r.g}</span></div></div>`}
+const seMiss=r=>`You guessed ${r.g}% · ${r.err<1?'spot on':'missed by '+r.err.toFixed(0)+' pts'}`;
+function seRow(r,open){return `<details class="se-row"${open?' open':''}><summary><span class="nm">${r.nm}</span>${seBar(r)}<span class="pct">${pct(r.e.eq,0)}</span><span class="miss small ${r.err<=6?'good':'bad'}">${seMiss(r)}</span></summary><p class="small">Shortcut: ${r.hint}</p></details>`}
+/* the pop-up after each guess; its button moves on to the next street */
+function sePop(){const s=se.step,r=se.rows[s],river=s===3;
+  $('se-dlg-body').innerHTML=river?`<h2 class="se-pop-h">River</h2>${seResult()}`
+    :`<h2 class="se-pop-h">${r.nm}: ${pct(r.e.eq,0)} equity</h2><p class="${r.err<=6?'good':'bad'}" style="font-weight:700">${seMiss(r)}</p>${seBar(r)}<p class="small muted se-legend"><span class="k fill"></span> your real equity <span class="k mark"></span> your guess</p><p class="small">Shortcut: ${r.hint}</p>`;
+  $('se-dlg-next').textContent=river?'New hand':s===2?'See the river':'Next street';
+  if(!$('se-dlg').open)$('se-dlg').showModal();$('se-dlg-next').focus()}
+function seNext(){if(se.step===3){newSE()}else{se.step++;se.t0=Date.now();seRender();if(se.step===3)return sePop()}
+  const t=document.querySelector('#v-street-equity .table');if(t)t.scrollIntoView({behavior:'smooth',block:'start'})}
+$('se-dlg-next').onclick=()=>{$('se-dlg').close();seNext()};
+$('se-dlg-close').onclick=()=>$('se-dlg').close();
 function seMath(){const lines=se.rows.map((r,i)=>{const nb=SHOW[i],bd=se.board.slice(0,nb);
     if(!nb)return `<li><b>${r.nm}:</b> no board yet, so use the matchup rule of thumb (Equity &gt; Hand vs hand). Exact: ${pct(r.e.eq,0)}.</li>`;
     if(nb===5)return `<li><b>${r.nm}:</b> all five cards are out, so it's 100% or 0% (or a split).</li>`;
@@ -121,8 +134,8 @@ $('se-form').addEventListener('submit',e=>{e.preventDefault();if(se.rows.length>
   const g=+$('se-guess').value,eq=equity(se.hero,se.vil,se.board.slice(0,SHOW[se.step]),60000),err=Math.abs(g-eq.eq*100);
   se.rows.push({nm:STREETS[se.step],e:eq,g,err,hint:(h=>typeof h==='function'?h(eq):h)(seHint(se.step))});stats.se.n++;stats.se.err+=err;save();
   logEvent({drill:'Street equity',spot:STREETS[se.step],hand:names(se.hero)+' vs '+names(se.vil),answer:g,expected:+(eq.eq*100).toFixed(1),
-    error:+err.toFixed(1),detail:'board '+(names(se.board.slice(0,SHOW[se.step]))||'none'),ms:Date.now()-se.t0});seRender()});
-$('se-adv').onclick=()=>{se.step++;se.t0=Date.now();seRender()};$('se-new').onclick=newSE;
+    error:+err.toFixed(1),detail:'board '+(names(se.board.slice(0,SHOW[se.step]))||'none'),ms:Date.now()-se.t0});seRender();sePop()});
+$('se-adv').onclick=seNext;$('se-new').onclick=()=>{newSE();const t=document.querySelector('#v-street-equity .table');if(t)t.scrollIntoView({behavior:'smooth',block:'start'})};
 
 /* ---------- preflop matchups ---------- */
 let mu;
