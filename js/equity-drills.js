@@ -58,6 +58,8 @@ function newHVR() {
 $('hvr-guess').oninput = () => { $('hvr-gv').textContent = $('hvr-guess').value; };
 $('hvr-next').onclick = newHVR;
 $('hvr-street').onchange = newHVR;
+$('hvr-math').checked = !!cfg.hvrMath;
+$('hvr-math').onchange = () => { cfg.hvrMath = $('hvr-math').checked; try { localStorage.setItem(CFGKEY, JSON.stringify(cfg)); } catch (e) {} const d = document.querySelector('.hvr-math'); if (d) d.open = cfg.hvrMath; };
 $('hvr-form').onsubmit = e => {
   e.preventDefault(); if (!hvr || hvr.done) return; hvr.done = true; $('hvr-sub').disabled = true;
   $('hvr-out').innerHTML = '<p class="small muted">Working it out…</p>';
@@ -79,11 +81,49 @@ $('hvr-form').onsubmit = e => {
         <dt>Close to a flip vs</dt><dd>${pct(share(flip), 0)}${flip.length ? ` <span class="muted">(${list(flip)})</span>` : ''}</dd>
         <dt>Behind</dt><dd>${pct(share(behind), 0)}${behind.length ? ` <span class="muted">(${list(behind)})</span>` : ''}</dd>
       </dl>
-      <p class="small muted">Shortcut: think of the range as a few groups, guess your equity against each, and weight by how many combos each group has. Pairs are 6 combos, suited hands 4 and offsuit hands 12.</p>`;
+      <details class="learn hvr-math"${cfg.hvrMath ? ' open' : ''}><summary>Show the math <span>How to work this out at the table</span></summary><div class="learn-body">${hvrMath(rows, tot, r.eq)}</div></details>`;
     $('hvr-grid').innerHTML = eqGrid(hvr.labels, new Set(behind.map(x => x.l)));
     $('hvr-next').focus();
   }, 20);
 };
+
+/* ---------- "show the math" for hand vs range ----------
+   Splits the range into groups a player could name at the table, counts the combos in each, finds your equity
+   against each group, and shows the weighted average next to the exact simulated answer. */
+function hvrGroupPre(heroL, l) {
+  const ri = c => R.indexOf(c), a = ri(heroL[0]), b = ri(heroL[1]), x = ri(l[0]), y = ri(l[1]);
+  if (a === b) {
+    if (x === y) return x > a ? 'Bigger pairs' : 'Smaller pairs';
+    if (x === a || y === a) return 'Hands with your rank';
+    return y > a ? 'Two higher cards' : x < a ? 'Two lower cards' : 'One higher, one lower card';
+  }
+  if (x === y) return x > a ? 'Pairs above your cards' : x === a || x === b ? 'Pairs of your ranks' : x > b ? 'Pairs between your cards' : 'Pairs below your cards';
+  if (x === a && y === b) return 'Same hand as yours';
+  const shared = [x, y].find(r => r === a || r === b);
+  if (shared !== undefined) { const theirs = x === shared ? y : x, mine = shared === a ? b : a; return theirs > mine ? 'Share a card, their other card is higher' : 'Share a card, your other card is higher'; }
+  const hi = (x > a) + (y > a);
+  return hi === 2 ? 'Two cards higher than your top card' : hi === 1 ? 'One card higher than your top card' : 'Both cards lower than your top card';
+}
+function hvrMath(rows, tot, exact) {
+  const hl = handLabel(hvr.hero), pre = !hvr.board.length, groups = new Map();
+  for (const c of hvr.combos) { const g = pre ? hvrGroupPre(hl, handLabel(c)) : RD_GROUPS[rdGroup(c, hvr.board)]; if (!groups.has(g)) groups.set(g, { cs: [], labels: new Set() }); const o = groups.get(g); o.cs.push(c); o.labels.add(handLabel(c)); }
+  const gs = [...groups].map(([g, o]) => { const e = equityVsRange(hvr.hero, o.cs, hvr.board, 3000); return { g, n: o.cs.length, eq: e ? e.eq : 0, labels: [...o.labels] }; }).sort((p, q) => q.n - p.n);
+  const sum = gs.reduce((a, x) => a + x.n * x.eq, 0), weighted = sum / tot;
+  const piles = { ahead: 0, flip: 0, behind: 0 }; for (const x of rows) piles[x.eq >= .58 ? 'ahead' : x.eq > .42 ? 'flip' : 'behind'] += x.n;
+  const quick = (piles.ahead * .7 + piles.flip * .5 + piles.behind * .25) / tot;
+  const lst = ls => ls.slice(0, 6).join(', ') + (ls.length > 6 ? '…' : '');
+  return `<ol class="math-steps small">
+      <li><b>Split their range into groups</b> you can name${pre ? ' (compared with your ' + hl + ')' : ' (what each hand has made on this board)'}.</li>
+      <li><b>Count the combos</b> in each group: pairs 6, suited 4, offsuit 12, fewer when you or the board hold one of those cards.</li>
+      <li><b>Estimate your equity</b> against each group.</li>
+      <li><b>Multiply and add up</b>, then divide by the total number of combos.</li></ol>
+    <div class="tbl-scroll"><table class="ref"><thead><tr><th>Their group</th><th>Combos</th><th>Your equity</th><th>Combos × equity</th></tr></thead><tbody>
+      ${gs.map(x => `<tr><td class="t">${x.g}<br><span class="muted small">${lst(x.labels)}</span></td><td>${x.n}</td><td>${pct(x.eq, 0)}</td><td>${(x.n * x.eq).toFixed(1)}</td></tr>`).join('')}
+      <tr class="me"><td class="t"><b>Total</b></td><td><b>${tot}</b></td><td></td><td><b>${sum.toFixed(1)}</b></td></tr></tbody></table></div>
+    <p class="small">${sum.toFixed(1)} ÷ ${tot} = <b>${pct(weighted, 1)}</b>. The exact simulation says <b>${pct(exact, 1)}</b>; the small gap is rounding and random deals.</p>
+    <p class="small"><b>The quick table version:</b> sort the range into three piles and use rough numbers: ahead ≈ 70%, about a flip ≈ 50%, behind ≈ 25%. Here that's ${piles.ahead} ahead, ${piles.flip} flipping and ${piles.behind} behind:
+      (${piles.ahead} × 70 + ${piles.flip} × 50 + ${piles.behind} × 25) ÷ ${tot} ≈ <b>${pct(quick, 0)}</b>.</p>`;
+}
 
 /* ---------- range vs range ---------- */
 const RVR_PAIRS = {

@@ -446,3 +446,9 @@ dialog.fb-modal{width:min(560px,calc(100vw - 20px))}
 .lk-item p{margin-top:2px}
 .lk-item .act{flex:none}
 .stat .n.good{color:var(--good)}.stat .n.bad{color:var(--bad)}
+
+/* show the math */
+.math-steps{margin:0;padding-left:20px;display:grid;gap:4px}
+.tbl-scroll{overflow-x:auto}
+.hvr-math{background:var(--sand);box-shadow:none}
+label.check{display:flex;align-items:center;gap:8px;font-size:14px;min-height:44px}
