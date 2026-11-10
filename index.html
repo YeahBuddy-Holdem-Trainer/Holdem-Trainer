@@ -318,7 +318,7 @@
 
 <!-- STREET EQUITY -->
 <section class="view" id="v-street-equity" hidden>
-  <details class="learn"><summary>How this works <span>What equity is and how it moves street to street</span></summary><div class="learn-body">
+  <details class="learn"><summary>How this works</summary><div class="learn-body">
     <p><b>Equity</b> is your share of the pot if every remaining card were dealt with no more betting. The app deals every possible remaining board, counts how often you win, and counts a tie as half a win.</p>
     <ul>
       <li><b>Preflop:</b> use the matchup types from the Matchups tab. Name the type, recall the number.</li>
@@ -337,16 +337,17 @@
         <div><span class="lbl">Villain</span><div class="cards" id="se-vil"></div></div>
       </div>
       <div><span class="lbl" id="se-street">Preflop</span><div class="cards" id="se-board"></div></div>
-      <form id="se-form" style="display:grid;gap:8px">
-        <label for="se-guess"><span class="lbl">Your equity guess: <b id="se-gv" style="font-family:var(--mono)">50</b>%</span></label>
+      <form id="se-form" class="guess-form">
+        <div class="guess-top"><label for="se-guess" class="lbl">Your equity</label>
+          <div class="nudge" role="group" aria-label="Adjust your guess"><button type="button" data-n="-5" aria-label="Minus 5">−5</button><button type="button" data-n="-1" aria-label="Minus 1">−1</button><b id="se-gv">50%</b><button type="button" data-n="1" aria-label="Plus 1">+1</button><button type="button" data-n="5" aria-label="Plus 5">+5</button></div></div>
         <input type="range" id="se-guess" min="0" max="100" value="50">
-        <div class="row"><button class="act" type="submit" id="se-sub">Lock in guess</button><button class="act ghost" type="button" id="se-adv" disabled>Next street</button><button class="act ghost" type="button" id="se-new">New hand</button></div>
+        <div class="row"><button class="act" type="submit" id="se-sub">Lock in guess</button><button class="act" type="button" id="se-adv" hidden>Next street</button><button class="act" type="button" id="se-new" hidden>New hand</button></div>
       </form>
+      <div class="streets" id="se-log" aria-live="polite"></div>
     </div>
     <div class="panel">
       <h3>Session</h3>
       <div class="stats"><div class="stat"><div class="n" id="se-avg">–</div><span class="small muted">avg miss (pts)</span></div><div class="stat"><div class="n" id="se-n">0</div><span class="small muted">guesses</span></div></div>
-      <div class="streets" id="se-log"></div>
     </div>
   </div>
 </section>

@@ -97,8 +97,14 @@ function seHint(step){const b=se.board.slice(0,SHOW[step]);
 function seRender(){const s=se.step,shown=se.board.slice(0,SHOW[s]);
   $('se-hero').innerHTML=cardsHTML(se.hero);$('se-vil').innerHTML=cardsHTML(se.vil);
   $('se-board').innerHTML=cardsHTML(shown)+cardsHTML(Array(5-shown.length).fill(null));$('se-street').textContent=STREETS[s];
-  const locked=se.rows.length>s||s===3;$('se-sub').disabled=locked;$('se-guess').disabled=locked;$('se-adv').disabled=!locked||s===3;
-  $('se-log').innerHTML=se.rows.map(r=>`<div class="st"><span class="nm">${r.nm}</span><div class="bar"><div class="w" style="width:${r.e.w*100}%"></div><div class="t" style="width:${r.e.t*100}%"></div></div><span class="pct">${pct(r.e.eq,0)}</span><span class="cat">You guessed ${r.g}% · ${r.err<1?'spot on':'missed by '+r.err.toFixed(0)+' pts'}<br>Shortcut: ${r.hint}</span></div>`).join('')+(s===3?seResult():'');
+  const locked=se.rows.length>s||s===3;$('se-sub').disabled=locked;$('se-guess').disabled=locked;
+  /* one button at a time: lock in, then next street, then a new hand once the river is out */
+  $('se-sub').hidden=locked;$('se-adv').hidden=!locked||s===3;$('se-new').hidden=s!==3;
+  document.querySelectorAll('#se-form .nudge button').forEach(b=>b.disabled=locked);
+  document.querySelector('#se-form .guess-top').hidden=s===3;$('se-guess').hidden=s===3;
+  /* newest result first, right under the buttons */
+  $('se-log').innerHTML=(s===3?seResult():'')+se.rows.slice().reverse().map(r=>`<div class="st"><span class="nm">${r.nm}</span><div class="bar"><div class="w" style="width:${r.e.w*100}%"></div><div class="t" style="width:${r.e.t*100}%"></div></div><span class="pct">${pct(r.e.eq,0)}</span><span class="cat">You guessed ${r.g}% · ${r.err<1?'spot on':'missed by '+r.err.toFixed(0)+' pts'}<br>Shortcut: ${r.hint}</span></div>`).join('');
+  if(se.rows.length&&locked){const f=$('se-log').firstElementChild;if(f&&f.getBoundingClientRect().bottom>innerHeight-90)f.scrollIntoView({behavior:'smooth',block:'center'})}
   $('se-avg').textContent=stats.se.n?(stats.se.err/stats.se.n).toFixed(1):'–';$('se-n').textContent=stats.se.n}
 function seMath(){const lines=se.rows.map((r,i)=>{const nb=SHOW[i],bd=se.board.slice(0,nb);
     if(!nb)return `<li><b>${r.nm}:</b> no board yet, so use the matchup rule of thumb (Equity &gt; Hand vs hand). Exact: ${pct(r.e.eq,0)}.</li>`;
@@ -108,8 +114,9 @@ function seMath(){const lines=se.rows.map((r,i)=>{const nb=SHOW[i],bd=se.board.s
       :`you're ahead with ${catName(a).toLowerCase()}. Count <i>their</i> outs: <b>${o.length}</b>. ${o.length} × ${m} ≈ ${est}% for them, so you ≈ <b>${100-est}%</b>`}. Exact: ${pct(r.e.eq,0)}.</li>`}).join('');
   return mathBox(`<p class="small">After the flop, count <b>outs</b>: cards that put the player who's behind ahead. With two cards to come, outs × 4 ≈ equity; with one card to come, outs × 2.</p><ol class="small math-steps">${lines}</ol><p class="small muted">The rule runs a little high above about 8 outs on the flop (for 15 outs it says 60%, the truth is about 54%), and it ignores outs that also help the other player.</p>`)}
 function seResult(){const a=evalHand(se.hero.concat(se.board)),b=evalHand(se.vil.concat(se.board));
-  return seMath()+`<div class="verdict ${a>b?'good':a<b?'bad':''}"><strong>${a>b?'You win':a<b?'Villain wins':'Split pot'}</strong><span class="small">${catName(a)} vs ${catName(b)}</span></div>`}
-$('se-guess').oninput=e=>$('se-gv').textContent=e.target.value;
+  return `<div class="verdict ${a>b?'good':a<b?'bad':''}"><strong>${a>b?'You win':a<b?'Villain wins':'Split pot'}</strong><span class="small">${catName(a)} vs ${catName(b)}</span></div>`+seMath()}
+$('se-guess').oninput=e=>$('se-gv').textContent=e.target.value+'%';
+document.querySelector('#se-form .nudge').addEventListener('click',e=>{const b=e.target.closest('[data-n]');if(!b)return;const s=$('se-guess');s.value=Math.max(0,Math.min(100,+s.value+ +b.dataset.n));$('se-gv').textContent=s.value+'%'});
 $('se-form').addEventListener('submit',e=>{e.preventDefault();if(se.rows.length>se.step)return;
   const g=+$('se-guess').value,eq=equity(se.hero,se.vil,se.board.slice(0,SHOW[se.step]),60000),err=Math.abs(g-eq.eq*100);
   se.rows.push({nm:STREETS[se.step],e:eq,g,err,hint:(h=>typeof h==='function'?h(eq):h)(seHint(se.step))});stats.se.n++;stats.se.err+=err;save();
