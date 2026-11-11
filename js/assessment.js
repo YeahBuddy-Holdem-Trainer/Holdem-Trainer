@@ -29,10 +29,10 @@ const QGEN={
         explain:`${n} outs: <span class="outs">${cardsHTML(outs,'xs')}</span>`}}},
   'Call or fold'(){const c=genCF(.03),v=cfReview(c);
     return{drill:'Call or fold',spot:(c.street===3?'Flop shove':'Turn bet')+(c.behind?', drawing':', ahead'),hand:names(c.hero)+' vs '+names(c.vil),
-      visual:tableSnap({...cfTable(c),heroCards:c.hero,shown:{[c.vp]:c.vil}}),
-      prompt:`<p class="spot-text">${c.street===3?'Flop':'Turn'}. Villain ${c.street===3?'shoves':'bets'} ${money(c.bet)} into ${money(c.pot)}.</p>`,
+      visual:tableSnap({...cfTable(c),heroCards:c.hero,shown:{[c.vp]:['back','back']}}),
+      prompt:`<p class="spot-text">${c.street===3?'Flop':'Turn'}. Villain ${c.street===3?'shoves':'bets'} ${money(c.bet)} into ${money(c.pot)}. Your read: villain has <b>${cfRead(c)}</b>.</p>`,
       opts:['Call','Fold'],correct:v.best==='Call'?0:1,short:`${names(c.hero)} vs ${names(c.vil)} on ${names(c.board)}`,
-      explain:`You need ${pct(c.req)} and have ${pct(c.e.eq)}${c.behind?` (${v.hOuts.length} outs)`:''}.`}},
+      explain:`Villain had ${names(c.vil)}. You need ${pct(c.req)} and have ${pct(c.e.eq)}${c.behind?` (${v.hOuts.length} outs)`:''}.`}},
 };
 let qz=null;
 function startQuiz(){const plan=shuffle(Object.entries(QPLAN).flatMap(([a,n])=>Array(n).fill(a)));

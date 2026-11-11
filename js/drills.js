@@ -6,19 +6,22 @@ function genPO(){newStakes();const pot=makePot(4,40),bet=makeBet(pot,pick(FRACS)
 let po;
 function newPO(){po={...genPO(),done:false,t0:Date.now()};const{pot,bet}=po;
   $('po-pot').textContent=money(pot);$('po-bet').textContent=money(bet);$('po-pot-bb').textContent=bbs(pot);$('po-bet-bb').textContent=`${Math.round(bet/pot*100)}% of pot`;
-  $('po-ans').value='';$('po-out').innerHTML='<p class="small muted">Type your answer and press Check. The full math appears here.</p>'}
+  $('po-ans').value=25;$('po-v').textContent='25%';poLock(false);$('po-out').innerHTML='<p class="small muted">Slide to your answer and press Check. The full math appears here.</p>'}
+/* one button: Check, then Next spot once the result shows */
+function poLock(on){$('po-ans').disabled=on;document.querySelectorAll('#po-form .nudge button').forEach(b=>b.disabled=on);$('po-sub').textContent=on?'Next spot':'Check'}
 function poStats(){$('po-score').textContent=`${stats.po.c}/${stats.po.n}`;$('po-streak').textContent=stats.po.streak}
 function poMath(p){const{pot,bet,req}=p,total=pot+2*bet;
   return `<dl class="math"><dt>You call</dt><dd>${money(bet)}</dd><dt>To win</dt><dd>${money(pot)} + ${money(bet)} = ${money(pot+bet)}</dd><dt>Final pot</dt><dd>${money(pot)} + ${money(bet)} + ${money(bet)} = ${money(total)}</dd><dt>Equity needed</dt><dd>${money(bet)} ÷ ${money(total)} = ${pct(req)}</dd><dt>As a ratio</dt><dd>${((pot+bet)/bet).toFixed(2)} : 1 → 1 ÷ (${((pot+bet)/bet).toFixed(2)} + 1) = ${pct(req)}</dd></dl>`}
-$('po-form').addEventListener('submit',e=>{e.preventDefault();const g=parseFloat($('po-ans').value);if(isNaN(g)){$('po-ans').focus();return}
+$('po-form').addEventListener('submit',e=>{e.preventDefault();if(po.done){newPO();return}const g=parseFloat($('po-ans').value);
   const ok=Math.abs(g-po.req*100)<=2.5,miss=Math.abs(g-po.req*100);
-  if(!po.done){stats.po.n++;if(ok){stats.po.c++;stats.po.streak++}else stats.po.streak=0;po.done=true;save();poStats();
+  if(!po.done){stats.po.n++;if(ok){stats.po.c++;stats.po.streak++}else stats.po.streak=0;po.done=true;save();poStats();poLock(true);
     logEvent({drill:'Pot odds',spot:nearestRef(po.bet/po.pot)+' bet',answer:g,expected:+(po.req*100).toFixed(1),correct:ok,error:+miss.toFixed(1),detail:`pot ${po.pot}, bet ${po.bet}`,ms:Date.now()-po.t0})}
   const wrongBase=Math.abs(g-po.bet/(po.pot+po.bet)*100)<1.5;
   $('po-out').innerHTML=`<div class="verdict ${ok?'good':'bad'}"><strong>${ok?'Correct':'Off by '+miss.toFixed(1)+' pts'}</strong><span>You need <b>${pct(po.req)}</b> equity to call.</span></div>${poMath(po)}
   ${wrongBase?'<p class="small"><b>Common slip:</b> you divided by the pot before your call. Your own call goes into the final pot too, so add the bet twice.</p>':''}
   <p class="small muted">A ${Math.round(po.bet/po.pot*100)}% pot bet is closest to the ${nearestRef(po.bet/po.pot)} row in the table below.</p>`});
-$('po-next').onclick=()=>{newPO();$('po-ans').focus()};
+$('po-ans').oninput=e=>$('po-v').textContent=e.target.value+'%';
+document.querySelector('#po-form .nudge').addEventListener('click',e=>{const b=e.target.closest('[data-n]');if(!b)return;const s=$('po-ans');s.value=Math.max(0,Math.min(50,+s.value+ +b.dataset.n));$('po-v').textContent=s.value+'%'});
 $('ref').innerHTML=REF.map(([n,f])=>`<tr><td class="t">${n}</td><td>${((1+f)/f).toFixed(1)} : 1</td><td>${pct(f/(1+2*f))}</td></tr>`).join('');
 
 /* ---------- call or fold ---------- */
@@ -41,10 +44,17 @@ function cfTable(c){const seats={};POS.forEach(p=>seats[p]={state:'folded',bet:'
   seats[c.hp]={state:'hero',tag:'You',stack:'',bet:''};seats[c.vp]={state:'vil',tag:c.street===3?'All in':'Bets',stack:'',bet:money(c.bet)};
   return{hero:c.hp,seats,center:`<div class="cards">${cardsHTML(c.board,'xs')}</div><span>Pot ${money(c.pot)}</span>`}}
 let cf;
+/* villain's cards stay face down until you answer; you get a read on their hand instead */
+function cfRead(c){const k=rvbClassify(c.vil,c.board),name=x=>(RVB_MADE.concat(RVB_DRAW).find(([y])=>y===x)||[,x])[1].toLowerCase();
+  const weak=['ahigh','nothing'].includes(k.made),dr=k.draw&&k.draw!=='air'?name(k.draw):null,art=s=>/^[aeiou]/.test(s)?'an '+s:'a '+s;
+  const made=k.made==='ahigh'?'ace high':k.made==='nothing'?'no pair':k.made==='ppbelow'?'a pocket pair below the top card':['fh','flush','straight','set','overpair'].includes(k.made)?art(name(k.made)):name(k.made);
+  return weak&&dr?art(dr):dr?`${made} plus ${art(dr)}`:made}
+function cfShow(open){const back=['back','back'],v=open?cf.vil:back;
+  renderTable($('cf-table'),{...cfTable(cf),heroCards:cf.hero,shown:{[cf.vp]:v}});
+  $('cf-hero').innerHTML=cardsHTML(cf.hero);$('cf-vil').innerHTML=cardsHTML(v)}
 function newCF(){cf={...genCF(),done:false,t0:Date.now()};
-  renderTable($('cf-table'),{...cfTable(cf),heroCards:cf.hero,shown:{[cf.vp]:cf.vil}});
-  $('cf-hero').innerHTML=cardsHTML(cf.hero);$('cf-vil').innerHTML=cardsHTML(cf.vil);
-  $('cf-text').textContent=`${cf.street===3?'Flop':'Turn'}. The ${POSNAME[cf.vp]} ${cf.street===3?'shoves all in for':'bets'} ${money(cf.bet)} into ${money(cf.pot)}. You are on the ${POSNAME[cf.hp]}.`;
+  cfShow(false);
+  $('cf-text').innerHTML=`${cf.street===3?'Flop':'Turn'}. The ${POSNAME[cf.vp]} ${cf.street===3?'shoves all in for':'bets'} ${money(cf.bet)} into ${money(cf.pot)}. You are on the ${POSNAME[cf.hp]}.<br><span class="cf-read">Your read: villain has <b>${cfRead(cf)}</b>.</span>`;
   ['cf-call','cf-fold'].forEach(id=>{$(id).disabled=false;$(id).classList.remove('pickok','pickbad')});
   $('cf-out').innerHTML='<p class="small muted">Decide, and the outs, exact equity and EV of the call show here.</p>'}
 function cfReview(c){
@@ -57,7 +67,7 @@ function cfAnswer(call){const c=cf,v=cfReview(c),right=(v.best==='Call')===call|
       answer:call?'Call':'Fold',expected:v.close?'Either':v.best,correct:right,
       detail:`board ${names(c.board)}; equity ${pct(c.e.eq)}; needed ${pct(c.req)}; outs ${c.behind?v.hOuts.length:'-'}`,ms:Date.now()-c.t0})}
   $(v.best==='Call'?'cf-call':'cf-fold').classList.add('pickok');if(!right)$(call?'cf-call':'cf-fold').classList.add('pickbad');
-  ['cf-call','cf-fold'].forEach(id=>$(id).disabled=true);
+  ['cf-call','cf-fold'].forEach(id=>$(id).disabled=true);cfShow(true);
   const est=Math.min(100,v.hOuts.length*v.mult);
   $('cf-out').innerHTML=`<div class="verdict ${right?'good':'bad'}"><strong>${v.close?'Close spot, either is fine':right?v.best+' is right':'Should '+v.best.toLowerCase()}</strong>
   <span>Your equity <b>${pct(c.e.eq)}</b> vs <b>${pct(c.req)}</b> needed.</span></div>

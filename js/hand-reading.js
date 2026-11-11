@@ -92,7 +92,7 @@ function rdRender() {
     $('rd-guess').oninput = () => { $('rd-gv').textContent = $('rd-guess').value; };
     $('rd-lock').onclick = rdLockShare;
   } else if (rd.asking === 'read') {
-    ask.innerHTML = `<p class="lbl">Final read: what do they most likely have?</p><div class="seg rd-read" role="group">${Object.entries(RD_GROUPS).filter(([g]) => g !== 'draw').map(([g, t]) => `<button type="button" data-g="${g}">${g === 'air' ? 'Missed draw or nothing' : t}</button>`).join('')}</div>`;
+    ask.innerHTML = `<p class="lbl">Final read: what do they most likely have?</p><div class="opts rd-read" role="group">${Object.entries(RD_GROUPS).filter(([g]) => g !== 'draw').map(([g, t]) => `<button type="button" data-g="${g}">${g === 'air' ? 'Missed draw or nothing' : t}</button>`).join('')}</div>`;
     ask.querySelectorAll('[data-g]').forEach(b => b.onclick = () => rdFinal(b.dataset.g));
   } else ask.innerHTML = '';
 }

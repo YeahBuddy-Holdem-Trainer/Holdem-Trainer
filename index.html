@@ -260,11 +260,11 @@
         <div><span class="lbl">Pot before bet</span><span class="big" id="po-pot"></span><div class="sub" id="po-pot-bb"></div></div>
         <div><span class="lbl">Villain bets</span><span class="big chipnum" id="po-bet"></span><div class="sub" id="po-bet-bb"></div></div>
       </div>
-      <form class="row" id="po-form">
-        <label for="po-ans"><span class="lbl">Your break-even equity %</span></label>
-        <input type="number" id="po-ans" min="0" max="100" step="0.1" inputmode="decimal" placeholder="25">
-        <button class="act" type="submit">Check</button>
-        <button class="act ghost" type="button" id="po-next">Next spot</button>
+      <form class="guess-form" id="po-form">
+        <div class="guess-top"><label for="po-ans" class="lbl">Break-even equity</label>
+          <div class="nudge" role="group" aria-label="Adjust your answer"><button type="button" data-n="-5" aria-label="Minus 5">−5</button><button type="button" data-n="-1" aria-label="Minus 1">−1</button><b id="po-v">25%</b><button type="button" data-n="1" aria-label="Plus 1">+1</button><button type="button" data-n="5" aria-label="Plus 5">+5</button></div></div>
+        <input type="range" id="po-ans" min="0" max="50" step="1" value="25">
+        <div class="row"><button class="act" type="submit" id="po-sub">Check</button></div>
       </form>
     </div>
     <div class="panel">
@@ -291,7 +291,7 @@
     <div class="worked"><b>Worked example</b><span>Turn. Villain bets $50 into $100, so you need 25%. You have a flush draw: 9 outs × 2 = 18%. 18% is below 25%, so fold.</span></div>
     <ul>
       <li>Watch for <b>dirty outs</b>: a card that completes your draw but gives villain a better hand does not count. The trainer counts only clean outs.</li>
-      <li>Villain's cards are face up here so you can check your counting. In real play you estimate against a range; the Calculator tab handles that.</li>
+      <li>Villain's cards stay face down while you decide. Instead you get a <b>read</b> on their hand, the kind you'd build from how they played it. The cards flip over with the answer so you can check your outs.</li>
       <li>Not modeled: implied odds (money you win on later streets) and fold equity from raising.</li>
     </ul>
   </div></details>
@@ -301,7 +301,7 @@
       <p class="spot-text" id="cf-text"></p>
       <div class="hands table-cards-only">
         <div><span class="lbl muted">You</span><div class="cards" id="cf-hero"></div></div>
-        <div><span class="lbl muted">Villain shows</span><div class="cards" id="cf-vil"></div></div>
+        <div><span class="lbl muted">Villain</span><div class="cards" id="cf-vil"></div></div>
       </div>
       <div class="row">
         <button class="act" id="cf-call">Call</button>
@@ -832,6 +832,14 @@
 </div>
 
 <!-- ANSWER EXPLANATIONS (js/feedback.js) -->
+<dialog class="modal fb-modal" id="info-dlg" aria-labelledby="info-h">
+  <div class="modal-in">
+    <form method="dialog" class="modal-x"><button aria-label="Close">✕</button></form>
+    <div><h2 id="info-h" style="text-align:left;font-size:22px;padding-right:36px"></h2><p class="small muted" id="info-sub"></p></div>
+    <div id="info-body"></div>
+    <form method="dialog"><button class="act" style="width:100%">Got it</button></form>
+  </div>
+</dialog>
 <dialog class="modal fb-modal" id="fb-dlg" aria-label="Explanation">
   <div class="modal-in">
     <div id="fb-body"></div>

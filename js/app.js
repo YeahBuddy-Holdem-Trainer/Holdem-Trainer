@@ -42,7 +42,15 @@ const MODE_VIEWS=['pots','reading','texture','hvr','rvr','calculator','board','p
 const UNIT_VIEWS=['pot-odds','call-or-fold','log'];
 const secOf=v=>Object.keys(SECTIONS).find(k=>SECTIONS[k].includes(v));
 const lastInSec={};
-function unitsSeg(){const bb=cfg.units==='bb';return `<div class="seg units" role="group" aria-label="Show amounts as"><button type="button" data-units="money" aria-pressed="${!bb}">$ / chips</button><button type="button" data-units="bb" aria-pressed="${bb}">BB</button></div>`}
+/* one tap switches $ ⇄ BB; the lit half is the one in use */
+function unitsSeg(){const bb=cfg.units==='bb';return `<button type="button" class="units-tog" data-units-tog aria-label="Amounts shown in ${bb?'big blinds':'dollars'}. Tap to switch." title="Tap to switch $ / BB"><span${bb?'':' class="on"'}>$</span><span${bb?' class="on"':''}>BB</span></button>`}
+/* "How this works": the box at the top of each trainer is hidden and opens as a pop-up from the ⓘ button */
+const LEARN={};
+document.querySelectorAll('section.view').forEach(sec=>{const d=sec.querySelector(':scope details.learn:not(.math-box)');if(!d)return;
+  const sm=d.querySelector('summary'),sub=sm.querySelector('span');
+  LEARN[sec.id.slice(2)]={title:(sub?sm.firstChild.textContent:sm.textContent).trim(),sub:sub?sub.textContent.trim():'',body:d.querySelector('.learn-body')};d.hidden=true});
+function openInfo(v){const L=LEARN[v];if(!L)return;$('info-h').textContent=L.title;$('info-sub').textContent=L.sub;$('info-sub').hidden=!L.sub;
+  $('info-body').replaceChildren(L.body);$('info-dlg').showModal();$('info-dlg').scrollTop=0}
 function route(){const h=location.hash.slice(1),v=VIEWS.includes(h)?h:'daily';currentView=v;const sec=secOf(v);
   VIEWS.forEach(x=>$('v-'+x).hidden=x!==v);
   if(sec!=='home'){lastInSec[sec]=v;try{localStorage.setItem(LASTVIEWKEY,v)}catch(e){}}
@@ -50,15 +58,16 @@ function route(){const h=location.hash.slice(1),v=VIEWS.includes(h)?h:'daily';cu
     if(s===sec)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   document.querySelector('.seg.mode').hidden=!MODE_VIEWS.includes(v);
   const sn=$('subnav');sn.hidden=false;
-  sn.innerHTML=`<div class="subtabs">${SECTIONS[sec].map(x=>`<a href="#${x==='daily'?'home':x}"${x===v?' aria-current="page"':''}>${VIEW_LABEL[x]}</a>`).join('')}</div>${UNIT_VIEWS.includes(v)?unitsSeg():''}${sec!=='home'&&v!=='log'?'<button type="button" class="flag-btn flag-sub" aria-label="Flag this spot" title="Flag this spot">⚑</button>':''}`;
+  sn.innerHTML=`<div class="subtabs">${SECTIONS[sec].map(x=>`<a href="#${x==='daily'?'home':x}"${x===v?' aria-current="page"':''}>${VIEW_LABEL[x]}</a>`).join('')}</div>${UNIT_VIEWS.includes(v)?unitsSeg():''}${LEARN[v]?'<button type="button" class="info-sub" data-info aria-label="How this works" title="How this works">i</button>':''}${sec!=='home'&&v!=='log'?'<button type="button" class="flag-btn flag-sub" aria-label="Flag this spot" title="Flag this spot">⚑</button>':''}`;
   const cur=sn.querySelector('[aria-current]');if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:'nearest',inline:'nearest'});
   if(v==='progress')renderProgress();if(v==='daily'&&!daily)dailyHome();if(v==='replay')rpList();if(v==='log')lgRender();if(v==='exploit')xpOpponents();if(v==='leaks')lkRender();
   window.scrollTo(0,0)}
 /* $ / BB switch: a fresh spot in the drills, redrawn in the log */
-$('subnav').addEventListener('click',e=>{const b=e.target.closest('[data-units]');if(!b)return;cfg.units=b.dataset.units;
+$('subnav').addEventListener('click',e=>{if(e.target.closest('[data-info]'))return openInfo(currentView);
+  const b=e.target.closest('[data-units-tog]');if(!b)return;cfg.units=cfg.units==='bb'?'money':'bb';
   try{localStorage.setItem(CFGKEY,JSON.stringify(cfg))}catch(err){}
-  $('subnav').querySelectorAll('[data-units]').forEach(x=>x.setAttribute('aria-pressed',x===b));
-  if(currentView==='pot-odds')newPO();if(currentView==='call-or-fold')newCF();if(currentView==='log')lgRender()});
+  b.outerHTML=unitsSeg();
+  newPO();newCF();if(currentView==='log')lgRender()});
 window.addEventListener('hashchange',route);
 
 /* ---------- start ---------- */

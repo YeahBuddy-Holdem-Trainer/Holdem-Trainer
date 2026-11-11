@@ -48,7 +48,7 @@ function newTX() {
   renderTable($('tx-table'), { hero: P, seats, center: `<div class="cards">${cardsHTML(board, 'xs')}</div><b>${fmtBB(sc.pot)} BB</b><span>${sc.three ? '3-bet pot' : 'Flop pot'}</span>` });
   $('tx-spot').textContent = sc.name + '. The flop comes:';
   $('tx-qs').innerHTML = Object.entries(TX_Q).map(([k, q]) => `<fieldset class="tx-q" data-k="${k}"><legend><b>${q.label}.</b> ${q.q}</legend>
-    <div class="seg" role="group">${q.opts.map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join('')}</div></fieldset>`).join('');
+    <div class="opts${q.opts.some(([, t]) => t.length > 14) ? ' stack' : ''}" role="group">${q.opts.map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join('')}</div></fieldset>`).join('');
   $('tx-sub').disabled = true;
   $('tx-out').innerHTML = '<p class="small muted">Answer all three, then check.</p>';
 }

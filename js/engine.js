@@ -6,7 +6,7 @@ const CAT=['High card','Pair','Two pair','Three of a kind','Straight','Flush','F
 const B5=13**5;
 const isRed=c=>(c&3)===1||(c&3)===2;
 const rankTxt=r=>R[r]==='T'?'10':R[r];
-function cardHTML(c,cls=''){if(c==null)return `<span class="card empty ${cls}"></span>`;return `<span class="card ${isRed(c)?'red':''} ${cls}"><b>${rankTxt(c>>2)}</b><i>${SYM[c&3]}</i></span>`}
+function cardHTML(c,cls=''){if(c==='back')return `<span class="card back ${cls}" aria-label="face-down card"></span>`;if(c==null)return `<span class="card empty ${cls}"></span>`;return `<span class="card ${isRed(c)?'red':''} ${cls}"><b>${rankTxt(c>>2)}</b><i>${SYM[c&3]}</i></span>`}
 const cardsHTML=(a,cls)=>a.map(c=>cardHTML(c,cls)).join('');
 const names=a=>a.map(c=>R[c>>2]+S[c&3]).join(' ');
 function sHigh(m){for(let h=12;h>=4;h--)if(((m>>(h-4))&31)===31)return h;return (m&0x100F)===0x100F?3:-1}
