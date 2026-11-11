@@ -38,6 +38,7 @@
 <script defer src="js/hand-log.js"></script>
 <script defer src="js/daily.js"></script>
 <script defer src="js/feedback.js"></script>
+<script defer src="js/learn.js"></script>
 <script defer src="js/flags.js"></script>
 <script defer src="js/app.js"></script>
 <script type="module" src="js/cloud.js"></script>
@@ -47,6 +48,7 @@
   <a class="brand" href="#home"><img src="assets/logo.webp" alt="YeahBuddy Poker logo"><span>Hold'em <b>Trainer</b></span></a>
   <nav class="secnav" aria-label="Sections">
     <a href="#home" data-sec="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+    <a href="#learn" data-sec="learn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11.2v5c3.3 2.6 8.7 2.6 12 0v-5"/><path d="M22 9v5"/></svg>Learn</a>
     <a href="#pot-odds" data-sec="odds"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></svg>Odds</a>
     <a href="#matchups" data-sec="equity"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v18M5 21h14M6 7h12"/><path d="M6 7l-3 7h6zM18 7l-3 7h6z"/></svg>Equity</a>
     <a href="#sizing" data-sec="ev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>EV</a>
@@ -63,10 +65,16 @@
 <nav class="subnav" id="subnav" aria-label="Trainers in this section" hidden></nav>
 
 <!-- DAILY -->
+<section class="view" id="v-learn" hidden>
+  <div id="ln-dash" class="ln-dash"></div>
+  <div id="ln-play" class="ln-play" hidden></div>
+  <div class="ln-toast" id="ln-toast" role="status" hidden></div>
+</section>
 <section class="view" id="v-daily" hidden>
   <div id="dl-home" style="display:grid;gap:16px">
     <div class="home-hi"><h1 id="hm-hi">Good morning</h1><p id="hm-date"></p></div>
     <div class="home-grid">
+      <section class="panel span3 ln-mini" id="hm-learn" aria-label="Learning progress"></section>
       <section class="hero span2" aria-labelledby="hm-dl-h">
         <div class="hero-top">
           <div style="display:grid;gap:6px">

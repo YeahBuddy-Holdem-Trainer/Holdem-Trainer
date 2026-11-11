@@ -160,6 +160,29 @@ check('Trainers', 'Leak finder spots a player who folds too much preflop', () =>
   return [f.some(x => /Too tight/.test(x.title)), f.map(x => x.title).join(', ') || 'no findings'];
 });
 
+
+/* ---------- learning path ---------- */
+check('Learning path', 'Every lesson makes valid questions in cash and tournament (40 each)', () => {
+  const was = E('mode');
+  for (const m of ['cash', 'tour']) { E(`mode='${m}'`);
+    for (const l of E('LN_ALL')) for (let i = 0; i < 40; i++) { const q = l.gen();
+      if (!q || !Array.isArray(q.opts) || !(q.correct >= 0 && q.correct < q.opts.length) || new Set(q.opts.map(String)).size !== q.opts.length) return [false, `${m} ${l.id}: ${JSON.stringify(q && q.opts)} → ${q && q.correct}`]; } }
+  E(`mode='${was}'`); return [true, `${E('LN_ALL').length} lessons`];
+});
+check('Learning path', 'Lessons unlock in order: only the first is open at the start', () => {
+  const saved = E('JSON.stringify(ln)'); E('ln.lessons={}');
+  const open = E('LN_ALL').filter(l => E('lnOpen')(l)).map(l => l.id);
+  E('ln.lessons={"pf-late":{best:8,attempts:1}}'); const two = E('LN_ALL').filter(l => E('lnOpen')(l)).length;
+  E('ln.lessons={"pf-check":{placed:true}}'); const unit2 = E('lnOpen')(E('lnById')('po-easy'));
+  E(`ln=${saved}`);
+  return [open.length === 1 && open[0] === 'pf-late' && two === 2 && unit2, `open at start: ${open}; after one pass: ${two}; checkpoint unlocks next unit: ${unit2}`];
+});
+check('Learning path', 'Rule of 2 and 4 answers are outs × 4 on the flop and × 2 on the turn', () => {
+  for (let i = 0; i < 200; i++) { const q = E('lnRule')(), n = parseInt(q.hand), flop = /Flop/.test(q.spot), want = n * (flop ? 4 : 2);
+    if (q.opts[q.correct] !== want + '%') return [false, `${q.hand} ${q.spot}: ${q.opts[q.correct]}`]; }
+  return [true];
+});
+
 /* ---------- runner ---------- */
 function load() {
   return new Promise((res, rej) => {

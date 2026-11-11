@@ -8,7 +8,7 @@
 import { firebaseConfig } from './firebase-config.js';
 
 const SDK = 'https://www.gstatic.com/firebasejs/12.14.0/';
-const SYNC_KEYS = ['holdem-odds-trainer-v1', 'holdem-ranges-v1', 'holdem-hands-v1', 'holdem-daily-v1', 'holdem-odds-cfg-v1', 'holdem-log-v1', 'holdem-players-v1'];
+const SYNC_KEYS = ['holdem-odds-trainer-v1', 'holdem-ranges-v1', 'holdem-hands-v1', 'holdem-daily-v1', 'holdem-odds-cfg-v1', 'holdem-log-v1', 'holdem-players-v1', 'holdem-learn-v1'];
 const DEVICE_KEYS = ['holdem-odds-log-v1', 'holdem-odds-session-v1', 'holdem-last-view', 'holdem-last-pull'];
 const OWNER = 'holdem-owner', PULL = 'holdem-last-pull', GUEST_OK = 'holdem-guest-ok';
 
