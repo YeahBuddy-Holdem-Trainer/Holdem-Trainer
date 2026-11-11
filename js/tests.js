@@ -162,20 +162,31 @@ check('Trainers', 'Leak finder spots a player who folds too much preflop', () =>
 
 
 /* ---------- learning path ---------- */
-check('Learning path', 'Every lesson makes valid questions in cash and tournament (40 each)', () => {
+check('Learning path', 'Every lesson makes valid questions at all 3 levels, cash and tournament (15 each)', () => {
   const was = E('mode');
   for (const m of ['cash', 'tour']) { E(`mode='${m}'`);
-    for (const l of E('LN_ALL')) for (let i = 0; i < 40; i++) { const q = l.gen();
-      if (!q || !Array.isArray(q.opts) || !(q.correct >= 0 && q.correct < q.opts.length) || new Set(q.opts.map(String)).size !== q.opts.length) return [false, `${m} ${l.id}: ${JSON.stringify(q && q.opts)} → ${q && q.correct}`]; } }
-  E(`mode='${was}'`); return [true, `${E('LN_ALL').length} lessons`];
+    for (const l of E('LN_ALL')) for (const lv of [1, 2, 3]) for (let i = 0; i < 15; i++) { const q = l.gen(lv);
+      if (!q || !Array.isArray(q.opts) || q.opts.length < 2 || !(q.correct >= 0 && q.correct < q.opts.length) || new Set(q.opts.map(String)).size !== q.opts.length) return [false, `${m} ${l.id} level ${lv}: ${JSON.stringify(q && q.opts)} → ${q && q.correct}`]; } }
+  E(`mode='${was}'`); return [true, `${E('LN_ALL').length} lessons × 3 levels`];
+});
+check('Learning path', 'Basics answers match the hand evaluator (300 questions)', () => {
+  for (let i = 0; i < 100; i++) {
+    const s = E('lnShowdown')(1 + i % 3), cs = s.hand.split(' vs ').map(h => C(h.replace(/ /g, ''))), board = C(s.short.split(' on ')[1].replace(/ /g, ''));
+    const a = E('evalHand')(cs[0].concat(board)), b = E('evalHand')(cs[1].concat(board)), want = a > b ? 0 : a < b ? 1 : 2;
+    if (s.correct !== want) return [false, `showdown ${s.short}: app ${s.opts[s.correct]}`];
+    const n = E('lnNameHand')(1 + i % 3), parts = n.short.split(' on '), k = Math.floor(E('evalHand')(C(parts[0].replace(/ /g, '')).concat(C(parts[1].replace(/ /g, '')))) / E('B5'));
+    if (n.opts[n.correct] !== E('CAT')[k]) return [false, `name your hand ${n.short}: app ${n.opts[n.correct]}, evaluator ${E('CAT')[k]}`];
+    for (let c = 0; c < 9; c++) if (Math.floor(E('evalHand')(E('lnMakeCat')(c)) / E('B5')) !== c) return [false, `made a ${E('CAT')[c]} that isn't one`];
+  }
+  return [true];
 });
 check('Learning path', 'Lessons unlock in order: only the first is open at the start', () => {
   const saved = E('JSON.stringify(ln)'); E('ln.lessons={}');
   const open = E('LN_ALL').filter(l => E('lnOpen')(l)).map(l => l.id);
-  E('ln.lessons={"pf-late":{best:8,attempts:1}}'); const two = E('LN_ALL').filter(l => E('lnOpen')(l)).length;
-  E('ln.lessons={"pf-check":{placed:true}}'); const unit2 = E('lnOpen')(E('lnById')('po-easy'));
+  E('ln.lessons={"ranks":{best:8,attempts:1}}'); const two = E('LN_ALL').filter(l => E('lnOpen')(l)).length;
+  E('ln.lessons={"basics-check":{placed:true}}'); const unit2 = E('lnOpen')(E('lnById')('pf-late'));
   E(`ln=${saved}`);
-  return [open.length === 1 && open[0] === 'pf-late' && two === 2 && unit2, `open at start: ${open}; after one pass: ${two}; checkpoint unlocks next unit: ${unit2}`];
+  return [open.length === 1 && open[0] === 'ranks' && two === 2 && unit2, `open at start: ${open}; after one pass: ${two}; checkpoint unlocks next unit: ${unit2}`];
 });
 check('Learning path', 'Rule of 2 and 4 answers are outs × 4 on the flop and × 2 on the turn', () => {
   for (let i = 0; i < 200; i++) { const q = E('lnRule')(), n = parseInt(q.hand), flop = /Flop/.test(q.spot), want = n * (flop ? 4 : 2);
