@@ -47,6 +47,7 @@ function renderAccount() {
     $('acct-email').textContent = u.email || 'Signed in with Google';
     $('acct-name').value = (typeof cfg !== 'undefined' && cfg.player) || u.displayName || '';
   }
+  $('acct-flags').hidden = !(u && cloud.admin);
 }
 function renderButton() {
   const b = $('acct-btn'), u = cloud.user;
@@ -66,7 +67,8 @@ function renderButton() {
 const nm = u => u.displayName || 'your Google account';
 
 /* ---------- start ---------- */
-const configured = firebaseConfig && firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('PASTE');
+const TEST_MODE = /[?&]test=1/.test(location.search);   /* the app checks page loads the app without signing in */
+const configured = !TEST_MODE && firebaseConfig && firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('PASTE');
 if (!configured) { renderButton(); }
 else start().catch(e => {
   console.error(e); cloud.enabled = false; renderButton();
@@ -103,6 +105,11 @@ async function start() {
     } catch (e) { keys.forEach(k => dirty.add(k)); console.warn(e); }
   }
   const dayOf = ts => { const d = new Date(ts); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  /* ---- flags: anyone signed in can send one; only admins (a doc in admins/{uid}) can read them all ---- */
+  cloud.sendFlag = async f => { await F.addDoc(F.collection(db, 'flags'), { ...f, uid: cloud.user.uid, ts: F.serverTimestamp(), status: 'open' }); };
+  cloud.listFlags = async () => { const s = await F.getDocs(F.query(F.collection(db, 'flags'), F.orderBy('ts', 'desc'), F.limit(200))); const out = []; s.forEach(d => out.push({ id: d.id, ...d.data(), ms: d.data().ts ? d.data().ts.toMillis() : 0 })); return out; };
+  cloud.setFlag = (id, status) => F.updateDoc(F.doc(db, 'flags', id), { status });
+  cloud.deleteFlag = id => F.deleteDoc(F.doc(db, 'flags', id));
   cloud.pushEvents = async batch => {
     const byDay = new Map();
     for (const r of batch) { const k = dayOf(r.ts || Date.now()); if (!byDay.has(k)) byDay.set(k, []); const { player, ...rest } = r; byDay.get(k).push(rest); }
@@ -159,6 +166,8 @@ async function start() {
       if (owner !== 'guest') { clearDevice(); ls.set(OWNER, 'guest'); location.reload(); return; }
       if (!ls.get(GUEST_OK)) window.openAccount();
     }
+    cloud.admin = false;
+    if (u) F.getDoc(F.doc(db, 'admins', u.uid)).then(d => { cloud.admin = d.exists(); renderAccount(); }).catch(() => {});
     renderButton(); renderAccount();
     if (typeof homeRender === 'function' && currentView === 'daily') homeRender();
   });

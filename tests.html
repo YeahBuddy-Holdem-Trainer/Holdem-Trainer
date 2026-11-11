@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App checks · Hold'em Trainer</title>
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/webp" href="assets/logo.webp">
+<link rel="stylesheet" href="css/app.css">
+<style>
+body{padding-bottom:40px}
+.wrap{max-width:900px}
+.tsum{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.tsec h2{font-size:20px;margin-bottom:6px}
+.trow{display:grid;grid-template-columns:28px 1fr;gap:6px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.trow:last-child{border-bottom:0}
+.trow .ic{font-weight:800}
+.trow.pass .ic{color:var(--good)}.trow.fail .ic{color:var(--bad)}.trow.fail{background:color-mix(in srgb,var(--bad) 8%,transparent)}
+.trow small{display:block;color:var(--muted);font-family:var(--mono);font-size:12px;white-space:pre-wrap}
+#app{position:absolute;width:390px;height:844px;left:-10000px;top:0;border:0}
+</style>
+</head>
+<body>
+<header class="topbar"><div class="topbar-in"><a class="brand" href="./"><img src="assets/logo.webp" alt=""><span>App <b>checks</b></span></a></div></header>
+<div class="wrap">
+  <div class="panel">
+    <p class="small">These checks load the app in the background and test its math, charts and opponent models against known answers and against slower exact calculations. Nothing is saved and you aren't signed in, so running them doesn't touch your data.</p>
+    <div class="tsum"><button class="act" type="button" id="run">Run checks</button><b id="sum"></b><span class="small muted" id="time"></span></div>
+  </div>
+  <div id="out" style="display:grid;gap:16px"></div>
+</div>
+<iframe id="app" title="App under test" aria-hidden="true" tabindex="-1"></iframe>
+<script src="js/tests.js"></script>
+</body>
+</html>

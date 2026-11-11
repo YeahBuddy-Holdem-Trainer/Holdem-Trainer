@@ -38,6 +38,7 @@
 <script defer src="js/hand-log.js"></script>
 <script defer src="js/daily.js"></script>
 <script defer src="js/feedback.js"></script>
+<script defer src="js/flags.js"></script>
 <script defer src="js/app.js"></script>
 <script type="module" src="js/cloud.js"></script>
 </head>
@@ -834,7 +835,7 @@
 <dialog class="modal fb-modal" id="fb-dlg" aria-label="Explanation">
   <div class="modal-in">
     <div id="fb-body"></div>
-    <div class="row"><button type="button" class="act" id="fb-next">Next</button><button type="button" class="act ghost" id="fb-close">Close</button></div>
+    <div class="row"><button type="button" class="act" id="fb-next">Next</button><button type="button" class="act ghost" id="fb-close">Close</button><button type="button" class="linkbtn flag-btn">⚑ Flag this</button></div>
   </div>
 </dialog>
 
@@ -842,7 +843,7 @@
 <dialog class="modal fb-modal" id="se-dlg" aria-label="Street result">
   <div class="modal-in">
     <div id="se-dlg-body" style="display:grid;gap:10px"></div>
-    <div class="row"><button type="button" class="act" id="se-dlg-next">Next street</button><button type="button" class="act ghost" id="se-dlg-close">Close</button></div>
+    <div class="row"><button type="button" class="act" id="se-dlg-next">Next street</button><button type="button" class="act ghost" id="se-dlg-close">Close</button><button type="button" class="linkbtn flag-btn">⚑ Flag this</button></div>
   </div>
 </dialog>
 <!-- CARD PICKER for the hand log -->
@@ -881,6 +882,7 @@
       <p class="small muted" style="text-align:center" id="acct-email"></p>
       <label class="field" for="acct-name"><span>Name shown on Home</span><input type="text" id="acct-name" autocomplete="given-name"></label>
       <div class="row"><button class="act ghost" type="button" id="acct-save-name">Save name</button><span class="small muted" id="acct-name-msg" role="status"></span></div>
+      <button class="act ghost" type="button" id="acct-flags" hidden>Review flags from players</button>
       <button class="act" type="button" id="acct-signout">Sign out</button>
       <p class="small muted">Signing out removes your training from this device. It stays in your account for next time.</p>
     </div>
@@ -888,6 +890,33 @@
       <h2>Sign-in isn't set up yet</h2>
       <p class="small">Add your Firebase settings to <code>js/firebase-config.js</code> (see README). Until then everything is saved on this device.</p>
     </div>
+    <p class="small acct-foot"><a href="tests.html" target="_blank" rel="noopener">Run app checks</a> · tests the math, charts and models</p>
+  </div>
+</dialog>
+
+<!-- FLAG A SPOT (js/flags.js) -->
+<dialog class="modal" id="flag-dlg" aria-labelledby="flag-h">
+  <div class="modal-in">
+    <form method="dialog" class="modal-x"><button aria-label="Close">✕</button></form>
+    <h2 id="flag-h" style="text-align:left;font-size:22px">Flag this spot</h2>
+    <p class="small muted" id="flag-what"></p>
+    <div id="flag-in" style="display:grid;gap:10px">
+      <label class="field" for="flag-note"><span>What looks wrong?</span><textarea id="flag-note" rows="4" maxlength="1500" placeholder="For example: a nit wouldn't fold top pair to a 2 BB bet"></textarea></label>
+      <p class="small muted">The cards, board, action and the app's answer are attached so it can be checked.</p>
+      <div class="row"><button class="act" type="button" id="flag-send">Send flag</button><button class="act ghost" type="button" id="flag-cancel">Cancel</button></div>
+    </div>
+    <div id="flag-out" hidden style="display:grid;gap:10px"><p class="small">Sign in to send flags, so they can be followed up.</p><button class="act" type="button" id="flag-signin">Sign in</button></div>
+    <p class="small" id="flag-msg" role="status"></p>
+  </div>
+</dialog>
+
+<!-- REVIEW FLAGS (admins only) -->
+<dialog class="modal" id="flags-dlg" aria-labelledby="flags-h" style="width:min(760px,calc(100vw - 16px))">
+  <div class="modal-in">
+    <form method="dialog" class="modal-x"><button aria-label="Close">✕</button></form>
+    <h2 id="flags-h" style="text-align:left;font-size:22px">Flags from players</h2>
+    <div class="seg" role="group" aria-label="Show" id="flags-filter"><button type="button" data-s="open" aria-pressed="true">Open</button><button type="button" data-s="done" aria-pressed="false">Resolved</button><button type="button" data-s="all" aria-pressed="false">All</button></div>
+    <div id="flags-list" style="display:grid;gap:10px"></div>
   </div>
 </dialog>
 

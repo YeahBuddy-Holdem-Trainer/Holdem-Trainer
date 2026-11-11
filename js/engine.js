@@ -1,3 +1,5 @@
+/* in the app checks page (index.html?test=1) nothing is saved, so running checks can't touch your data */
+if(/[?&]test=1/.test(location.search)){Storage.prototype.setItem=function(){};Storage.prototype.removeItem=function(){}}
 /* ---------- cards & evaluator ---------- */
 const R='23456789TJQKA', S='shdc', SYM=['♠','♥','♦','♣'];
 const CAT=['High card','Pair','Two pair','Three of a kind','Straight','Flush','Full house','Four of a kind','Straight flush'];

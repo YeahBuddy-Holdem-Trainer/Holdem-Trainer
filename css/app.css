@@ -505,3 +505,13 @@ input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px var(-
 .se-legend{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .se-legend .k{display:inline-block;width:14px;height:10px;border-radius:3px}
 .se-legend .k.fill{background:var(--range)}.se-legend .k.mark{width:4px;height:14px;background:var(--orange);margin-left:8px}
+
+/* flags */
+.flag-sub{flex:none;width:40px;height:40px;border-radius:50%;border:1px solid rgba(251,246,234,.55);background:transparent;color:var(--ivory);font-size:17px;cursor:pointer}
+.flag-btn.linkbtn{margin-left:auto;color:var(--muted)}
+.acct-foot{text-align:center;color:var(--muted);border-top:1px solid var(--line);padding-top:10px;margin-top:4px}
+.flag-item{background:var(--sand);border-radius:12px;padding:10px 12px}
+.flag-item>summary{cursor:pointer}
+.flag-text{white-space:pre-wrap;word-break:break-word;font:12px/1.45 var(--mono);background:var(--surface);border-radius:8px;padding:8px;max-height:320px;overflow:auto;margin:8px 0}
+#flag-note{width:100%;font:15px var(--body);padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+@media (max-width:600px){.subnav:has(.flag-sub) .subtabs{flex-basis:calc(100% - 50px)}}

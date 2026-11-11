@@ -50,7 +50,7 @@ function route(){const h=location.hash.slice(1),v=VIEWS.includes(h)?h:'daily';cu
     if(s===sec)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
   document.querySelector('.seg.mode').hidden=!MODE_VIEWS.includes(v);
   const sn=$('subnav');sn.hidden=false;
-  sn.innerHTML=`<div class="subtabs">${SECTIONS[sec].map(x=>`<a href="#${x==='daily'?'home':x}"${x===v?' aria-current="page"':''}>${VIEW_LABEL[x]}</a>`).join('')}</div>${UNIT_VIEWS.includes(v)?unitsSeg():''}`;
+  sn.innerHTML=`<div class="subtabs">${SECTIONS[sec].map(x=>`<a href="#${x==='daily'?'home':x}"${x===v?' aria-current="page"':''}>${VIEW_LABEL[x]}</a>`).join('')}</div>${UNIT_VIEWS.includes(v)?unitsSeg():''}${sec!=='home'&&v!=='log'?'<button type="button" class="flag-btn flag-sub" aria-label="Flag this spot" title="Flag this spot">⚑</button>':''}`;
   const cur=sn.querySelector('[aria-current]');if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:'nearest',inline:'nearest'});
   if(v==='progress')renderProgress();if(v==='daily'&&!daily)dailyHome();if(v==='replay')rpList();if(v==='log')lgRender();if(v==='exploit')xpOpponents();if(v==='leaks')lkRender();
   window.scrollTo(0,0)}
