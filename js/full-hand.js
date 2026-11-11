@@ -34,6 +34,9 @@ const FH_FACE={
   aggro:{monster:[.3,.7],strong:[.75,.2],medium:[.65,.05],weak:[.35,.05],draw:[.5,.35],gut:[.3,.15],air:[.08,.15]}};
 function fhFacing(type,tier,f,isRaise){let [c,r]=FH_FACE[type][tier];
   if(tier!=='monster'&&tier!=='strong')c*=Math.min(1.1,Math.max(.3,type==='station'?1.1-.2*f:1.25-.5*f));
+  /* strong hands (overpair, top pair good kicker) only fold to big bets with deep stacks: almost never to a small bet,
+     and never when the stacks are short compared with the pot (a nit doesn't fold top pair top kicker for 2 BB) */
+  if(tier==='strong'&&!isRaise){const spr=fh&&fh.pot?fh.stack.vil/fh.pot:9,fold=(1-c-r)*Math.min(1,Math.pow(f/.75,2))*(spr<3?0:spr<6?.5:1);c=1-r-fold}
   if(isRaise){c=Math.min(1,c+r);r=0;if(tier!=='monster'&&tier!=='strong')c*=.7}
   c=Math.min(c,1-r);return{fold:1-c-r,call:c,raise:r}}
 /* checked to or first to act: [bet probability, size] */
