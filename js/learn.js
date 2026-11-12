@@ -2,7 +2,9 @@
    Units of short lessons, unlocked in order. A lesson is a teaching card and 10 questions (pass at 8);
    each unit ends in a 12-question checkpoint (pass at 10) that unlocks the next unit.
    Every lesson has three levels: 1 Learn (clear-cut spots), 2 Practice (the full mix), 3 Master (the closest spots,
-   20 seconds per question). Passing level 1 unlocks the next lesson; levels 2 and 3 earn stars and more chips.
+   on the shot clock an admin sets in Settings, plus an optional time bank).
+   Passed lessons come back for review after 1, 3, 7, 14, 30 and 60 days; "Weak spots" mixes the lessons for the
+   areas where your answer history (trainers included) is weakest. Passing level 1 unlocks the next lesson; levels 2 and 3 earn stars and more chips.
    Questions come from the same engine the trainers use (evaluator, equity, charts).
    Chips: right answers win chips, wrong ones cost 5 (never below zero), passing adds a bonus.
    Rank follows the most chips you have ever held, so a bad lesson shrinks the stack but never demotes you.
@@ -12,8 +14,10 @@ const LN_PASS = { lesson: [10, 8], check: [12, 10] };
 const LN_LV = [null,
   { name: 'Learn', line: 'Clear-cut spots to build the habit.', right: 10, pass: 50 },
   { name: 'Practice', line: 'The full mix, like real play.', right: 15, pass: 75 },
-  { name: 'Master', line: 'The closest spots, 20 seconds each.', right: 20, pass: 100, time: 20 }];
-const LN_CHIPS = { wrong: -5, repass: 10, placed: 30 };
+  { name: 'Master', line: 'The closest spots, on the shot clock.', right: 20, pass: 100, clock: true }];
+const lnLvLine = k => k === 3 ? `The closest spots, ${APPCFG.shot} seconds each${APPCFG.bankOn ? ` plus a ${APPCFG.bank}-second time bank` : ''}.` : LN_LV[k].line;
+const LN_RV = [1, 3, 7, 14, 30, 60], LN_DAY = 864e5;   /* review gaps in days */
+const LN_CHIPS = { wrong: -5, repass: 10, placed: 30, review: 25 };
 const LN_RANKS = [
   { name: 'Fish', at: 0, icon: '🐟', line: 'Learning the rules of the table.' },
   { name: 'Rookie', at: 300, icon: '🃏', line: 'Knows the basics and starting to see the math.' },
@@ -130,9 +134,9 @@ function lnNameHand(lvl) {
 }
 
 /* ---------- lesson question makers built on the trainers ---------- */
-function lnPF(re) {
+function lnPF(re, game) {
   return lvl => {
-    const pool = SPOTS.filter(s => s.game === mode && re.test(s.id)), spot = pick(pool), bnd = new Set(spot.boundary || []);
+    const pool = SPOTS.filter(s => s.game === (game || mode) && re.test(s.id)), spot = pick(pool), bnd = new Set(spot.boundary || []);
     let label, cards;
     if (lvl === 3 && bnd.size) { label = pick([...bnd]); cards = comboFor(label); }
     else if (lvl === 1) {
@@ -198,54 +202,194 @@ function lnCF(lvl) {
     opts: ['Call', 'Fold'], correct: v.best === 'Call' ? 0 : 1, short: `${names(c.hero)} vs ${names(c.vil)} on ${names(c.board)}`,
     explain: `Villain had ${names(c.vil)}. You need ${pct(c.req)} and have ${pct(c.e.eq)}${c.behind ? ` (${v.hOuts.length} outs)` : ''}.` };
 }
+
+/* ---------- Reading ranges ---------- */
+const lnPctOpts = (v, lvl) => numOpts(v, (lvl === 3 ? [v - 5, v + 5, v - 10, v + 10] : lvl === 1 ? [v - 20, v + 20, v - 30, v + 30] : [v - 10, v + 10, v - 20, v + 20, v - 15, v + 15]).filter(x => x > 0 && x < 100));
+const lnRound5 = x => Math.min(95, Math.max(5, Math.round(x * 20) * 5));
+function lnCB(lvl) {
+  const type = pick(lvl === 1 ? ['basics'] : lvl === 2 ? ['basics', 'removal', 'removal', 'range'] : ['removal', 'range', 'bluffs', 'bluffs']), q = CB_GEN[type](), a = q.answer, pc = q.unit === '%';
+  const d = pc ? (lvl === 3 ? [5, 10] : [10, 15, 20]) : (lvl === 3 ? [1, 2, 3] : lvl === 1 ? [3, 6] : [2, 3, 6]);
+  const cands = d.flatMap(x => [a - x, a + x]).filter(x => x >= 0 && (!pc || x < 100)), opts = [a];
+  for (const c of shuffle(cands)) if (opts.length < 4 && !opts.includes(c)) opts.push(c);
+  const o = shuffle(opts);
+  return { drill: 'Combinatorics', spot: CB_TYPES[type], hand: names(q.hero) + (q.board.length ? ' | ' + names(q.board) : ''),
+    prompt: `${q.hero.length ? `<div class="hands">${lnHandBox('You', q.hero)}${q.board.length ? lnHandBox('Board', q.board) : ''}</div>` : ''}<p class="spot-text">${q.q}</p>`,
+    opts: o.map(x => x + (pc ? '%' : '')), correct: o.indexOf(a), short: CB_TYPES[type], explain: q.why };
+}
+function lnRVB(lvl) {
+  const r = pick([['cash-btn-open|0', 'button open'], ['cash-bb-vs-btn-open|1', 'big blind call vs a button open'], ['cash-co-open|0', 'cutoff open'], ['cash-bb-vs-co-open|1', 'big blind call vs a cutoff open'], ['cash-utg-open|0', 'UTG open']]);
+  const board = shuffled().slice(0, 3), A = rvbAnalyze(presetRange(r[0]), board), actual = A.tpplus / A.n, v = lnRound5(actual), { opts, correct } = lnPctOpts(v, lvl);
+  return { drill: 'Range vs board', spot: texture(board).replace(/^\S+ /, ''), hand: names(board),
+    prompt: `<div class="hands">${lnHandBox('Flop', board)}</div><p class="spot-text">How often does a <b>${r[1]}</b> range have <b>top pair or better</b> on this flop?</p>`,
+    opts: opts.map(o => o + '%'), correct, short: `${r[1]} on ${names(board)}`,
+    explain: `${pct(actual)} of the live combos (${A.tpplus} of ${A.n}) have top pair or better; ${pct(A.strong / A.n)} have two pair or better. High cards connect with opening ranges; low, connected boards hit calling ranges more.` };
+}
+function lnHVR(lvl) {
+  const g = mode === 'cash' ? 'cash' : 'tour', spots = SPOTS.filter(s => s.game === g); let s, act, labels;
+  for (let t = 0; t < 30; t++) { s = pick(spots); const acts = s.acts.filter((a, i) => i !== s.fold); act = acts.length > 1 ? pick(acts) : null; labels = eqSpotLabels(s.id, act); if (labels.reduce((a, l) => a + combosOf(l), 0) >= 40) break; }
+  const street = lvl === 1 ? 0 : lvl === 2 ? (Math.random() < .5 ? 0 : 3) : 3; let hero, board, combos;
+  for (let t = 0; t < 50; t++) { const d = shuffled(); hero = d.slice(0, 2); board = d.slice(2, 2 + street); const dead = new Set([...hero, ...board]);
+    combos = labels.flatMap(labelCombos).filter(c => !dead.has(c[0]) && !dead.has(c[1])); if (combos.length >= 20) break; }
+  const eq = equityVsRange(hero, combos, board, street ? 3000 : 5000).eq, v = lnRound5(eq), { opts, correct } = lnPctOpts(v, lvl);
+  return { drill: 'Hand vs range', spot: street ? 'Flop' : 'Preflop', hand: names(hero),
+    prompt: `<div class="hands">${lnHandBox('You', hero)}${board.length ? lnHandBox('Flop', board) : ''}</div><p class="spot-text">Villain's range: <b>${esc(eqRangeName(s.id, act))}</b>. Your equity against the <b>whole range</b> is closest to:</p><details class="ln-range"><summary class="small">See the range</summary>${eqGrid(labels)}</details>`,
+    opts: opts.map(o => o + '%'), correct, short: `${names(hero)}${board.length ? ' on ' + names(board) : ''} vs ${eqRangeName(s.id, act)}`,
+    explain: `Against all ${combos.length} live combos you have <b>${pct(eq)}</b>. Think in parts: which hands in the range you beat, which you flip with, and which crush you, weighted by how many combos each has.` };
+}
+/* ---------- Flop play ---------- */
+function lnTX(k) {
+  return lvl => {
+    let t, S;
+    for (let i = 0; i < 8; i++) { t = txMake(); S = txSolve(t, 5000);
+      const edge = k === 'range' ? Math.min(Math.abs(S.eq - .53), Math.abs(S.eq - .47)) : k === 'nuts' ? Math.abs(S.sP - S.sC) : 1;
+      if (lvl === 1 ? edge >= .03 || k === 'plan' && S.range !== 'even' : lvl === 3 ? edge < .03 || k === 'plan' && S.range === 'even' : true) break; }
+    const seats = {}; POS.forEach(p => seats[p] = { state: 'folded', bet: '', tag: '', stack: '' });
+    seats[t.P] = { state: 'hero', tag: 'Raiser', stack: '', bet: '' }; seats[t.C] = { state: 'vil', tag: 'Caller', stack: '', bet: '' };
+    const Q = TX_Q[k], ans = S.right[k], why = txWhy(S)[k];
+    return { drill: 'Board texture', spot: Q.label, hand: names(t.board), visual: tableSnap({ hero: t.P, seats, center: `<div class="cards">${cardsHTML(t.board, 'xs')}</div><b>${fmtBB(t.sc.pot)} BB</b><span>${t.sc.three ? '3-bet pot' : 'Flop pot'}</span>` }),
+      prompt: `<p class="spot-text"><b>${t.sc.name}.</b> ${S.T.word[0].toUpperCase() + S.T.word.slice(1)} flop. ${Q.q}</p>`,
+      opts: Q.opts.map(o => o[1]), correct: Q.opts.findIndex(o => o[0] === ans), short: `${t.sc.name}, ${names(t.board)}`, explain: why };
+  };
+}
+/* ---------- Bigger pots ---------- */
+function lnPT(kinds) {
+  return lvl => {
+    const q = PT_GEN[pick(kinds)]();
+    let opts, correct;
+    if (q.slider) { const v = lnRound5(q.answer); ({ opts, correct } = lnPctOpts(v, lvl)); opts = opts.map(o => o + '%'); } else { opts = q.opts; correct = q.correct; }
+    return { drill: '3-bet & multiway', spot: PT_KINDS[q.kind].label, hand: q.label || (q.hero ? names(q.hero) : ''), visual: q.table ? tableSnap(q.table) : '',
+      prompt: `<div class="spot-text">${q.prompt}</div>`, opts, correct, short: PT_KINDS[q.kind].label, explain: q.why };
+  };
+}
+/* ---------- Exploits ---------- */
+const LN_XP_EASY = ['Tight passive (nit)', 'Loose passive (calling station)', 'Maniac'];
+function lnXP(fams) {
+  return lvl => {
+    let q;
+    for (let i = 0; i < 30; i++) { const style = pick(lvl === 1 ? LN_XP_EASY : Object.keys(XP_TYPES)); q = xpMake(style, null, pick(fams));
+      const ev = Object.values(q.ev).sort((a, b) => b - a), gap = ev[0] - ev[1];
+      if (lvl === 1 ? gap > .1 * q.P : lvl === 3 ? gap > .25 && gap < Math.max(1, .1 * q.P) : gap > .25) break; }
+    const seats = {}; POS.forEach(p => seats[p] = { state: 'folded', bet: '', tag: '', stack: '' });
+    seats.BTN = { state: 'hero', tag: 'You', stack: '', bet: '' }; seats.BB = { state: 'vil', tag: q.style.split(' (')[0].slice(0, 12), stack: '', bet: q.fam === 'catch' ? fmtBB(q.b) + ' BB' : '' };
+    const keys = q.opts.map(o => o[0]), r1 = x => fmtBB(Math.round(x * 10) / 10);
+    return { drill: 'Exploit', spot: `${XP_FAM[q.fam]} vs ${q.style}`, hand: names(q.hero),
+      visual: tableSnap({ hero: 'BTN', seats, heroCards: q.hero, center: `<div class="cards">${cardsHTML(q.board, 'xs')}</div><b>${fmtBB(q.P)} BB</b><span>pot</span>` }),
+      prompt: `<p class="spot-text"><b>Opponent:</b> ${q.style.toLowerCase()}, who ${q.T.blurb.replace(/\.?$/, '.')}</p><p class="spot-text">${q.text}</p>`,
+      opts: q.opts.map(o => o[1]), correct: keys.indexOf(q.best), okIdx: keys.map((k, i) => Math.abs(q.ev[k] - q.ev[q.best]) < .25 ? i : -1).filter(i => i >= 0),
+      short: `${XP_FAM[q.fam]} vs ${q.style}`,
+      explain: `Expected value against this player: ${q.opts.map(([k, t]) => `${t.replace(/ \(.*\)/, '')} <b>${r1(q.ev[k])} BB</b>`).join(', ')}. ${q.balanced}` };
+  };
+}
+/* ---------- Tournaments: ICM ---------- */
+function lnICM(lvl) {
+  const n = lvl === 1 ? 3 : lvl === 2 ? pick([3, 4]) : pick([4, 5]), pay = { 3: ['50/30/20', '65/35'], 4: ['40/30/20/10', '45/27/18/10', '50/30/20'], 5: ['35/25/18/12/10', '40/30/20/10'] }[n];
+  const pk = pick(pay), prizes = ICM_PAY[pk], stacks = Array.from({ length: n }, () => (2 + Math.floor(Math.random() * 37)) * 500), tot = stacks.reduce((a, b) => a + b, 0);
+  const eq = icmEquity(stacks, prizes)[0], chip = stacks[0] / tot * 100, v = Math.round(eq);
+  const cands = [Math.round(chip), v + 4, v - 4, v + 7, v - 7, v + 2, v - 2].filter(x => x > 0 && x < 100 && Math.abs(x - v) >= (lvl === 3 ? 2 : 3));
+  const { opts, correct } = numOpts(v, cands);
+  return { drill: 'ICM', spot: `${n} left, ${pk}`, hand: stacks.join('/'),
+    prompt: `<p class="spot-text"><b>${n} players left</b>, payouts ${pk} (% of the prize pool). Stacks: <b>you ${stacks[0].toLocaleString()}</b>, ${stacks.slice(1).map(x => x.toLocaleString()).join(', ')}. What share of the prize pool are your chips worth?</p>`,
+    opts: opts.map(o => o + '%'), correct, short: `${n} left, stacks ${stacks.join('/')}`,
+    explain: `ICM says <b>${eq.toFixed(1)}%</b>. Your share of the chips is ${chip.toFixed(1)}%, but chips aren't money: ${eq < chip ? 'a big stack is worth less than its chip share, because first place pays a capped amount' : 'a short stack is worth more than its chip share, because you already have a shot at the paid places'}.` };
+}
 /* a checkpoint mixes every lesson in its unit, at the checkpoint's level */
 function lnMix(unitId) { return lvl => { const u = LN_UNITS.find(x => x.id === unitId); return pick(u.lessons.filter(l => !l.check)).gen(lvl); }; }
 
 /* ---------- the path ---------- */
 const LN_UNITS = [
   { id: 'basics', name: 'Basics', blurb: 'Hand rankings, showdowns and seats.', lessons: [
-    { id: 'ranks', name: 'Hand rankings', icon: '♛', gen: lnRankings,
+    { id: 'ranks', name: 'Hand rankings', icon: '♛', d: 'Hand rankings', gen: lnRankings,
       intro: `<p>Every poker hand is the <b>best five cards</b> a player can make. From strongest to weakest:</p><ol class="ln-ranks"><li><b>Straight flush</b> five in a row, same suit</li><li><b>Four of a kind</b></li><li><b>Full house</b> three of a kind plus a pair</li><li><b>Flush</b> five of one suit</li><li><b>Straight</b> five in a row (A-2-3-4-5 counts)</li><li><b>Three of a kind</b></li><li><b>Two pair</b></li><li><b>One pair</b></li><li><b>High card</b></li></ol><p>The two most mixed up: a <b>flush beats a straight</b>, and a <b>full house beats a flush</b>.</p>` },
-    { id: 'showdown', name: 'Which hand wins', icon: '⚖', gen: lnShowdown,
+    { id: 'showdown', name: 'Which hand wins', icon: '⚖', d: 'Which hand wins', gen: lnShowdown,
       intro: `<p>At showdown each player makes the best five cards out of their two cards and the five on the board.</p><ul><li>You can use both, one, or none of your hole cards.</li><li>Same hand type? Compare the cards that make it, then the <b>kickers</b> (the other cards), highest first.</li><li>If the best five cards match in rank, the pot is <b>split</b>. Suits never break a tie.</li></ul>` },
-    { id: 'seats', name: 'Positions', icon: '◉', gen: lnPositions,
+    { id: 'seats', name: 'Positions', icon: '◉', d: 'Positions', gen: lnPositions,
       intro: `<p>Six seats, clockwise from the first to act: <b>UTG</b> (under the gun), <b>HJ</b> (hijack), <b>CO</b> (cutoff), <b>BTN</b> (button), <b>SB</b> and <b>BB</b> (the blinds).</p><ul><li><b>Before the flop</b> the blinds have posted, so UTG acts first and the big blind last.</li><li><b>After the flop</b> the small blind acts first and the <b>button always acts last</b>.</li><li>Acting after your opponent is being <b>in position</b>. You see what they do before you decide.</li></ul>` },
-    { id: 'namehand', name: 'Name your hand', icon: '?', gen: lnNameHand,
+    { id: 'namehand', name: 'Name your hand', icon: '?', d: 'Name your hand', gen: lnNameHand,
       intro: `<p>Before you can bet well you need to know what you have.</p><ul><li>Combine your two cards with the board and find the best five.</li><li>Check for flushes and straights first; they hide easily.</li><li>A paired board can give you two pair or a full house without your cards helping. If the board alone is your best hand, "the board plays".</li></ul><p class="small">Level 1 uses the flop, level 2 the turn, level 3 the river.</p>` },
     { id: 'basics-check', name: 'Checkpoint', check: true, gen: lnMix('basics'), intro: `<p>A mix of everything in this unit. Score 10 out of 12 to unlock <b>Preflop basics</b>.</p>` },
   ] },
   { id: 'preflop', name: 'Preflop basics', blurb: 'Which hands to play from each seat.', lessons: [
-    { id: 'pf-late', name: 'Opening late', icon: '♠', gen: lnPF(/-(co|btn)-open/),
+    { id: 'pf-late', name: 'Opening late', icon: '♠', d: 'Preflop', gen: lnPF(/-(co|btn)-open/),
       intro: `<p>When everyone folds to you on the <b>cutoff</b> or <b>button</b>, open-raise a wide range.</p><ul><li>Only a few players are left behind you, so a strong hand is less likely to wake up.</li><li>You'll play the rest of the hand <b>in position</b>, acting last on every street.</li><li>Raise or fold. Don't just call (limp) when you're first in.</li></ul>` },
-    { id: 'pf-early', name: 'Opening early', icon: '♣', gen: lnPF(/-(utg|hj|sb)-open/),
+    { id: 'pf-early', name: 'Opening early', icon: '♣', d: 'Preflop', gen: lnPF(/-(utg|hj|sb)-open/),
       intro: `<p>From <b>UTG</b> and the <b>hijack</b>, many players still act after you, so open a much <b>tighter</b> range: big pairs, strong aces and suited broadways.</p><ul><li>The small blind is a special case: only the big blind is left, but you'll be <b>out of position</b> after the flop.</li><li>Answer with the chart for the game shown, cash or tournament.</li></ul>` },
-    { id: 'pf-bb', name: 'Defending the big blind', icon: '♥', gen: lnPF(/-bb-vs-[a-z]+-open/),
+    { id: 'pf-bb', name: 'Defending the big blind', icon: '♥', d: 'Preflop', gen: lnPF(/-bb-vs-[a-z]+-open/),
       intro: `<p>In the big blind you already have 1 BB in the pot, so calling a raise is <b>cheap</b>. You defend wider than anyone else at the table.</p><ul><li>The later the raiser's seat, the wider their range, and the wider you defend.</li><li>3-bet your strongest hands and a few good bluffs; call with hands that play well.</li></ul>` },
-    { id: 'pf-face', name: 'Facing a raise', icon: '♦', gen: lnPF(/-(co|btn|sb)-vs-[a-z]+-open/),
+    { id: 'pf-face', name: 'Facing a raise', icon: '♦', d: 'Preflop', gen: lnPF(/-(co|btn|sb)-vs-[a-z]+-open/),
       intro: `<p>When someone has already raised, <b>tighten up</b>. Their range is stronger than a random hand.</p><ul><li>3-bet strong hands for value, plus some bluffs with blockers (like suited aces).</li><li>Call with hands that play well in position. Fold the rest.</li><li>From the small blind, most charts 3-bet or fold, since calling leaves you out of position.</li></ul>` },
     { id: 'pf-check', name: 'Checkpoint', check: true, gen: lnMix('preflop'), intro: `<p>A mix of everything in this unit. Score 10 out of 12 to unlock <b>The price of a call</b>.</p>` },
   ] },
   { id: 'price', name: 'The price of a call', blurb: 'Pot odds, outs and quick equity math.', lessons: [
-    { id: 'po-easy', name: 'Pot odds', icon: '%', gen: lnPO([[.5, 1], [.33, .5, 1], [.33, .5, 1]]),
+    { id: 'po-easy', name: 'Pot odds', icon: '%', d: 'Pot odds', gen: lnPO([[.5, 1], [.33, .5, 1], [.33, .5, 1]]),
       intro: `<p>Pot odds tell you how often you need to win to call.</p><p class="mono-ex">equity needed = your call ÷ (pot + bet + your call)</p><ul><li>Half pot → <b>25%</b></li><li>Pot-size bet → <b>33%</b></li><li>A third of the pot → <b>20%</b></li></ul><p>Memorize these three; most bets are close to one of them.</p>` },
-    { id: 'po-any', name: 'Any bet size', icon: '÷', gen: lnPO([FRACS, FRACS, FRACS]),
+    { id: 'po-any', name: 'Any bet size', icon: '÷', d: 'Pot odds', gen: lnPO([FRACS, FRACS, FRACS]),
       intro: `<p>Same formula, every bet size, from a quarter pot up to twice the pot.</p><ul><li>Bigger bets need more equity: ¾ pot → 30%, 2× pot → 40%.</li><li>The most common slip is dividing by the pot <i>before</i> your call. Your call is part of what you win back.</li><li>On level 3 the bet's share of the pot isn't shown, and the choices are close together.</li></ul>` },
-    { id: 'outs', name: 'Counting outs', icon: '+', gen: lnOuts,
+    { id: 'outs', name: 'Counting outs', icon: '+', d: 'Counting outs', gen: lnOuts,
       intro: `<p>An <b>out</b> is a card that puts you ahead.</p><ul><li>Flush draw: 9 outs. Open-ended straight draw: 8. Gutshot: 4.</li><li>Two overcards to a pair: about 6.</li><li>Don't count cards that also improve your opponent.</li></ul>` },
-    { id: 'rule24', name: 'Rule of 2 and 4', icon: '×', gen: lnRule,
+    { id: 'rule24', name: 'Rule of 2 and 4', icon: '×', d: 'Rule of 2 and 4', gen: lnRule,
       intro: `<p>A quick way to turn outs into equity:</p><ul><li><b>One card to come</b> (turn to river): outs × 2.</li><li><b>Two cards to come</b> (all in on the flop): outs × 4.</li></ul><p>9 outs on the turn ≈ 18%. 9 outs all in on the flop ≈ 36%.</p>` },
     { id: 'price-check', name: 'Checkpoint', check: true, gen: lnMix('price'), intro: `<p>Pot odds, outs and the rule of 2 and 4 together. Score 10 out of 12 to unlock <b>Making decisions</b>.</p>` },
   ] },
   { id: 'decide', name: 'Making decisions', blurb: 'Put the price and your equity together.', lessons: [
-    { id: 'matchups', name: 'Preflop matchups', icon: '⚔', gen: lnMatch,
+    { id: 'matchups', name: 'Preflop matchups', icon: '⚔', d: 'Matchups', gen: lnMatch,
       intro: `<p>A handful of matchups cover most all-in hands:</p><ul><li>Higher pair vs lower pair: about <b>80/20</b>.</li><li>Pair vs two higher cards: a coin flip, about <b>55/45</b>.</li><li>Two higher cards vs two lower: about <b>65/35</b>.</li><li>Dominated (sharing a card, like AK vs AQ): about <b>70/30</b>.</li></ul>` },
-    { id: 'callfold', name: 'Call or fold', icon: '✓', gen: lnCF,
+    { id: 'callfold', name: 'Call or fold', icon: '✓', d: 'Call or fold', gen: lnCF,
       intro: `<p>Now combine it all. Work out the price (pot odds), estimate your equity (outs and the rule of 2 and 4), then compare.</p><ul><li>Equity higher than the price: <b>call</b>.</li><li>Equity lower: <b>fold</b>.</li><li>You get a read on villain's hand instead of seeing their cards.</li></ul>` },
-    { id: 'decide-check', name: 'Checkpoint', check: true, gen: lnMix('decide'), intro: `<p>Matchups and call-or-fold decisions. Score 10 out of 12 to finish this part of the path.</p>` },
+    { id: 'decide-check', name: 'Checkpoint', check: true, gen: lnMix('decide'), intro: `<p>Matchups and call-or-fold decisions. Score 10 out of 12 to unlock <b>Reading ranges</b>.</p>` },
+  ] },
+  { id: 'ranges', name: 'Reading ranges', blurb: 'Combos, and how ranges hit boards.', lessons: [
+    { id: 'combos', name: 'Combinatorics', icon: '#', d: 'Combinatorics', gen: lnCB,
+      intro: `<p>Ranges are made of <b>combos</b>, the exact two-card hands.</p><ul><li>Pocket pair: <b>6</b> combos. Suited hand: <b>4</b>. Offsuit hand: <b>12</b>.</li><li>Cards you can see remove combos: if an ace is on the board, AA has 3 combos left and AK has 12 − 3 = 9… minus any you hold.</li><li>Counting combos tells you how often a range is value vs a bluff.</li></ul>` },
+    { id: 'rvb', name: 'Range vs board', icon: '▦', d: 'Range vs board', gen: lnRVB,
+      intro: `<p>A range doesn't hit a flop the way one hand does. Ask what share of the whole range has <b>top pair or better</b>.</p><ul><li>Opening ranges are full of high cards, so A- and K-high flops hit them often.</li><li>Big-blind calling ranges have more small suited and connected hands, so low, connected flops hit them more.</li><li>Most flops miss most hands: often only 25–40% of a range has top pair or better.</li></ul>` },
+    { id: 'hvr', name: 'Hand vs range', icon: '◐', d: 'Hand vs range', gen: lnHVR,
+      intro: `<p>Your equity against a range is the average over every combo in it, weighted by how many combos each hand has.</p><ul><li>Split the range: hands you beat, coin flips, and hands that crush you.</li><li>Big pairs do well against wide ranges and worse against tight 3-bet ranges.</li><li>Level 1 is preflop; levels 2 and 3 add the flop.</li></ul>` },
+    { id: 'ranges-check', name: 'Checkpoint', check: true, gen: lnMix('ranges'), intro: `<p>Combos, range vs board and hand vs range. Score 10 out of 12 to unlock <b>Flop play</b>.</p>` },
+  ] },
+  { id: 'flop', name: 'Flop play', blurb: 'Who the flop favors, and how to c-bet.', lessons: [
+    { id: 'tx-range', name: 'Range advantage', icon: '⇅', d: 'Board texture', gen: lnTX('range'),
+      intro: `<p><b>Range advantage</b>: whose whole range has more equity on this flop.</p><ul><li>The preflop raiser usually has it on high-card flops (A, K, Q high).</li><li>The caller catches up on low, connected flops.</li><li>Close to 50/50 counts as <b>about even</b>.</li></ul>` },
+    { id: 'tx-nuts', name: 'Nut advantage', icon: '♛', d: 'Board texture', gen: lnTX('nuts'),
+      intro: `<p><b>Nut advantage</b>: who has more of the very strongest hands, two pair or better.</p><ul><li>Sets and two pair come from the hands each player kept preflop.</li><li>Big-blind callers often have more low two-pair and straight combos.</li><li>A nut advantage lets you bet bigger.</li></ul>` },
+    { id: 'tx-plan', name: 'C-bet plan', icon: '➚', d: 'Board texture', gen: lnTX('plan'),
+      intro: `<p>Put the two advantages together:</p><ul><li>Range edge, no nut gap against you, dry board: <b>bet small, often</b>.</li><li>Range and nut edge on a wet board: <b>bet big</b>, less often.</li><li>The caller has the edge, or nobody does: <b>check a lot</b>.</li></ul>` },
+    { id: 'sizing', name: 'Bet sizing', icon: '⚖', d: 'Bet sizing', gen: () => { const q = QGEN['Bet sizing'](); q.prompt = q.prompt.replace(/ ?<span class="small muted">\(.*?\)<\/span>/, ''); return q; },
+      intro: `<p>Pick a bet size from your hand, the board, and what you want called by.</p><ul><li>Strong hands on wet boards: bet bigger to charge draws.</li><li>Thin value: smaller, so worse hands can call.</li><li>Some spots have more than one good answer; those count as right too.</li></ul>` },
+    { id: 'flop-check', name: 'Checkpoint', check: true, gen: lnMix('flop'), intro: `<p>Advantages, c-bet plans and sizing. Score 10 out of 12 to unlock <b>Bigger pots</b>.</p>` },
+  ] },
+  { id: 'pots', name: 'Bigger pots', blurb: '3-bet pots and pots with three or more players.', lessons: [
+    { id: 'pt-size', name: '3-bet sizing', icon: '3', d: '3-bet & multiway', gen: lnPT(['size']),
+      intro: `<p>A standard 3-bet is about <b>3× the open in position</b> and <b>4× out of position</b>, plus one more open size for each caller.</p><ul><li>Out of position you make it bigger so you play a smaller stack-to-pot ratio.</li></ul>` },
+    { id: 'pt-face', name: 'Facing a 3-bet', icon: '↺', d: '3-bet & multiway', gen: lnPT(['face']),
+      intro: `<p>When your open gets 3-bet, continue with the top of your range.</p><ul><li>4-bet the strongest hands and a few blockers.</li><li>Call with hands that play well in position.</li><li>Fold most of the bottom of your opening range.</li></ul>` },
+    { id: 'pt-spr', name: 'Stack-to-pot ratio', icon: 'SPR', d: '3-bet & multiway', gen: lnPT(['spr']),
+      intro: `<p><b>SPR</b> = effective stack ÷ pot on the flop.</p><ul><li>Under 3: top pair is usually good enough to get all in.</li><li>Over 6: you need stronger hands to stack off.</li><li>3-bet pots have low SPRs, so commitment comes fast.</li></ul>` },
+    { id: 'pt-multi', name: 'Multiway pots', icon: '⋔', d: '3-bet & multiway', gen: lnPT(['multieq', 'someone']),
+      intro: `<p>Every extra player cuts your equity and raises the chance someone has a strong hand.</p><ul><li>Top pair is much weaker three-way than heads up.</li><li>Bluff less and value-bet tighter in multiway pots.</li></ul>` },
+    { id: 'pots-check', name: 'Checkpoint', check: true, gen: lnMix('pots'), intro: `<p>3-bet pots and multiway pots. Score 10 out of 12 to unlock <b>Exploits</b>.</p>` },
+  ] },
+  { id: 'exploit', name: 'Exploits', blurb: 'Adjust to the player in front of you.', lessons: [
+    { id: 'xp-catch', name: 'Bluff-catching', icon: '🛡', d: 'Exploit', gen: lnXP(['catch']),
+      intro: `<p>With a bluff-catcher, you call when they bluff often enough to beat the price.</p><ul><li>Call more against maniacs and aggressive players.</li><li>Fold more against nits and passive players: their big bets are rarely bluffs.</li></ul>` },
+    { id: 'xp-river', name: 'River value and bluffs', icon: '🎯', d: 'Exploit', gen: lnXP(['thin', 'bluff']),
+      intro: `<p>On the river, bet for value when worse hands call, and bluff when better hands fold.</p><ul><li>Calling stations: value-bet thinner, never bluff.</li><li>Nits: bluff more, value-bet only strong hands.</li></ul>` },
+    { id: 'xp-cbet', name: 'C-bets by player', icon: '➚', d: 'Exploit', gen: lnXP(['cbet']),
+      intro: `<p>A c-bet with nothing works when the player folds enough.</p><ul><li>Nits and tight players fold a lot: c-bet more.</li><li>Stations rarely fold: check and take your equity.</li></ul>` },
+    { id: 'exploit-check', name: 'Checkpoint', check: true, gen: lnMix('exploit'), intro: `<p>Exploits across player types. Score 10 out of 12 to unlock <b>Tournaments</b>.</p>` },
+  ] },
+  { id: 'tourney', name: 'Tournaments', blurb: 'Short stacks, shoves and ICM.', lessons: [
+    { id: 'tr-shove', name: 'Open shoving', icon: '⇪', d: 'Preflop', gen: lnPF(/^tour-[a-z]+-shove-/, 'tour'),
+      intro: `<p>With about 15 BB or less, raising and folding to a shove wastes chips. Move <b>all in</b> or fold.</p><ul><li>The fewer players behind you and the shorter your stack, the wider you shove.</li><li>Answers use the tournament push/fold charts.</li></ul>` },
+    { id: 'tr-call', name: 'Calling a shove', icon: '✓', d: 'Preflop', gen: lnPF(/^tour-[a-z]+-vs-[a-z]+-shove-/, 'tour'),
+      intro: `<p>Calling a shove needs a stronger hand than shoving does, because you can't win by making them fold.</p><ul><li>Wider against late-position and short-stack shoves.</li><li>Pot odds help: in the big blind you've already put 1 BB in.</li></ul>` },
+    { id: 'tr-reshove', name: 'Re-shoving', icon: '↻', d: 'Preflop', gen: lnPF(/re-shove/, 'tour'),
+      intro: `<p>With about 20 BB, re-shoving over a late-position open puts maximum pressure on a wide range.</p><ul><li>Good re-shoves have blockers or play well when called: suited aces, pairs, broadways.</li></ul>` },
+    { id: 'tr-icm', name: 'ICM', icon: '$', d: 'ICM', gen: lnICM,
+      intro: `<p>Near the money, chips aren't worth their face value. <b>ICM</b> (the independent chip model) turns stacks into shares of the prize pool.</p><ul><li>Big stacks are worth <b>less</b> than their chip share; short stacks <b>more</b>.</li><li>That's why you call shoves tighter near the bubble.</li></ul>` },
+    { id: 'tourney-check', name: 'Checkpoint', check: true, gen: lnMix('tourney'), intro: `<p>Push/fold and ICM. Score 10 out of 12 to finish this part of the path.</p>` },
   ] },
 ];
-const LN_SOON = [['Reading ranges', 'Combos, hand vs range, range vs range'], ['Flop play', 'Board texture, c-bets, value and bluffs'], ['Reading hands', 'Narrowing ranges street by street'],
-  ['Bigger pots', '3-bet and multiway pots'], ['Exploits', 'Adjusting to nits, stations and maniacs'], ['Tournaments', 'Push/fold and ICM'], ['Capstone', 'Playing full hands']];
+const LN_SOON = [['Reading hands', 'Narrowing a range street by street'], ['Capstone', 'Playing full hands against every player type']];
 const LN_ALL = LN_UNITS.flatMap((u, ui) => u.lessons.map((l, li) => ({ ...l, unit: u, ui, li })));
 const lnById = id => LN_ALL.find(l => l.id === id);
 
@@ -277,6 +421,22 @@ function lnStreak() {
 }
 function lnAddChips(x) { ln.xp = Math.max(0, ln.xp + x); ln.peak = Math.max(ln.peak, ln.xp); }
 
+/* ---------- reviews: passed lessons come back after 1, 3, 7, 14, 30 and 60 days ---------- */
+const lnMaxLv = l => [3, 2, 1].find(k => lnLvPassed(l, k)) || 1;
+function lnDueAt(l) { const r = ln.lessons[l.id] || {}; return r.due ?? ((r.last || (ln.pre && ln.pre.ts) || Date.now()) + (r.placed && !r.last ? 7 : 1) * LN_DAY); }
+const lnDue = () => LN_ALL.filter(l => !l.check && lnPassed(l) && lnDueAt(l) <= Date.now());
+function lnSchedule(r, step) { r.rv = Math.max(0, Math.min(LN_RV.length - 1, step)); r.due = Date.now() + LN_RV[r.rv] * LN_DAY; }
+/* ---------- weak spots: the areas with the lowest accuracy in your recent answers (lessons and trainers) ---------- */
+function lnWeak() {
+  const rows = historyRows().slice(-1500), out = [];
+  const byDrill = {}; for (const l of LN_ALL) if (l.d && !l.check && lnOpen(l)) (byDrill[l.d] = byDrill[l.d] || []).push(l);
+  for (const [d, ls] of Object.entries(byDrill)) {
+    const xs = rows.filter(r => r.drill === d && cv(r.correct) !== null); if (xs.length < 6) continue;
+    const acc = xs.filter(r => cv(r.correct)).length / xs.length; if (acc < .85) out.push({ d, acc, n: xs.length, ls });
+  }
+  return out.sort((a, b) => a.acc - b.acc).slice(0, 3);
+}
+
 /* ---------- chip stacks: the stack grows with right answers and shrinks with wrong ones ---------- */
 const LN_DENOM = [[1000, '#C99A2E', '#F3D98B'], [500, '#6B3FA0', '#C9B3E6'], [100, '#1E1E24', '#9A9AA6'], [25, '#1F7A4D', '#BFE3CF'], [5, '#B8322A', '#F2C4BF'], [1, '#EDE7D9', '#2B4F86']];
 function lnStacks(xp, h = 120) {
@@ -305,13 +465,25 @@ function lnRankCard(compact) {
   </div>`;
 }
 function lnMini() {
-  const box = $('hm-learn'); if (!box) return; const nx = lnNext();
-  box.innerHTML = `${lnRankCard(true)}<div class="row">${nx ? `<button class="act" type="button" data-ln-go="${nx.id}">${LN_ALL.some(lnPassed) ? 'Continue' : 'Start'}: ${esc(nx.unit.name)} · ${esc(nx.name)}</button>` : '<span class="small">Every lesson in the path is passed. Go for three stars, or wait for new units.</span>'}<a class="linkbtn" href="#learn">Learning dashboard</a></div>`;
+  const box = $('hm-learn'); if (!box) return; const nx = lnNext(), due = lnDue().length;
+  box.innerHTML = `${lnRankCard(true)}<div class="row">${nx ? `<button class="act" type="button" data-ln-go="${nx.id}">${LN_ALL.some(lnPassed) ? 'Continue' : 'Start'}: ${esc(nx.unit.name)} · ${esc(nx.name)}</button>` : '<span class="small">Every lesson in the path is passed. Go for three stars, or wait for new units.</span>'}${due ? `<button class="act ghost" type="button" data-ln-review>🔁 Review ${due} due</button>` : ''}<a class="linkbtn" href="#learn">Learning dashboard</a></div>`;
+}
+function lnPracticeCards() {
+  const due = lnDue(), weak = lnWeak(), soon = LN_ALL.filter(l => !l.check && lnPassed(l)).map(l => lnDueAt(l)).sort((a, b) => a - b)[0];
+  const when = t => { const d = Math.ceil((t - Date.now()) / LN_DAY); return d <= 1 ? 'tomorrow' : `in ${d} days`; };
+  return `<div class="ln-practice">
+    <section class="panel ln-pc"><span class="eyebrow">🔁 Review</span><h3>${due.length ? `${due.length} lesson${due.length > 1 ? 's' : ''} due` : 'Nothing due'}</h3>
+      <p class="small">${due.length ? esc(due.slice(0, 4).map(l => l.name).join(', ')) + (due.length > 4 ? '…' : '') : soon ? `Next review ${when(soon)}. Lessons come back after 1, 3, 7, 14, 30 and 60 days.` : 'Pass a lesson and it comes back for review tomorrow, then at longer gaps.'}</p>
+      <div class="row"><button class="act${due.length ? '' : ' ghost'}" type="button" data-ln-review${due.length ? '' : ' disabled'}>Review now</button></div></section>
+    <section class="panel ln-pc"><span class="eyebrow">🎯 Weak spots</span><h3>${weak.length ? 'Practice your weakest areas' : 'No weak spots found'}</h3>
+      <p class="small">${weak.length ? weak.map(w => `${esc(w.d)} <b>${pct(w.acc, 0)}</b>`).join(' · ') : 'Uses your last 1,500 answers from lessons and trainers. Areas under 85% with at least 6 answers show up here.'}</p>
+      <div class="row"><button class="act${weak.length ? '' : ' ghost'}" type="button" data-ln-weak${weak.length ? '' : ' disabled'}>Practice</button></div></section>
+  </div>`;
 }
 function lnRender() {
   lnMini(); if (lnPlay) return lnShowPlay();
   $('ln-play').hidden = true; $('ln-dash').hidden = false;
-  const nx = lnNext(), qs = ln.n, acc = qs ? ln.c / qs : 0, any = LN_ALL.some(lnPassed), stars = LN_ALL.reduce((a, l) => a + lnStars(l), 0);
+  const nx = lnNext(), qs = ln.n, acc = qs ? ln.c / qs : 0, any = LN_ALL.some(lnPassed), stars = LN_ALL.reduce((a, l) => a + lnStars(l), 0), dueSet = new Set(lnDue().map(l => l.id));
   $('ln-dash').innerHTML = `
   <section class="hero ln-hero">${lnRankCard(false)}
     <div class="row">${nx ? `<button class="act" type="button" data-ln-go="${nx.id}">${any ? 'Continue' : 'Start'}: ${esc(nx.name)}</button>` : ''}
@@ -324,46 +496,59 @@ function lnRender() {
     <div class="stat"><div class="n">${qs ? pct(acc, 0) : '–'}</div><span class="small muted">lesson accuracy</span></div>
     <div class="stat"><div class="n">${lnStreak()}</div><span class="small muted">day streak</span></div>
   </div>
+  ${any ? lnPracticeCards() : ''}
   <div class="ln-path">${LN_UNITS.map((u, ui) => { const p = u.lessons.filter(l => lnPassed(LN_ALL.find(x => x.id === l.id))).length;
     return `<section class="panel ln-unit" aria-labelledby="ln-u-${u.id}">
       <div class="ln-unit-h"><div><span class="eyebrow">Unit ${ui + 1}</span><h2 id="ln-u-${u.id}">${u.name}</h2><p class="small muted">${u.blurb}</p></div>
         <span class="chip ${p === u.lessons.length ? 'good' : p ? 'ok' : 'new'}">${p}/${u.lessons.length}</span></div>
-      <div class="ln-nodes">${u.lessons.map((l0, li) => { const l = LN_ALL.find(x => x.id === l0.id), pa = lnPassed(l), o = lnOpen(l), r = ln.lessons[l.id], cur = nx && nx.id === l.id;
-        return `<button type="button" class="ln-node${pa ? ' passed' : o ? ' open' : ' locked'}${cur ? ' current' : ''}${l.check ? ' check' : ''}${lnStars(l) === 3 ? ' gold' : ''}" data-ln-go="${l.id}" style="--off:${[0, 1, 0, -1][li % 4]}" aria-label="${esc(l.name)}${pa ? `, passed, ${lnStars(l)} of 3 stars` : o ? ', open' : ', locked'}">
-          <span class="ln-dot">${pa ? (lnStars(l) === 3 ? '♛' : '✓') : o ? (l.check ? '🏁' : l.icon) : '🔒'}</span><span class="ln-name">${l.name}</span>
+      <div class="ln-nodes">${u.lessons.map((l0, li) => { const l = LN_ALL.find(x => x.id === l0.id), pa = lnPassed(l), o = lnOpen(l), r = ln.lessons[l.id], cur = nx && nx.id === l.id, due = dueSet.has(l.id);
+        return `<button type="button" class="ln-node${pa ? ' passed' : o ? ' open' : ' locked'}${cur ? ' current' : ''}${l.check ? ' check' : ''}${lnStars(l) === 3 ? ' gold' : ''}" data-ln-go="${l.id}" style="--off:${[0, 1, 0, -1][li % 4]}" aria-label="${esc(l.name)}${pa ? `, passed, ${lnStars(l)} of 3 stars${due ? ', due for review' : ''}` : o ? ', open' : ', locked'}">
+          <span class="ln-dot">${pa ? (lnStars(l) === 3 ? '♛' : '✓') : o ? (l.check ? '🏁' : l.icon) : '🔒'}${due ? '<em class="ln-due" title="Due for review">🔁</em>' : ''}</span><span class="ln-name">${l.name}</span>
           ${pa ? lnStarHTML(l) : `<span class="ln-best">${r && r.attempts ? `Best ${r.best}/${lnNeed(l)[0]}` : cur ? 'Up next' : ''}</span>`}</button>`; }).join('')}</div>
     </section>`; }).join('')}
     ${LN_SOON.map(([n, b], k) => `<section class="panel ln-unit soon"><div class="ln-unit-h"><div><span class="eyebrow">Unit ${LN_UNITS.length + k + 1}</span><h2>${n}</h2><p class="small muted">${b}</p></div><span class="chip new">Coming soon</span></div></section>`).join('')}
   </div>
-  <details class="panel ln-detail"><summary><b>Lesson details</b> <span class="small muted">scores by level, attempts and last played</span></summary>
-    <div style="overflow-x:auto"><table class="ref"><thead><tr><th>Lesson</th><th>Status</th><th>Best L1 · L2 · L3</th><th>Attempts</th><th>Accuracy</th><th>Last played</th></tr></thead><tbody>
-    ${LN_ALL.map(l => { const r = ln.lessons[l.id] || {}, p = lnPassed(l), o = lnOpen(l), b = k => lnBestAt(r, k) ? `${lnBestAt(r, k)}/${lnNeed(l)[0]}` : '–';
-      return `<tr><td class="t">${l.unit.name} · ${l.name}</td><td><span class="chip ${p ? 'good' : o ? 'ok' : 'new'}">${p ? (r.placed && !r.best ? 'Placed' : 'Passed') : o ? 'Open' : 'Locked'}</span> ${p ? lnStarHTML(l) : ''}</td><td>${b(1)} · ${b(2)} · ${b(3)}</td><td>${r.attempts || 0}</td><td>${r.n ? pct(r.c / r.n, 0) : '–'}</td><td>${r.last ? new Date(r.last).toLocaleDateString([], { month: 'short', day: 'numeric' }) : '–'}</td></tr>`; }).join('')}
+  <details class="panel ln-detail"><summary><b>Lesson details</b> <span class="small muted">scores by level, attempts, reviews</span></summary>
+    <div style="overflow-x:auto"><table class="ref"><thead><tr><th>Lesson</th><th>Status</th><th>Best L1 · L2 · L3</th><th>Attempts</th><th>Accuracy</th><th>Next review</th></tr></thead><tbody>
+    ${LN_ALL.map(l => { const r = ln.lessons[l.id] || {}, p = lnPassed(l), o = lnOpen(l), b = k => lnBestAt(r, k) ? `${lnBestAt(r, k)}/${lnNeed(l)[0]}` : '–', du = p && !l.check ? lnDueAt(l) : 0;
+      return `<tr><td class="t">${l.unit.name} · ${l.name}</td><td><span class="chip ${p ? 'good' : o ? 'ok' : 'new'}">${p ? (r.placed && !r.best ? 'Placed' : 'Passed') : o ? 'Open' : 'Locked'}</span> ${p ? lnStarHTML(l) : ''}</td><td>${b(1)} · ${b(2)} · ${b(3)}</td><td>${r.attempts || 0}</td><td>${r.n ? pct(r.c / r.n, 0) : '–'}</td><td>${du ? (du <= Date.now() ? '<b>Due</b>' : new Date(du).toLocaleDateString([], { month: 'short', day: 'numeric' })) : '–'}</td></tr>`; }).join('')}
     </tbody></table></div>
-    <p class="small muted">Levels: 1 Learn, 2 Practice, 3 Master (20 seconds a question). Right answers win ${LN_LV[1].right} / ${LN_LV[2].right} / ${LN_LV[3].right} chips by level, wrong ones cost ${-LN_CHIPS.wrong}. Passing adds ${LN_LV[1].pass} / ${LN_LV[2].pass} / ${LN_LV[3].pass} the first time, ${LN_CHIPS.repass} on a repeat. Rank follows the most chips you've held.</p>
+    <p class="small muted">Levels: 1 Learn, 2 Practice, 3 Master (${APPCFG.shot} seconds a question${APPCFG.bankOn ? `, ${APPCFG.bank}-second time bank` : ''}). Right answers win ${LN_LV[1].right} / ${LN_LV[2].right} / ${LN_LV[3].right} chips by level, wrong ones cost ${-LN_CHIPS.wrong}. Passing adds ${LN_LV[1].pass} / ${LN_LV[2].pass} / ${LN_LV[3].pass} the first time, ${LN_CHIPS.repass} on a repeat; a passed review or weak-spots session adds ${LN_CHIPS.review}. Rank follows the most chips you've held.</p>
   </details>`;
 }
 
-/* ---------- lesson player ---------- */
-let lnPlay = null, lnTimer = null;
+/* ---------- lesson player ----------
+   kinds: 'lesson' (one lesson at one level), 'pre' (placement test), 'review' and 'weak' (a mix of lessons) */
+let lnPlay = null;
+const lnGoLearn = () => { if (location.hash !== '#learn') location.hash = '#learn'; else lnShowPlay(); };
 function lnStart(id, lvl) {
   const l = lnById(id); if (!l) return;
   if (!lnOpen(l)) { const prev = l.li ? LN_ALL.find(x => x.ui === l.ui && x.li === l.li - 1) : LN_ALL.find(x => x.ui === l.ui - 1 && x.check); lnToast(`Pass “${prev.name}” first to unlock this lesson.`); return; }
   if (!lvl) lvl = [1, 2, 3].find(k => lnLvOpen(l, k) && !lnLvPassed(l, k)) || 3;
   const [n, need] = lnNeed(l);
-  lnPlay = { kind: 'lesson', l, lvl, n, need, i: 0, right: 0, chips: 0, stage: 'intro', game: mode, miss: [] };
-  if (location.hash !== '#learn') location.hash = '#learn'; else lnShowPlay();
+  lnPlay = { kind: 'lesson', l, lvl, n, need, i: 0, right: 0, chips: 0, stage: 'intro', game: mode, miss: [], bank: APPCFG.bankOn ? { left: APPCFG.bank } : null };
+  lnGoLearn();
 }
 function lnPlacement() {
   lnPlay = { kind: 'pre', lvl: 2, ui: 0, inUnit: 0, wrong: 0, i: 0, right: 0, chips: 0, stage: 'intro', game: mode, placed: [], miss: [] };
-  if (location.hash !== '#learn') location.hash = '#learn'; else lnShowPlay();
+  lnGoLearn();
+}
+function lnMixStart(kind) {
+  let pool;
+  if (kind === 'review') pool = lnDue().map(l => ({ l, lvl: Math.min(2, lnMaxLv(l)) }));
+  else pool = lnWeak().flatMap(w => w.ls.map(l => ({ l, lvl: lnPassed(l) ? 2 : 1, d: w.d })));
+  if (!pool.length) { lnToast(kind === 'review' ? 'Nothing is due for review right now.' : 'No weak spots yet. Answer more questions first.'); return; }
+  pool = shuffle(pool).slice(0, 10);
+  lnPlay = { kind, pool, lvl: 2, n: 10, need: 8, i: 0, right: 0, chips: 0, stage: 'intro', game: mode, miss: [], per: {} };
+  lnGoLearn();
 }
 const LN_PRE_N = 8, LN_PRE_MISS = 1; /* each unit: 8 questions, at most 1 miss to place out of it */
 function lnShowPlay() {
-  clearTimeout(lnTimer);
+  stopClock();
   $('ln-dash').hidden = true; $('ln-play').hidden = false; const P = lnPlay, box = $('ln-play');
   const total = P.kind === 'pre' ? LN_UNITS.length * LN_PRE_N : P.n, done = P.kind === 'pre' ? P.ui * LN_PRE_N + P.inUnit : P.i;
   const head = `<div class="ln-top"><button type="button" class="linkbtn ln-quit" data-ln-quit>✕ Quit</button><div class="ln-bar"><i style="width:${done / total * 100}%"></i></div><span class="ln-pchips" id="ln-pchips">${P.chips >= 0 ? '+' : ''}${P.chips}</span></div>`;
+  const title = P.kind === 'review' ? 'Review' : P.kind === 'weak' ? 'Weak spots' : P.kind === 'pre' ? 'Placement test' : P.l.name;
   if (P.stage === 'intro') {
     if (P.kind === 'pre') {
       box.innerHTML = `${head}<section class="panel ln-card"><span class="eyebrow">Placement test</span><h2>Find your starting point</h2>
@@ -372,24 +557,33 @@ function lnShowPlay() {
       <div class="row"><button class="act" type="button" data-ln-begin>Begin</button></div></section>`;
       return;
     }
+    if (P.kind !== 'lesson') {
+      const ls = [...new Map(P.pool.map(x => [x.l.id, x.l])).values()];
+      box.innerHTML = `${head}<section class="panel ln-card"><span class="eyebrow">${P.kind === 'review' ? '🔁 Review' : '🎯 Weak spots'}</span><h2>${P.kind === 'review' ? 'Keep it fresh' : 'Work on your weakest areas'}</h2>
+      <p>${P.kind === 'review' ? 'A mix from the lessons due for review. Each lesson you get mostly right moves to a longer gap; any you miss come back tomorrow.' : 'A mix from the areas where your recent answers are weakest, across lessons and trainers.'}</p>
+      <ul class="ln-mixlist">${ls.map(l => `<li><b>${esc(l.name)}</b> <span class="small muted">${esc(l.unit.name)}</span></li>`).join('')}</ul>
+      <p class="small muted">${P.n} questions · pass with ${P.need} for a ${LN_CHIPS.review}-chip bonus · no clock</p>
+      <div class="row"><button class="act" type="button" data-ln-begin>Start</button></div></section>`;
+      return;
+    }
     const l = P.l;
     box.innerHTML = `${head}<section class="panel ln-card"><span class="eyebrow">${esc(l.unit.name)} · ${l.check ? 'Checkpoint' : 'Lesson ' + (l.li + 1)}</span><h2>${esc(l.name)}</h2><div class="ln-intro">${l.intro}</div>
       <div class="ln-levels" role="group" aria-label="Level">${[1, 2, 3].map(k => { const o = lnLvOpen(l, k), pa = lnLvPassed(l, k);
         return `<button type="button" class="ln-lv${P.lvl === k ? ' on' : ''}" data-ln-lv="${k}"${o ? '' : ' disabled'} aria-pressed="${P.lvl === k}"><b>${o ? (pa ? '★ ' : '') : '🔒 '}Level ${k}</b><span>${LN_LV[k].name}</span></button>`; }).join('')}</div>
-      <p class="small muted">${LN_LV[P.lvl].line} ${P.n} questions · pass with ${P.need} · ${LN_LV[P.lvl].right} chips a right answer${l.unit.id === 'preflop' ? ` · ${mode === 'cash' ? 'cash (100 BB)' : 'tournament'} charts` : ''}</p>
+      <p class="small muted">${lnLvLine(P.lvl)} ${P.n} questions · pass with ${P.need} · ${LN_LV[P.lvl].right} chips a right answer${l.unit.id === 'preflop' || l.d === 'Preflop' && l.unit.id !== 'tourney' ? ` · ${mode === 'cash' ? 'cash (100 BB)' : 'tournament'} charts` : ''}</p>
       <div class="row"><button class="act" type="button" data-ln-begin>Start level ${P.lvl}</button></div></section>`;
     return;
   }
   if (P.stage === 'q') {
-    const q = P.q, ans = P.picked != null, ok = ans && P.picked === q.correct, tm = LN_LV[P.lvl].time;
-    box.innerHTML = `${head}<section class="panel ln-card"><span class="eyebrow">${P.kind === 'pre' ? `Placement · ${LN_UNITS[P.ui].name}` : `${esc(P.l.name)} · Level ${P.lvl}`} · ${done + 1} of ${P.kind === 'pre' ? 'up to ' + total : total}</span>
-      ${tm && !ans ? `<div class="ln-timer" aria-hidden="true"><i style="animation-duration:${tm}s"></i></div>` : ''}
+    const q = P.q, ans = P.picked != null, ok = ans && lnIsRight(q, P.picked), exact = ans && P.picked === q.correct, clock = P.kind === 'lesson' && LN_LV[P.lvl].clock;
+    box.innerHTML = `${head}<section class="panel ln-card"><span class="eyebrow">${P.kind === 'pre' ? `Placement · ${LN_UNITS[P.ui].name}` : P.kind === 'lesson' ? `${esc(title)} · Level ${P.lvl}` : `${esc(title)} · ${esc(q._lname)}`} · ${done + 1} of ${P.kind === 'pre' ? 'up to ' + total : total}</span>
+      ${clock && !ans ? '<div class="clock-host" id="ln-clock"></div>' : ''}
       ${q.visual ? `<div class="qz-visual">${q.visual}</div>` : ''}<div class="ln-prompt">${q.prompt}</div>
-      <div class="ln-opts">${q.opts.map((o, k) => `<button type="button" class="ln-opt${ans ? (k === q.correct ? ' right' : k === P.picked ? ' wrong' : ' dim') : ''}" data-k="${k}"${ans ? ' disabled' : ''}>${o}</button>`).join('')}</div>
-      ${ans ? `<div class="ln-fb ${ok ? 'good' : 'bad'}"><b>${ok ? pick(['Nice!', 'Correct.', 'That\'s it.', 'Well played.']) : P.picked === -1 ? 'Out of time.' : 'Not quite.'}</b> <span class="ln-delta">${ok ? '+' + LN_LV[P.lvl].right : LN_CHIPS.wrong} chips</span><p>${q.explain}</p>
+      <div class="ln-opts">${q.opts.map((o, k) => `<button type="button" class="ln-opt${ans ? (k === q.correct ? ' right' : k === P.picked ? (ok ? ' right' : ' wrong') : ' dim') : ''}" data-k="${k}"${ans ? ' disabled' : ''}>${o}</button>`).join('')}</div>
+      ${ans ? `<div class="ln-fb ${ok ? 'good' : 'bad'}"><b>${ok ? (exact ? pick(['Nice!', 'Correct.', 'That\'s it.', 'Well played.']) : 'Good enough.') : P.picked === -1 ? 'Out of time.' : 'Not quite.'}</b> <span class="ln-delta">${ok ? '+' + LN_LV[P.lvl].right : LN_CHIPS.wrong} chips</span><p>${!exact && ok ? `Close to the best play, <b>${q.opts[q.correct]}</b>. ` : ''}${q.explain}</p>
         <button class="act" type="button" data-ln-cont>Continue</button></div>` : ''}</section>`;
     if (ans) box.querySelector('[data-ln-cont]').focus({ preventScroll: true });
-    else if (tm) { const qq = q; lnTimer = setTimeout(() => { if (lnPlay && lnPlay.q === qq && lnPlay.picked == null) lnAnswer(-1); }, tm * 1000); }
+    else if (clock) { const qq = q; startClock($('ln-clock'), APPCFG.shot, P.bank, () => { if (lnPlay && lnPlay.q === qq && lnPlay.picked == null) lnAnswer(-1); }); }
     return;
   }
   /* results */
@@ -402,42 +596,60 @@ function lnShowPlay() {
       <div class="row">${nx ? `<button class="act" type="button" data-ln-go="${nx.id}">Go to next lesson</button>` : ''}<button class="act ghost" type="button" data-ln-dash>Back to path</button></div></section>`;
     return;
   }
-  const ok = P.right >= P.need, nx = lnNext(), up = P.lvl < 3 && lnLvOpen(P.l, P.lvl + 1);
+  const ok = P.right >= P.need, missHTML = P.miss.length ? `<details class="ln-review"><summary>Review your misses (${P.miss.length})</summary>${P.miss.map(m => `<div><span class="small muted">${esc(m.short)}</span><span>${m.picked === -1 ? 'Out of time' : `You chose <b>${m.opts[m.picked]}</b>`}; the answer is <b>${m.opts[m.correct]}</b>.</span><span class="small">${m.explain}</span></div>`).join('')}</details>` : '';
+  const stackHTML = `${lnStacks(ln.xp, 90)}<p class="small">${P.chips >= 0 ? '+' : ''}${P.chips} chips this ${P.kind === 'lesson' ? 'lesson' : 'session'} · stack ${Math.round(ln.xp).toLocaleString()}</p>`;
+  if (P.kind !== 'lesson') {
+    box.innerHTML = `${head}<section class="panel ln-card ln-end"><span class="eyebrow">${P.kind === 'review' ? '🔁 Review' : '🎯 Weak spots'}</span>
+      <h2>${P.rankUp ? `Rank up: ${LN_RANKS[lnRank()].icon} ${LN_RANKS[lnRank()].name}!` : ok ? 'Nicely done' : 'Keep at it'}</h2>
+      <p><b>${P.right} of ${P.n}</b> right.${ok ? ` Bonus +${LN_CHIPS.review} chips.` : ''}</p>
+      ${P.kind === 'review' ? `<ul class="ln-mixlist">${Object.entries(P.per).map(([id, x]) => { const l = lnById(id), r = ln.lessons[id]; return `<li><b>${esc(l.name)}</b> ${x.c}/${x.n} · <span class="small">${x.up ? `next review in ${LN_RV[r.rv]} day${LN_RV[r.rv] > 1 ? 's' : ''}` : 'back tomorrow'}</span></li>`; }).join('')}</ul>` : ''}
+      ${stackHTML}${missHTML}
+      <div class="row">${lnDue().length ? `<button class="act" type="button" data-ln-review>Review more (${lnDue().length} due)</button>` : ''}<button class="act ghost" type="button" data-ln-dash>Back to path</button></div></section>`;
+    return;
+  }
+  const nx = lnNext(), up = P.lvl < 3 && lnLvOpen(P.l, P.lvl + 1);
   box.innerHTML = `${head}<section class="panel ln-card ln-end"><span class="eyebrow">${esc(P.l.name)} · Level ${P.lvl}</span>
     <h2>${ok ? (P.rankUp ? `Rank up: ${LN_RANKS[lnRank()].icon} ${LN_RANKS[lnRank()].name}!` : P.lvl === 3 ? 'Mastered!' : `Level ${P.lvl} passed`) : 'Not this time'}</h2>
     ${ok ? lnStarHTML(P.l) : ''}
     <p><b>${P.right} of ${P.n}</b> right. ${ok ? (P.first ? `Passing bonus +${LN_LV[P.lvl].pass} chips.` : `Bonus +${LN_CHIPS.repass} chips.`) : `You need ${P.need} to pass. Have another go; the questions change every time.`}</p>
-    ${lnStacks(ln.xp, 90)}<p class="small">${P.chips >= 0 ? '+' : ''}${P.chips} chips this lesson · stack ${Math.round(ln.xp).toLocaleString()}</p>
-    ${P.miss.length ? `<details class="ln-review"><summary>Review your misses (${P.miss.length})</summary>${P.miss.map(m => `<div><span class="small muted">${esc(m.short)}</span><span>${m.picked === -1 ? 'Out of time' : `You chose <b>${m.opts[m.picked]}</b>`}; the answer is <b>${m.opts[m.correct]}</b>.</span><span class="small">${m.explain}</span></div>`).join('')}</details>` : ''}
+    ${stackHTML}${missHTML}
     <div class="row">${ok && nx && nx.id !== P.l.id ? `<button class="act" type="button" data-ln-go="${nx.id}">Next: ${esc(nx.name)}</button>` : ''}
       ${ok && up ? `<button class="act${nx && nx.id !== P.l.id ? ' ghost' : ''}" type="button" data-ln-go="${P.l.id}" data-ln-lvl="${P.lvl + 1}">Try level ${P.lvl + 1}</button>` : ''}
       ${!ok ? `<button class="act" type="button" data-ln-go="${P.l.id}" data-ln-lvl="${P.lvl}">Try again</button>` : ''}
       <button class="act ghost" type="button" data-ln-dash>Back to path</button></div></section>`;
 }
+const lnIsRight = (q, k) => k === q.correct || (k >= 0 && (q.okIdx || []).includes(k));
 function lnDeal() {
   const P = lnPlay; P.picked = null;
-  let q; try { q = P.kind === 'pre' ? pick(LN_UNITS[P.ui].lessons.filter(l => !l.check)).gen(2) : P.l.gen(P.lvl); } catch (e) { console.warn(e); q = lnRule(2); }
+  let q, it = null;
+  try {
+    if (P.kind === 'pre') q = pick(LN_UNITS[P.ui].lessons.filter(l => !l.check)).gen(2);
+    else if (P.kind === 'lesson') q = P.l.gen(P.lvl);
+    else { it = P.pool[P.i % P.pool.length]; q = it.l.gen(it.lvl); q._lid = it.l.id; q._lname = it.l.name; }
+  } catch (e) { console.warn(e); q = lnRule(2); }
   q.t0 = Date.now(); P.q = q; P.stage = 'q'; lnShowPlay(); window.scrollTo(0, $('v-learn').offsetTop - 70);
 }
 function lnAnswer(k) {
-  const P = lnPlay, q = P.q, ok = k === q.correct; if (P.picked != null) return; P.picked = k; clearTimeout(lnTimer);
+  const P = lnPlay, q = P.q, ok = lnIsRight(q, k); if (P.picked != null) return; P.picked = k; stopClock();
   const d = ok ? LN_LV[P.lvl].right : LN_CHIPS.wrong, before = ln.xp; lnAddChips(d); P.chips += ln.xp - before;
   ln.n++; if (ok) { ln.c++; P.right++; } else P.miss.push({ ...q, picked: k });
   if (!ln.days.includes(lnToday())) ln.days = ln.days.concat(lnToday()).slice(-60);
-  if (P.kind === 'lesson') { const r = ln.lessons[P.l.id] = ln.lessons[P.l.id] || { best: 0, attempts: 0, n: 0, c: 0 }; r.n = (r.n || 0) + 1; r.c = (r.c || 0) + (ok ? 1 : 0); }
-  else if (!ok) P.wrong++;
+  const lid = P.kind === 'lesson' ? P.l.id : q._lid;
+  if (lid) { const r = ln.lessons[lid] = ln.lessons[lid] || { best: 0, attempts: 0, n: 0, c: 0 }; r.n = (r.n || 0) + 1; r.c = (r.c || 0) + (ok ? 1 : 0); }
+  if (q._lid) { const x = P.per[q._lid] = P.per[q._lid] || { n: 0, c: 0 }; x.n++; if (ok) x.c++; }
+  if (P.kind === 'pre' && !ok) P.wrong++;
   lnSave();
-  logEvent({ drill: q.drill, spot: q.spot, hand: q.hand, answer: k === -1 ? 'Out of time' : q.opts[k], expected: q.opts[q.correct], correct: ok, detail: P.kind === 'pre' ? 'Placement test' : `Lesson: ${P.l.name}, level ${P.lvl}`, ms: Date.now() - q.t0 });
+  logEvent({ drill: q.drill, spot: q.spot, hand: q.hand, answer: k === -1 ? 'Out of time' : q.opts[k], expected: q.opts[q.correct], correct: ok, detail: P.kind === 'pre' ? 'Placement test' : P.kind === 'lesson' ? `Lesson: ${P.l.name}, level ${P.lvl}` : (P.kind === 'review' ? 'Review: ' : 'Weak spots: ') + q._lname, ms: Date.now() - q.t0 });
   lnShowPlay();
 }
 function lnContinue() {
   const P = lnPlay;
-  if (P.kind === 'lesson') { P.i++; if (P.i < P.n) return lnDeal(); return lnFinish(); }
+  if (P.kind !== 'pre') { P.i++; if (P.i < P.n) return lnDeal(); return lnFinish(); }
   P.inUnit++; P.i++;
   if (P.wrong > LN_PRE_MISS) return lnPreEnd();
   if (P.inUnit >= LN_PRE_N) {
     P.placed.push(P.ui);
-    LN_UNITS[P.ui].lessons.forEach(l => { const r = ln.lessons[l.id] = ln.lessons[l.id] || { best: 0, attempts: 0, n: 0, c: 0 }; if (!r.placed && !lnPassed(LN_ALL.find(x => x.id === l.id))) { lnAddChips(LN_CHIPS.placed); P.chips += LN_CHIPS.placed; } r.placed = true; });
+    LN_UNITS[P.ui].lessons.forEach(l => { const r = ln.lessons[l.id] = ln.lessons[l.id] || { best: 0, attempts: 0, n: 0, c: 0 }; if (!r.placed && !lnPassed(LN_ALL.find(x => x.id === l.id))) { lnAddChips(LN_CHIPS.placed); P.chips += LN_CHIPS.placed; if (r.due == null) lnSchedule(r, 2); } r.placed = true; });
     lnSave(); P.ui++; P.inUnit = 0; P.wrong = 0;
     if (P.ui >= LN_UNITS.length) return lnPreEnd();
   }
@@ -445,10 +657,17 @@ function lnContinue() {
 }
 function lnPreEnd() { const P = lnPlay; ln.pre = { ts: Date.now(), units: P.placed.length }; lnSave(); P.stage = 'end'; lnShowPlay(); lnMini(); }
 function lnFinish() {
-  const P = lnPlay, r = ln.lessons[P.l.id], ok = P.right >= P.need, was = lnLvPassed(P.l, P.lvl) || (P.lvl === 1 && r.best >= P.need), rank0 = lnRank();
-  r.attempts++; r.last = Date.now();
-  if (P.lvl === 1) r.best = Math.max(r.best || 0, P.right); else r['b' + P.lvl] = Math.max(r['b' + P.lvl] || 0, P.right);
-  if (ok) { const b = was ? LN_CHIPS.repass : LN_LV[P.lvl].pass; lnAddChips(b); P.chips += b; P.first = !was; }
+  const P = lnPlay, ok = P.right >= P.need, rank0 = lnRank();
+  if (P.kind === 'lesson') {
+    const r = ln.lessons[P.l.id], was = lnLvPassed(P.l, P.lvl) || (P.lvl === 1 && r.best >= P.need);
+    r.attempts++; r.last = Date.now();
+    if (P.lvl === 1) r.best = Math.max(r.best || 0, P.right); else r['b' + P.lvl] = Math.max(r['b' + P.lvl] || 0, P.right);
+    if (ok) { const b = was ? LN_CHIPS.repass : LN_LV[P.lvl].pass; lnAddChips(b); P.chips += b; P.first = !was;
+      if (!P.l.check) { if (r.due == null) lnSchedule(r, 0); else lnSchedule(r, r.rv || 0); } }
+  } else {
+    if (P.kind === 'review') for (const [id, x] of Object.entries(P.per)) { const r = ln.lessons[id]; x.up = x.c / x.n >= .75; lnSchedule(r, x.up ? (r.rv ?? 0) + 1 : 0); }
+    if (ok) { lnAddChips(LN_CHIPS.review); P.chips += LN_CHIPS.review; }
+  }
   P.rankUp = lnRank() > rank0; lnSave(); P.stage = 'end'; lnShowPlay(); lnMini();
 }
 function lnToast(msg) { const t = $('ln-toast'); t.textContent = msg; t.hidden = false; clearTimeout(lnToast.h); lnToast.h = setTimeout(() => t.hidden = true, 2600); }
@@ -456,12 +675,14 @@ function lnToast(msg) { const t = $('ln-toast'); t.textContent = msg; t.hidden =
 document.addEventListener('click', e => {
   const g = e.target.closest('[data-ln-go]'); if (g) { lnStart(g.dataset.lnGo, +g.dataset.lnLvl || 0); return; }
   if (e.target.closest('[data-ln-pre]')) return lnPlacement();
+  if (e.target.closest('[data-ln-review]')) return lnMixStart('review');
+  if (e.target.closest('[data-ln-weak]')) return lnMixStart('weak');
   if (!lnPlay) return;
   const lv = e.target.closest('[data-ln-lv]'); if (lv && lnPlay.stage === 'intro') { lnPlay.lvl = +lv.dataset.lnLv; return lnShowPlay(); }
   if (e.target.closest('[data-ln-begin]')) return lnDeal();
   const o = e.target.closest('#ln-play .ln-opt'); if (o) return lnAnswer(+o.dataset.k);
   if (e.target.closest('[data-ln-cont]')) return lnContinue();
-  if (e.target.closest('[data-ln-dash]')) { clearTimeout(lnTimer); lnPlay = null; return lnRender(); }
+  if (e.target.closest('[data-ln-dash]')) { stopClock(); lnPlay = null; return lnRender(); }
   const qb = e.target.closest('[data-ln-quit]');
-  if (qb) { if (lnPlay.stage === 'end' || lnPlay.stage === 'intro' || qb.dataset.sure) { clearTimeout(lnTimer); lnPlay = null; lnRender(); } else { qb.dataset.sure = '1'; qb.textContent = 'Tap again to quit'; } }
+  if (qb) { if (lnPlay.stage === 'end' || lnPlay.stage === 'intro' || qb.dataset.sure) { stopClock(); lnPlay = null; lnRender(); } else { qb.dataset.sure = '1'; qb.textContent = 'Tap again to quit'; } }
 });

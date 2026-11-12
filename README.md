@@ -30,6 +30,7 @@ A Texas Hold'em training app that runs on GitHub Pages, with Firebase sign-in so
 | `js/hand-log.js` | Hand log and player notes. |
 | `js/daily.js` | Daily challenge and the Home screen. |
 | `js/learn.js` | Learn tab: the guided path (units, lessons with 3 levels, checkpoints), Basics question makers, placement test, Fish→Crusher ranks and chip stacks. |
+| `js/settings.js` | Settings menu, the admin clock settings (Firestore `config/app`), and the shot clock / time bank. |
 | `js/flags.js` | "Flag this" reports and the admin review list. |
 | `tests.html`, `js/tests.js` | App checks page (linked from the account menu). |
 | `js/leaks.js` | Leak finder: patterns in your answers and logged hands. |

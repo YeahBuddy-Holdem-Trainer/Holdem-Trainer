@@ -36,12 +36,39 @@ function txTexture(board) {
   return { ranks, suits, paired, conn, wet, high: ranks[0], word: texture(board) };
 }
 
-function newTX() {
+/* a spot: who raised, who called, and a random flop */
+function txMake() {
   const list = TX_SPOTS[mode === 'cash' ? 'cash' : 'tour'].filter(x => txSpot(x.pfr[0]) && txSpot(x.call[0])), sc = pick(list);
   const board = shuffled().slice(0, 3), dead = new Set(board), ok = c => !dead.has(c[0]) && !dead.has(c[1]);
   const lp = eqSpotLabels(sc.pfr[0], sc.pfr[1]), lc = eqSpotLabels(sc.call[0], sc.call[1]);
   const P = txSpot(sc.pfr[0]).hero, C = txSpot(sc.call[0]).hero;
-  tx = { sc, board, lp, lc, P, C, A: lp.flatMap(labelCombos).filter(ok), B: lc.flatMap(labelCombos).filter(ok), ans: {}, done: false, t0: Date.now() };
+  return { sc, board, lp, lc, P, C, A: lp.flatMap(labelCombos).filter(ok), B: lc.flatMap(labelCombos).filter(ok), ans: {}, done: false, t0: Date.now() };
+}
+/* the answers: range advantage (simulated), nut advantage (combo counts), and the c-bet plan that follows */
+function txSolve(t, N = 16000) {
+  const eq = rvrSim(t.A, t.B, t.board, N).eq, aP = rvbAnalyze(t.lp, t.board), aC = rvbAnalyze(t.lc, t.board);
+  const sP = aP.strong / aP.n, sC = aC.strong / aC.n, tP = aP.tpplus / aP.n, tC = aC.tpplus / aC.n, T = txTexture(t.board);
+  const ip = LG_POST.indexOf(t.P) > LG_POST.indexOf(t.C);
+  const range = eq >= .53 ? 'pfr' : eq < .47 ? 'call' : 'even';
+  const nuts = sP - sC >= .03 && sP >= sC * 1.4 ? 'pfr' : sC - sP >= .03 && sC >= sP * 1.4 ? 'call' : 'even';
+  const plan = range === 'call' ? 'check'
+    : nuts === 'call' && range !== 'pfr' ? 'check'
+    : nuts === 'pfr' && T.wet ? 'big'
+    : range === 'pfr' ? (nuts === 'call' && T.wet ? 'check' : 'small')
+    : !T.wet && ip ? 'small' : 'check';
+  return { eq, aP, aC, sP, sC, tP, tC, T, ip, range, nuts, plan, right: { range, nuts, plan } };
+}
+function txWhy({ eq, sP, sC, tP, tC, T, ip, range, nuts, plan }) {
+  return {
+      range: `The raiser's range has <b>${pct(eq)}</b> equity against the caller's${range === 'pfr' ? ', a clear edge' : range === 'call' ? ': the caller is ahead' : ', close to even'}. ${T.high >= 10 && range === 'pfr' ? 'High cards favor the raiser, whose range has more big cards.' : T.high <= 7 ? 'Low boards hit the caller\'s wider range of small pairs and connectors.' : ''}`,
+      nuts: `Two pair or better: raiser <b>${pct(sP)}</b>, caller <b>${pct(sC)}</b>. Top pair or better: raiser ${pct(tP)}, caller ${pct(tC)}.`,
+      plan: plan === 'small' ? (range === 'pfr' ? 'With the range edge and no big nut gap against you, a small bet with most of the range wins the pot often and is hard for the caller to fight.' : 'Ranges are close, but on a dry board and in position a small bet still works: the caller has few strong hands or good draws to fight back with.')
+        : plan === 'big' ? 'With both the range edge and more of the strongest hands on a board where draws are coming, betting bigger with a polarized range charges the draws and builds the pot for the nuts.'
+        : 'When the caller has the range or nut advantage, or nobody has an edge, betting the whole range loses money. Check a lot, and bet only strong hands and good draws.'
+    };
+}
+function newTX() {
+  tx = txMake(); const { sc, board, P, C } = tx;
   /* table: the raiser at the bottom, the caller in their seat */
   const seats = {}; POS.forEach(p => seats[p] = { state: 'folded', bet: '', tag: '', stack: '' });
   seats[P] = { state: 'hero', tag: 'Raiser', stack: '', bet: '' }; seats[C] = { state: 'vil', tag: 'Caller', stack: '', bet: '' };
@@ -63,27 +90,12 @@ $('tx-sub').onclick = () => {
   if (!tx || tx.done || Object.keys(tx.ans).length < 3) return; tx.done = true; $('tx-sub').disabled = true;
   $('tx-out').innerHTML = '<p class="small muted">Working it out…</p>';
   setTimeout(() => {
-    const eq = rvrSim(tx.A, tx.B, tx.board, 16000).eq, aP = rvbAnalyze(tx.lp, tx.board), aC = rvbAnalyze(tx.lc, tx.board);
-    const sP = aP.strong / aP.n, sC = aC.strong / aC.n, tP = aP.tpplus / aP.n, tC = aC.tpplus / aC.n, T = txTexture(tx.board);
-    const ip = LG_POST.indexOf(tx.P) > LG_POST.indexOf(tx.C);
-    const range = eq >= .53 ? 'pfr' : eq < .47 ? 'call' : 'even';
-    const nuts = sP - sC >= .03 && sP >= sC * 1.4 ? 'pfr' : sC - sP >= .03 && sC >= sP * 1.4 ? 'call' : 'even';
-    const plan = range === 'call' ? 'check'
-      : nuts === 'call' && range !== 'pfr' ? 'check'
-      : nuts === 'pfr' && T.wet ? 'big'
-      : range === 'pfr' ? (nuts === 'call' && T.wet ? 'check' : 'small')
-      : !T.wet && ip ? 'small' : 'check';
+    const S = txSolve(tx), { eq, aP, aC, sP, sC, tP, tC, T, ip, range, nuts, plan } = S;
     const right = { range, nuts, plan }, parts = Object.keys(right).map(k => ({ k, ok: tx.ans[k] === right[k] })), nOk = parts.filter(p => p.ok).length;
     const st = stats.texture = stats.texture || { n: 0, parts: 0, all: 0 }; st.n++; st.parts += nOk; if (nOk === 3) st.all++; save(); txStats();
     for (const p of parts) logEvent({ drill: 'Board texture', spot: TX_Q[p.k].label, hand: names(tx.board), answer: tx.ans[p.k], expected: right[p.k], correct: p.ok, error: '', detail: tx.sc.name, ms: Date.now() - tx.t0 });
     const word = (k, v) => (TX_Q[k].opts.find(o => o[0] === v) || [, v])[1];
-    const why = {
-      range: `The raiser's range has <b>${pct(eq)}</b> equity against the caller's${range === 'pfr' ? ', a clear edge' : range === 'call' ? ': the caller is ahead' : ', close to even'}. ${T.high >= 10 && range === 'pfr' ? 'High cards favor the raiser, whose range has more big cards.' : T.high <= 7 ? 'Low boards hit the caller\'s wider range of small pairs and connectors.' : ''}`,
-      nuts: `Two pair or better: raiser <b>${pct(sP)}</b>, caller <b>${pct(sC)}</b>. Top pair or better: raiser ${pct(tP)}, caller ${pct(tC)}.`,
-      plan: plan === 'small' ? (range === 'pfr' ? 'With the range edge and no big nut gap against you, a small bet with most of the range wins the pot often and is hard for the caller to fight.' : 'Ranges are close, but on a dry board and in position a small bet still works: the caller has few strong hands or good draws to fight back with.')
-        : plan === 'big' ? 'With both the range edge and more of the strongest hands on a board where draws are coming, betting bigger with a polarized range charges the draws and builds the pot for the nuts.'
-        : 'When the caller has the range or nut advantage, or nobody has an edge, betting the whole range loses money. Check a lot, and bet only strong hands and good draws.'
-    };
+    const why = txWhy(S);
     $('tx-out').innerHTML = `<div class="verdict ${nOk === 3 ? 'good' : 'bad'}"><strong>${nOk} of 3 right</strong><span>${T.word[0].toUpperCase() + T.word.slice(1)} flop: ${names(tx.board)}. The raiser is ${ip ? 'in position' : 'out of position'}.</span></div>
       ${parts.map(p => `<div class="tx-r ${p.ok ? 'good' : 'bad'}"><p><b>${p.ok ? '✓' : '✗'} ${TX_Q[p.k].label}: ${word(p.k, right[p.k])}</b>${p.ok ? '' : ` <span class="muted">(you said ${word(p.k, tx.ans[p.k])})</span>`}</p><p class="small">${why[p.k]}</p></div>`).join('')}
       ${mathBox(`<ul class="small math-steps"><li><b>Range advantage</b> is a simulation of the raiser's whole range against the caller's whole range on this flop (both run out to the river): <b>${pct(eq)}</b> for the raiser. At the table, compare how much of each range has top pair or better: raiser ${aP.tpplus} of ${aP.n} combos (${pct(tP, 0)}), caller ${aC.tpplus} of ${aC.n} (${pct(tC, 0)}).</li>

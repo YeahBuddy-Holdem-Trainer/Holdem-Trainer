@@ -51,7 +51,7 @@ document.querySelectorAll('section.view').forEach(sec=>{const d=sec.querySelecto
   LEARN[sec.id.slice(2)]={title:(sub?sm.firstChild.textContent:sm.textContent).trim(),sub:sub?sub.textContent.trim():'',body:d.querySelector('.learn-body')};d.hidden=true});
 function openInfo(v){const L=LEARN[v];if(!L)return;$('info-h').textContent=L.title;$('info-sub').textContent=L.sub;$('info-sub').hidden=!L.sub;
   $('info-body').replaceChildren(L.body);$('info-dlg').showModal();$('info-dlg').scrollTop=0}
-function route(){const h=location.hash.slice(1),v=VIEWS.includes(h)?h:'daily';currentView=v;const sec=secOf(v);
+function route(){if(typeof stopClock==='function')stopClock();const h=location.hash.slice(1),v=VIEWS.includes(h)?h:'daily';currentView=v;const sec=secOf(v);
   VIEWS.forEach(x=>$('v-'+x).hidden=x!==v);
   if(sec!=='home'){lastInSec[sec]=v;try{localStorage.setItem(LASTVIEWKEY,v)}catch(e){}}
   document.querySelectorAll('.secnav a').forEach(a=>{const s=a.dataset.sec;a.href='#'+(s==='home'?'home':lastInSec[s]||SECTIONS[s][0]);
@@ -61,7 +61,7 @@ function route(){const h=location.hash.slice(1),v=VIEWS.includes(h)?h:'daily';cu
   sn.innerHTML=`<div class="subtabs">${SECTIONS[sec].map(x=>`<a href="#${x==='daily'?'home':x}"${x===v?' aria-current="page"':''}>${VIEW_LABEL[x]}</a>`).join('')}</div>${UNIT_VIEWS.includes(v)?unitsSeg():''}${LEARN[v]?'<button type="button" class="info-sub" data-info aria-label="How this works" title="How this works">i</button>':''}${sec!=='home'&&v!=='log'?'<button type="button" class="flag-btn flag-sub" aria-label="Flag this spot" title="Flag this spot">⚑</button>':''}`;
   if(sec==='learn')sn.hidden=true;
   const cur=sn.querySelector('[aria-current]');if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:'nearest',inline:'nearest'});
-  if(v==='learn')lnRender();if(v==='daily')lnMini();if(v==='progress')renderProgress();if(v==='daily'&&!daily)dailyHome();if(v==='replay')rpList();if(v==='log')lgRender();if(v==='exploit')xpOpponents();if(v==='leaks')lkRender();
+  if(v==='learn')lnRender();if(v==='hand'&&typeof fh!=='undefined'&&fh&&!fh.done&&APPCFG.fhOn&&$('fh-acts').querySelector('[data-a]'))fhClock();if(v==='daily')lnMini();if(v==='progress')renderProgress();if(v==='daily'&&!daily)dailyHome();if(v==='replay')rpList();if(v==='log')lgRender();if(v==='exploit')xpOpponents();if(v==='leaks')lkRender();
   window.scrollTo(0,0)}
 /* $ / BB switch: a fresh spot in the drills, redrawn in the log */
 $('subnav').addEventListener('click',e=>{if(e.target.closest('[data-info]'))return openInfo(currentView);

@@ -38,6 +38,7 @@
 <script defer src="js/hand-log.js"></script>
 <script defer src="js/daily.js"></script>
 <script defer src="js/feedback.js"></script>
+<script defer src="js/settings.js"></script>
 <script defer src="js/learn.js"></script>
 <script defer src="js/flags.js"></script>
 <script defer src="js/app.js"></script>
@@ -442,6 +443,7 @@
       <p class="small" id="fh-opp"></p>
       <div class="ptable" id="fh-table" role="img"></div>
       <div class="hand-row table-cards-only"><div><span class="lbl muted small">You</span><div class="cards" id="fh-hand"></div></div><div><span class="lbl muted small">Opponent</span><div class="cards" id="fh-vil"></div></div></div>
+      <div id="fh-clock" class="clock-host"></div>
       <div class="row" id="fh-acts"></div>
       <ol class="fh-log" id="fh-log"></ol>
       <div><button class="linkbtn" id="fh-deal" style="color:var(--muted)">Deal a new hand</button></div>
@@ -840,6 +842,27 @@
 </div>
 
 <!-- ANSWER EXPLANATIONS (js/feedback.js) -->
+<dialog class="modal fb-modal" id="set-dlg" aria-labelledby="set-h">
+  <div class="modal-in set-in">
+    <form method="dialog" class="modal-x"><button aria-label="Close">✕</button></form>
+    <h2 id="set-h" style="text-align:left;font-size:22px">Settings</h2>
+    <section class="set-sec"><h3>Display</h3>
+      <div class="set-row"><span>Show amounts in</span><div class="seg" id="set-units" role="group" aria-label="Show amounts in"><button type="button" data-u="money">$ / chips</button><button type="button" data-u="bb">BB</button></div></div>
+      <label class="check set-row"><input type="checkbox" id="set-math"> Always open "Show the math"</label>
+    </section>
+    <section class="set-sec"><h3>Clocks</h3><p class="small" id="set-clock-sum"></p><p class="small muted">The app admin sets these for everyone.</p></section>
+    <section class="set-sec set-admin" id="set-admin" hidden><h3>Admin controls <span class="chip ok">Admin</span></h3>
+      <label class="set-row"><span>Master-level shot clock <small class="muted">seconds a question</small></span><input type="number" id="set-shot" min="5" max="120" step="1" inputmode="numeric"></label>
+      <label class="check set-row"><input type="checkbox" id="set-bank-on"> Time bank</label>
+      <label class="set-row sub"><span>Time bank <small class="muted">seconds per lesson or hand, used once the shot clock runs out</small></span><input type="number" id="set-bank" min="5" max="300" step="1" inputmode="numeric"></label>
+      <label class="check set-row"><input type="checkbox" id="set-fh-on"> Clock on full hands</label>
+      <label class="set-row sub"><span>Full-hand shot clock <small class="muted">seconds a decision; running out checks or folds</small></span><input type="number" id="set-fh" min="5" max="180" step="1" inputmode="numeric"></label>
+      <div class="row"><button class="act" type="button" id="set-save">Save for everyone</button><button class="linkbtn" type="button" id="set-reset">Defaults</button></div>
+      <p class="small" id="set-msg" role="status"></p>
+      <div class="row"><button class="act ghost" type="button" id="set-flags">Review flags from players</button><a class="linkbtn" href="tests.html" target="_blank" rel="noopener">Run app checks</a></div>
+    </section>
+  </div>
+</dialog>
 <dialog class="modal fb-modal" id="info-dlg" aria-labelledby="info-h">
   <div class="modal-in">
     <form method="dialog" class="modal-x"><button aria-label="Close">✕</button></form>
@@ -906,7 +929,7 @@
       <h2>Sign-in isn't set up yet</h2>
       <p class="small">Add your Firebase settings to <code>js/firebase-config.js</code> (see README). Until then everything is saved on this device.</p>
     </div>
-    <p class="small acct-foot"><a href="tests.html" target="_blank" rel="noopener">Run app checks</a> · tests the math, charts and models</p>
+    <p class="small acct-foot"><button type="button" class="linkbtn" id="acct-settings">⚙ Settings</button> · <a href="tests.html" target="_blank" rel="noopener">Run app checks</a></p>
   </div>
 </dialog>
 

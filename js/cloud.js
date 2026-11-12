@@ -110,6 +110,9 @@ async function start() {
   cloud.listFlags = async () => { const s = await F.getDocs(F.query(F.collection(db, 'flags'), F.orderBy('ts', 'desc'), F.limit(200))); const out = []; s.forEach(d => out.push({ id: d.id, ...d.data(), ms: d.data().ts ? d.data().ts.toMillis() : 0 })); return out; };
   cloud.setFlag = (id, status) => F.updateDoc(F.doc(db, 'flags', id), { status });
   cloud.deleteFlag = id => F.deleteDoc(F.doc(db, 'flags', id));
+  /* ---- app-wide settings (clocks): everyone reads config/app, only admins write it ---- */
+  cloud.saveConfig = c => F.setDoc(F.doc(db, 'config', 'app'), { ...c, ts: F.serverTimestamp() });
+  F.getDoc(F.doc(db, 'config', 'app')).then(d => { if (d.exists()) { const c = d.data(); delete c.ts; window.__appcfg = c; window.dispatchEvent(new CustomEvent('appcfg', { detail: c })); } }).catch(() => {});
   cloud.pushEvents = async batch => {
     const byDay = new Map();
     for (const r of batch) { const k = dayOf(r.ts || Date.now()); if (!byDay.has(k)) byDay.set(k, []); const { player, ...rest } = r; byDay.get(k).push(rest); }

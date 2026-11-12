@@ -95,7 +95,13 @@ function fhAsk(kind){fh.ask=kind;fhRender();
   else if(kind==='pre-vs3')h=`<button class="act" data-a="4bet">4-bet to ${fh.seat==='CO'?20:22} BB</button><button class="act" data-a="call">Call ${fmtBB(toCall)} BB</button><button class="act ghost" data-a="fold">Fold</button>`;
   else if(kind==='pre-jam')h=`<button class="act" data-a="call">Call all in (${fmtBB(Math.min(toCall,fh.stack.hero))} BB)</button><button class="act ghost" data-a="fold">Fold</button>`;
   else{const opts=fhOptions();h=opts.map(o=>`<button class="act ${o.id==='fold'||o.id==='check'?'ghost':''}" data-a="${o.id}">${o.label}</button>`).join('')}
-  b.innerHTML=h}
+  b.innerHTML=h;fhClock()}
+/* optional action clock (an admin setting): runs out → check if you can, otherwise fold; the time bank lasts the whole hand */
+function fhClock(){const host=$('fh-clock');if(!APPCFG.fhOn||!fh||fh.done){stopClock();host.innerHTML='';return}
+  if(!fh.bank)fh.bank={left:APPCFG.bankOn?APPCFG.bank:0};
+  startClock(host,APPCFG.fhShot,fh.bank,()=>{const bs=[...$('fh-acts').querySelectorAll('button[data-a]')],b=bs.find(x=>x.dataset.a==='check')||bs.find(x=>x.dataset.a==='fold');
+    fh.timedOut=(fh.timedOut||0)+1;if(b)b.click()})}
+$('fh-acts').addEventListener('click',e=>{if(e.target.closest('button[data-a]')){stopClock();$('fh-clock').innerHTML=''}},true);
 function fhOptions(){const P=fh.pot,toCall=Math.max(0,fh.streetIn.vil-fh.streetIn.hero),st=fh.stack.hero,o=[];
   if(!toCall){o.push({id:'check',label:'Check',kind:'check'});
     for(const k of['small','medium','large','over']){const b=Math.round(FH_SZ[k]*P*2)/2;if(b<st)o.push({id:k,label:`${SZB[SZI[k]].name} ${fmtBB(b)} BB`,kind:'bet',amt:b})}

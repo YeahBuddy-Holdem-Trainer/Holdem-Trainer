@@ -25,6 +25,17 @@ service cloud.firestore {
       allow read: if request.auth != null && request.auth.uid == uid;
     }
 
+    // App-wide settings (the clocks): anyone can read them; only admins can change them.
+    match /config/{id} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && request.resource.data.keys().hasOnly(['shot', 'bankOn', 'bank', 'fhOn', 'fhShot', 'ts'])
+        && request.resource.data.shot is int && request.resource.data.shot >= 5 && request.resource.data.shot <= 120
+        && request.resource.data.bank is int && request.resource.data.bank >= 5 && request.resource.data.bank <= 300
+        && request.resource.data.fhShot is int && request.resource.data.fhShot >= 5 && request.resource.data.fhShot <= 180
+        && request.resource.data.bankOn is bool && request.resource.data.fhOn is bool;
+    }
     // Everything else is closed.
   }
 }

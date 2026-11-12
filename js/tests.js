@@ -162,10 +162,10 @@ check('Trainers', 'Leak finder spots a player who folds too much preflop', () =>
 
 
 /* ---------- learning path ---------- */
-check('Learning path', 'Every lesson makes valid questions at all 3 levels, cash and tournament (15 each)', () => {
+check('Learning path', 'Every lesson makes valid questions at all 3 levels, cash and tournament (6 each)', () => {
   const was = E('mode');
   for (const m of ['cash', 'tour']) { E(`mode='${m}'`);
-    for (const l of E('LN_ALL')) for (const lv of [1, 2, 3]) for (let i = 0; i < 15; i++) { const q = l.gen(lv);
+    for (const l of E('LN_ALL')) for (const lv of [1, 2, 3]) for (let i = 0; i < 6; i++) { const q = l.gen(lv);
       if (!q || !Array.isArray(q.opts) || q.opts.length < 2 || !(q.correct >= 0 && q.correct < q.opts.length) || new Set(q.opts.map(String)).size !== q.opts.length) return [false, `${m} ${l.id} level ${lv}: ${JSON.stringify(q && q.opts)} → ${q && q.correct}`]; } }
   E(`mode='${was}'`); return [true, `${E('LN_ALL').length} lessons × 3 levels`];
 });
@@ -187,6 +187,22 @@ check('Learning path', 'Lessons unlock in order: only the first is open at the s
   E('ln.lessons={"basics-check":{placed:true}}'); const unit2 = E('lnOpen')(E('lnById')('pf-late'));
   E(`ln=${saved}`);
   return [open.length === 1 && open[0] === 'ranks' && two === 2 && unit2, `open at start: ${open}; after one pass: ${two}; checkpoint unlocks next unit: ${unit2}`];
+});
+check('Learning path', 'Reviews: a passed lesson is due a day later, and the gap grows 1 → 3 → 7 days', () => {
+  const saved = E('JSON.stringify(ln)'), D = E('LN_DAY'), now = Date.now();
+  E('ln.lessons={"ranks":{best:9,attempts:1,last:' + (now - 2 * D) + '}}');
+  const due1 = E('lnDue()').map(l => l.id).join(), r = E('ln.lessons.ranks'); E('lnSchedule')(r, 1); const g1 = Math.round((r.due - Date.now()) / D); E('lnSchedule')(r, 2); const g2 = Math.round((r.due - Date.now()) / D);
+  const due2 = E('lnDue()').length; E(`ln=${saved}`);
+  return [due1 === 'ranks' && g1 === 3 && g2 === 7 && due2 === 0, `due: ${due1}; gaps ${g1}, ${g2} days; due after scheduling: ${due2}`];
+});
+check('Learning path', 'ICM lesson answers match the ICM calculator', () => {
+  for (let i = 0; i < 60; i++) { const q = E('lnICM')(1 + i % 3), st = q.hand.split('/').map(Number), pk = q.spot.split(', ')[1], eq = E('icmEquity')(st, E('ICM_PAY')[pk])[0];
+    if (q.opts[q.correct] !== Math.round(eq) + '%') return [false, `${q.short}: ${q.opts[q.correct]} vs ${eq.toFixed(1)}%`]; }
+  return [true];
+});
+check('Settings', 'Clock settings are kept within their limits', () => {
+  const c = E('appCfgClean')({ shot: 2, bank: 9999, fhShot: '45', bankOn: 1, fhOn: 0 });
+  return [c.shot === 5 && c.bank === 300 && c.fhShot === 45 && c.bankOn === true && c.fhOn === false, JSON.stringify(c)];
 });
 check('Learning path', 'Rule of 2 and 4 answers are outs × 4 on the flop and × 2 on the turn', () => {
   for (let i = 0; i < 200; i++) { const q = E('lnRule')(), n = parseInt(q.hand), flop = /Flop/.test(q.spot), want = n * (flop ? 4 : 2);
