@@ -8,6 +8,13 @@ function flagSnapshot() {
   const v = currentView, view = $('v-' + v), pops = [...document.querySelectorAll('dialog[open]')].filter(d => d.id !== 'flag-dlg');
   const txt = el => el ? el.innerText.replace(/\n{3,}/g, '\n\n').trim() : '';
   let state = '';
+  if (v === 'learn' && typeof lnPlay !== 'undefined' && lnPlay) {   /* lessons: the question itself, not the whole player */
+    const P = lnPlay, q = P.q || {};
+    state = JSON.stringify({ kind: P.kind, lesson: P.l && P.l.id, level: P.lvl, question: P.i + 1, drill: q.drill, spot: q.spot, hand: q.hand, short: q.short, opts: (q.opts || []).map(o => String(o).replace(/<[^>]+>/g, '')), correct: q.correct, okIdx: q.okIdx, picked: P.picked });
+    const title = P.kind === 'lesson' ? `Learn · ${P.l.name} · level ${P.lvl}` : `Learn · ${P.kind === 'pre' ? 'placement test' : P.kind === 'review' ? 'review' : 'weak spots'}`;
+    const text = (txt($('ln-play'))).slice(0, 7900);
+    return { view: v, title, game: mode === 'cash' ? 'Cash' : 'Tournament', text, state, version: APP_VERSION };
+  }
   try { const g = FLAG_STATE[v] && window.eval(FLAG_STATE[v]);
     if (g) state = JSON.stringify(g, (k, x) => typeof x === 'function' ? undefined : x).slice(0, 11000); } catch (e) {}
   const text = (pops.map(txt).join('\n\n---\n\n') + '\n\n---\n\n' + txt(view && (view.querySelector('.stage') || view))).trim().slice(0, 7900);
@@ -15,6 +22,7 @@ function flagSnapshot() {
 }
 let flagSnap = null;
 function openFlag() {
+  if (typeof stopClock === 'function') stopClock();   /* don't let a shot clock run out while writing a flag */
   flagSnap = flagSnapshot();
   $('flag-what').textContent = `${flagSnap.title} · ${flagSnap.game}`;
   const can = !!(window.cloud && cloud.user && cloud.sendFlag);
@@ -34,6 +42,19 @@ $('flag-send').onclick = async () => {
 };
 
 /* ---------- review (admins) ---------- */
+/* one flag as plain text; the combined log is every flag in the current filter, ready to paste into a chat */
+function flagText(f, i) {
+  const when = f.ms ? new Date(f.ms).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+  return `### Flag ${i + 1}: ${f.title || f.view} · ${f.game || ''} · ${when} · ${f.name || 'Player'}${f.status === 'done' ? ' (resolved)' : ''}
+Note: ${f.note || ''}
+App version: ${f.version || '?'}
+
+What they saw:
+${(f.text || '').trim()}
+${f.state ? `\nTechnical details:\n${f.state.length > 3000 ? f.state.slice(0, 3000) + ' …(cut)' : f.state}\n` : ''}`;
+}
+const flagsShown = () => flagsAll.filter(f => flagsShow === 'all' || (flagsShow === 'open' ? f.status !== 'done' : f.status === 'done'));
+function flagsLog() { const xs = flagsShown(); return `Flags from the Hold'em trainer: ${xs.length} ${flagsShow === 'all' ? '' : flagsShow === 'open' ? 'open ' : 'resolved '}flag${xs.length === 1 ? '' : 's'}, exported ${new Date().toLocaleString()}\n\n` + xs.map(flagText).join('\n---\n\n'); }
 let flagsAll = [], flagsShow = 'open';
 async function openFlags() {
   $('flags-list').innerHTML = '<p class="small muted">Loading…</p>'; $('flags-dlg').showModal();
@@ -43,6 +64,8 @@ async function openFlags() {
 function flagsRender() {
   document.querySelectorAll('#flags-filter [data-s]').forEach(b => b.setAttribute('aria-pressed', b.dataset.s === flagsShow));
   const xs = flagsAll.filter(f => flagsShow === 'all' || (flagsShow === 'open' ? f.status !== 'done' : f.status === 'done'));
+  $('flags-bulk').hidden = !xs.length; $('flags-bulk-msg').textContent = ''; $('flags-copy').textContent = `Copy all ${xs.length}`;
+  $('flags-resolve').hidden = flagsShow === 'done';
   $('flags-list').innerHTML = xs.length ? xs.map(f => `<details class="flag-item" data-id="${f.id}">
       <summary><b>${esc(f.title || f.view)}</b> <span class="muted small">${esc(f.game || '')} · ${f.ms ? new Date(f.ms).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''} · ${esc(f.name || 'Player')}${f.status === 'done' ? ' · resolved' : ''}</span><br><span class="small">${esc(f.note || '')}</span></summary>
       <pre class="flag-text">${esc(f.text || '')}</pre>
@@ -57,4 +80,13 @@ $('flags-list').addEventListener('click', async e => {
   if (b.dataset.act === 'del') { if (b.textContent !== 'Tap again to delete') { b.textContent = 'Tap again to delete'; return; } await cloud.deleteFlag(id); flagsAll = flagsAll.filter(x => x.id !== id); return flagsRender(); }
   await cloud.setFlag(id, b.dataset.act); f.status = b.dataset.act; flagsRender();
 });
+$('flags-copy').onclick = async () => { try { await navigator.clipboard.writeText(flagsLog()); $('flags-bulk-msg').textContent = 'Copied. Paste it into your chat with Claude.'; } catch (e) { $('flags-bulk-msg').textContent = 'Copy was blocked; use Download instead.'; } };
+$('flags-dl').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([flagsLog()], { type: 'text/plain' })); a.download = `flags-${new Date().toLocaleDateString('en-CA')}.txt`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
+$('flags-resolve').onclick = async () => {
+  const b = $('flags-resolve'), xs = flagsShown().filter(f => f.status !== 'done');
+  if (b.dataset.sure !== '1') { b.dataset.sure = '1'; b.textContent = `Tap again to resolve ${xs.length}`; return; }
+  b.dataset.sure = ''; b.textContent = 'Mark all shown as resolved'; $('flags-bulk-msg').textContent = 'Resolving…';
+  for (const f of xs) { try { await cloud.setFlag(f.id, 'done'); f.status = 'done'; } catch (e) {} }
+  flagsRender(); $('flags-bulk-msg').textContent = `Resolved ${xs.length}.`;
+};
 $('acct-flags').onclick = () => { $('acct').close(); openFlags(); };

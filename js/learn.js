@@ -675,7 +675,7 @@ function lnShowPlay() {
       ${q.visual ? `<div class="qz-visual">${q.visual}</div>` : ''}<div class="ln-prompt">${q.prompt}</div>
       <div class="ln-opts">${q.opts.map((o, k) => `<button type="button" class="ln-opt${ans ? (k === q.correct ? ' right' : k === P.picked ? (ok ? ' right' : ' wrong') : ' dim') : ''}" data-k="${k}"${ans ? ' disabled' : ''}>${o}</button>`).join('')}</div>
       ${ans ? `<div class="ln-fb ${ok ? 'good' : 'bad'}"><b>${ok ? (exact ? pick(['Nice!', 'Correct.', 'That\'s it.', 'Well played.']) : 'Good enough.') : P.picked === -1 ? 'Out of time.' : 'Not quite.'}</b> <span class="ln-delta">${ok ? '+' + LN_LV[P.lvl].right : LN_CHIPS.wrong} chips</span><p>${!exact && ok ? `Close to the best play, <b>${q.opts[q.correct]}</b>. ` : ''}${q.explain}</p>
-        <button class="act" type="button" data-ln-cont>Continue</button></div>` : ''}</section>`;
+        <div class="row ln-fb-row"><button class="act" type="button" data-ln-cont>Continue</button><button type="button" class="linkbtn flag-btn">⚑ Flag this</button></div></div>` : '<div class="ln-flag-row"><button type="button" class="linkbtn flag-btn">⚑ Flag this question</button></div>'}</section>`;
     if (ans) box.querySelector('[data-ln-cont]').focus({ preventScroll: true });
     else if (clock) { const qq = q; startClock($('ln-clock'), APPCFG.shot, P.bank, () => { if (lnPlay && lnPlay.q === qq && lnPlay.picked == null) lnAnswer(-1); }); }
     return;

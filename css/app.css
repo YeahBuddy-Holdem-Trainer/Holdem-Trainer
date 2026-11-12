@@ -671,3 +671,6 @@ input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px var(-
 .cap-banner .linkbtn{color:var(--ivory);margin-left:auto}
 .set-row select{font:600 14px var(--body);padding:6px 8px;border-radius:8px;border:1.5px solid color-mix(in srgb,var(--ink) 25%,transparent);background:var(--surface);color:var(--ink);max-width:190px}
 .rd-log{margin:0 0 6px;padding-left:20px;display:grid;gap:2px}
+.ln-fb-row{justify-content:space-between;align-items:center}.ln-fb-row .act{flex:1}
+.ln-flag-row{display:flex;justify-content:flex-end}.ln-flag-row .linkbtn{font-size:13px;color:var(--muted)}
+.flags-bulk{align-items:center;gap:10px}
