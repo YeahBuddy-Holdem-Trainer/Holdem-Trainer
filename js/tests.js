@@ -211,6 +211,12 @@ check('Learning path', 'Every unit but the capstone ends in a checkpoint; capsto
   const capOk = cap && cap.lessons.every(l => l.cap.types.every(t => types.includes(t)));
   return [!bad.length && capOk, bad.length ? 'no checkpoint: ' + bad : `${U.length} units`];
 });
+check('Equity simulation', 'Dominated-hand shortcut stays within 7 points of the exact equity (300 random hands)', () => {
+  let worst = 0, w = '';
+  for (let i = 0; i < 300; i++) { const [h0, h1] = E('dealMatchup')('dom'), r = E('muRule')(h0, h1), fav = r.fav === 0 ? h0 : h1, oth = r.fav === 0 ? h1 : h0, e = E('equity')(fav, oth, [], 6000).eq * 100;
+    if (Math.abs(e - r.rule) > worst) { worst = Math.abs(e - r.rule); w = `${E('names')(fav)} vs ${E('names')(oth)}: rule ${r.rule}%, exact ${e.toFixed(1)}%`; } }
+  return [worst <= 7, `worst miss ${worst.toFixed(1)} pts: ${w}`];
+});
 check('Settings', 'Clock settings are kept within their limits', () => {
   const c = E('appCfgClean')({ shot: 2, bank: 9999, fhShot: '45', bankOn: 1, fhOn: 0 });
   return [c.shot === 5 && c.bank === 300 && c.fhShot === 45 && c.bankOn === true && c.fhOn === false, JSON.stringify(c)];

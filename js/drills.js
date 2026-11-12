@@ -89,7 +89,7 @@ function newSE(){const d=shuffled();se={hero:d.slice(0,2),vil:d.slice(2,4),board
 /* the shortcut you could have used at this street */
 function seHint(step){const b=se.board.slice(0,SHOW[step]);
   if(step===0){const c=classify(se.hero,se.vil);if(!c)return'Shared ranks: these hands often split, so equity sits closer to 50/50 than the cards suggest.';
-    const m=MUBY[c.id],fav=c.fav===0;return `${m.name} (${m.ex}). The favorite wins about ${m.rule}%, and you are the ${fav?'favorite':'underdog'}, so estimate about ${fav?m.rule:100-m.rule}%.`}
+    const m=MUBY[c.id],fav=c.fav===0,r=muRule(se.hero,se.vil);return `${m.name} (${m.ex}). The favorite wins about ${r.rule}%, and you are the ${fav?'favorite':'underdog'}, so estimate about ${fav?r.rule:100-r.rule}%.${r.note?' '+r.note:''}`}
   const mult=step===1?4:2,hv=evalHand(se.hero.concat(b)),vv=evalHand(se.vil.concat(b)),ahead=hv>vv;
   const deck=deckWithout([...se.hero,...se.vil,...b]),cmp=c=>evalHand(se.hero.concat(b,c))-evalHand(se.vil.concat(b,c));
   const win=deck.filter(c=>cmp(c)>0).length,tie=deck.filter(c=>cmp(c)===0).length,lose=deck.length-win-tie;
@@ -169,12 +169,12 @@ $('mu-form').addEventListener('submit',e=>{e.preventDefault();if(mu.done||!mu.pi
   logEvent({drill:'Matchups',spot:m.name,hand:names(mu.hero)+' vs '+names(mu.vil),answer:MUBY[mu.pickedCat].name,expected:m.name,correct:okCat,
     error:+err.toFixed(1),detail:`equity ${pct(eq.eq)}; guess ${g}%`,ms:Date.now()-mu.t0});
   $('mu-sub').disabled=true;$('mu-guess').disabled=true;
-  const est=mu.heroFav?m.rule:100-m.rule,hs=(mu.hero[0]&3)===(mu.hero[1]&3),vs=(mu.vil[0]&3)===(mu.vil[1]&3);
+  const mr=muRule(mu.hero,mu.vil)||{rule:m.rule,note:''},est=mu.heroFav?mr.rule:100-mr.rule,hs=(mu.hero[0]&3)===(mu.hero[1]&3),vs=(mu.vil[0]&3)===(mu.vil[1]&3);
   const adj=[];if(hs)adj.push('your hand is suited (+2 to 3 pts for you)');if(vs)adj.push('villain is suited (+2 to 3 pts for them)');
   const gap=h=>Math.abs((h[0]>>2)-(h[1]>>2));if(!mu.c.id.startsWith('pp')){if(gap(mu.hero)<=2&&gap(mu.vil)>2)adj.push('your cards are connected (a little extra straight equity)');if(gap(mu.vil)<=2&&gap(mu.hero)>2)adj.push('villain\'s cards are connected');}
   $('mu-out').innerHTML=`<div class="verdict ${okCat?'good':'bad'}"><strong>${okCat?'Right type':'It is '+m.name}</strong><span>${m.why}</span></div>
-   <dl class="math"><dt>Rule of thumb</dt><dd>Favorite ≈ ${m.rule}%, so you ≈ ${est}% (${mu.heroFav?'favorite':'underdog'})</dd>${adj.length?`<dt>Adjust</dt><dd style="font-family:var(--body)">${adj.join('; ')}</dd>`:''}<dt>Your guess</dt><dd>${g}%</dd><dt>Exact</dt><dd>${pct(eq.eq)} (win ${pct(eq.w)}, split ${pct(eq.t)})</dd><dt>Miss</dt><dd>${err.toFixed(1)} pts</dd></dl>`});
+   <dl class="math"><dt>Rule of thumb</dt><dd>Favorite ≈ ${mr.rule}%, so you ≈ ${est}% (${mu.heroFav?'favorite':'underdog'})${mr.note?`<br><span style="font-family:var(--body)">${mr.note}</span>`:''}</dd>${adj.length?`<dt>Adjust</dt><dd style="font-family:var(--body)">${adj.join('; ')}</dd>`:''}<dt>Your guess</dt><dd>${g}%</dd><dt>Exact</dt><dd>${pct(eq.eq)} (win ${pct(eq.w)}, split ${pct(eq.t)})</dd><dt>Miss</dt><dd>${err.toFixed(1)} pts</dd></dl>`});
 $('mu-next').onclick=newMU;$('mu-cat').onchange=newMU;
 function muStats(){$('mu-score').textContent=`${stats.mu.c}/${stats.mu.n}`;$('mu-avg').textContent=stats.mu.n?(stats.mu.err/stats.mu.n).toFixed(1):'–'}
 $('mu-cat').innerHTML='<option value="mixed">Mixed (weak types first)</option>'+MU.map(m=>`<option value="${m.id}">${m.name}</option>`).join('');
-$('mu-sheet').innerHTML=`<thead><tr><th>Matchup type</th><th>Example</th><th>Favorite wins</th></tr></thead><tbody>${MU.map(m=>`<tr><td class="t">${m.name}</td><td>${m.ex}</td><td>≈ ${m.rule}%</td></tr>`).join('')}</tbody>`;
+$('mu-sheet').innerHTML=`<thead><tr><th>Matchup type</th><th>Example</th><th>Favorite wins</th></tr></thead><tbody>${MU.map(m=>`<tr><td class="t">${m.name}</td><td>${m.ex}</td><td>≈ ${m.band||m.rule}%</td></tr>`).join('')}</tbody>`;

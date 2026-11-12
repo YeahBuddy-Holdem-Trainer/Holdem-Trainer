@@ -208,7 +208,7 @@ function lnMatch(lvl) {
   return { drill: 'Matchups', spot: m.name, hand: names(hero) + ' vs ' + names(vil),
     prompt: `<div class="hands">${lnHandBox('You', hero)}${lnHandBox('Villain', vil)}</div><p class="spot-text">All in preflop. Your equity is closest to:</p>`,
     opts: opts.map(o => o + '%'), correct, short: `${names(hero)} vs ${names(vil)}`,
-    explain: `${m.name}: the favorite wins about ${m.rule}%, and you are the ${(c.fav === 0) === first ? 'favorite' : 'underdog'}. Exact: ${pct(eq)}.` };
+    explain: (() => { const r = muRule(hero, vil); return `${m.name}: the favorite wins about ${r.rule}%, and you are the ${r.fav === 0 ? 'favorite' : 'underdog'}.${r.note ? ' ' + r.note : ''} Exact: ${pct(eq)}.`; })() };
 }
 function lnCF(lvl) {
   let c; for (let i = 0; i < 40; i++) { c = genCF(lvl === 1 ? .12 : lvl === 2 ? .03 : .01); if (lvl < 3 || Math.abs(c.e.eq - c.req) < .07) break; }
@@ -395,7 +395,7 @@ const LN_UNITS = [
   ] },
   { id: 'decide', name: 'Making decisions', blurb: 'Put the price and your equity together.', lessons: [
     { id: 'matchups', name: 'Preflop matchups', icon: '⚔', d: 'Matchups', gen: lnMatch,
-      intro: `<p>A handful of matchups cover most all-in hands:</p><ul><li>Higher pair vs lower pair: about <b>80/20</b>.</li><li>Pair vs two higher cards: a coin flip, about <b>55/45</b>.</li><li>Two higher cards vs two lower: about <b>65/35</b>.</li><li>Dominated (sharing a card, like AK vs AQ): about <b>70/30</b>.</li></ul>` },
+      intro: `<p>A handful of matchups cover most all-in hands:</p><ul><li>Higher pair vs lower pair: about <b>80/20</b>.</li><li>Pair vs two higher cards: a coin flip, about <b>55/45</b>.</li><li>Two higher cards vs two lower: about <b>65/35</b>.</li><li>Dominated (sharing a card, like AK vs AQ): about <b>73/27</b> with a big kicker, but only about <b>60/40</b> or less when both kickers are small (T6 vs T4), because many boards split.</li></ul>` },
     { id: 'callfold', name: 'Call or fold', icon: '✓', d: 'Call or fold', gen: lnCF,
       intro: `<p>Now combine it all. Work out the price (pot odds), estimate your equity (outs and the rule of 2 and 4), then compare.</p><ul><li>Equity higher than the price: <b>call</b>.</li><li>Equity lower: <b>fold</b>.</li><li>You get a read on villain's hand instead of seeing their cards.</li></ul>` },
     { id: 'decide-check', name: 'Checkpoint', check: true, gen: lnMix('decide'), intro: `<p>Matchups and call-or-fold decisions. Score 10 out of 12 to unlock <b>Reading ranges</b>.</p>` },

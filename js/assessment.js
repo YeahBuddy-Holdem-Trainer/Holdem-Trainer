@@ -13,7 +13,7 @@ const QGEN={
     return{drill:'Matchups',spot:m.name,hand:names(hero)+' vs '+names(vil),
       prompt:`<div class="hands"><div><span class="lbl">You</span><div class="cards">${cardsHTML(hero)}</div></div><div><span class="lbl">Villain</span><div class="cards">${cardsHTML(vil)}</div></div></div><p>All in preflop. Your equity is closest to:</p>`,
       opts:opts.map(o=>o+'%'),correct,short:`${names(hero)} vs ${names(vil)}`,
-      explain:`${m.name}: the favorite wins about ${m.rule}%, and you are the ${(c.fav===0)===first?'favorite':'underdog'}. Exact: ${pct(eq)}.`}},
+      explain:(()=>{const r=muRule(hero,vil);return `${m.name}: the favorite wins about ${r.rule}%, and you are the ${r.fav===0?'favorite':'underdog'}.${r.note?' '+r.note:''} Exact: ${pct(eq)}.`})()}},
   'Pot odds'(){const p=genPO(),r=Math.round(p.req*100),wrong1=Math.round(p.bet/(p.pot+p.bet)*100),wrong2=Math.round(p.bet/p.pot*100);
     const {opts,correct}=numOpts(r,[wrong1,wrong2<95?wrong2:r+12,r+7,r-7,r+12].filter(x=>x>0&&x<100));
     return{drill:'Pot odds',spot:nearestRef(p.bet/p.pot)+' bet',hand:'',
