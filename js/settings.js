@@ -52,6 +52,7 @@ function setRender() {
   const admin = !!(window.cloud && cloud.user && cloud.admin), c = APPCFG;
   $('set-units').querySelectorAll('[data-u]').forEach(b => b.setAttribute('aria-pressed', (cfg.units === 'bb') === (b.dataset.u === 'bb')));
   $('set-math').checked = !!cfg.showMath;
+  $('set-goal').innerHTML = LN_GOALS.map(([v, t]) => `<option value="${v}"${v === lnGoal() ? ' selected' : ''}>${t}</option>`).join('');
   $('set-clock-sum').innerHTML = `Master-level lessons: <b>${c.shot} s</b> a question. Time bank: <b>${c.bankOn ? c.bank + ' s' : 'off'}</b>. Full hands clock: <b>${c.fhOn ? c.fhShot + ' s a decision' : 'off'}</b>.`;
   $('set-admin').hidden = !admin;
   if (admin) {
@@ -69,6 +70,7 @@ $('set-units').addEventListener('click', e => {
 });
 $('set-math').onchange = e => { cfg.showMath = e.target.checked; delete cfg.hvrMath; try { localStorage.setItem(CFGKEY, JSON.stringify(cfg)); } catch (err) {}
   document.querySelectorAll('.math-always').forEach(x => x.checked = cfg.showMath); };
+$('set-goal').onchange = e => { ln.goal = +e.target.value; lnSave(); lnMini(); if (currentView === 'learn' && !lnPlay) lnRender(); };
 $('set-bank-on').onchange = e => { $('set-bank').disabled = !e.target.checked; };
 $('set-fh-on').onchange = e => { $('set-fh').disabled = !e.target.checked; };
 $('set-save').onclick = async () => {

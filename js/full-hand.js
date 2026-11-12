@@ -97,7 +97,7 @@ function fhAsk(kind){fh.ask=kind;fhRender();
   else{const opts=fhOptions();h=opts.map(o=>`<button class="act ${o.id==='fold'||o.id==='check'?'ghost':''}" data-a="${o.id}">${o.label}</button>`).join('')}
   b.innerHTML=h;fhClock()}
 /* optional action clock (an admin setting): runs out → check if you can, otherwise fold; the time bank lasts the whole hand */
-function fhClock(){const host=$('fh-clock');if(!APPCFG.fhOn||!fh||fh.done){stopClock();host.innerHTML='';return}
+function fhClock(){const host=$('fh-clock'),cap=typeof lnCap!=='undefined'&&lnCap&&lnCap.lvl===3&&fh&&fh.capHand;if(!(APPCFG.fhOn||cap)||!fh||fh.done){stopClock();host.innerHTML='';return}
   if(!fh.bank)fh.bank={left:APPCFG.bankOn?APPCFG.bank:0};
   startClock(host,APPCFG.fhShot,fh.bank,()=>{const bs=[...$('fh-acts').querySelectorAll('button[data-a]')],b=bs.find(x=>x.dataset.a==='check')||bs.find(x=>x.dataset.a==='fold');
     fh.timedOut=(fh.timedOut||0)+1;if(b)b.click()})}

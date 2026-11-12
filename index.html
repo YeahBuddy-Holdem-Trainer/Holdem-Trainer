@@ -433,6 +433,7 @@
     </ul>
     <p class="small muted">Results swing with the cards. The decisions are what you're practicing. Your last 50 hands are saved on this device for the hand replayer.</p>
   </div></details>
+  <div class="cap-banner" id="cap-banner" role="status" hidden></div>
   <div class="cols">
     <div class="panel stage">
       <div class="setup">
@@ -849,6 +850,9 @@
     <section class="set-sec"><h3>Display</h3>
       <div class="set-row"><span>Show amounts in</span><div class="seg" id="set-units" role="group" aria-label="Show amounts in"><button type="button" data-u="money">$ / chips</button><button type="button" data-u="bb">BB</button></div></div>
       <label class="check set-row"><input type="checkbox" id="set-math"> Always open "Show the math"</label>
+    </section>
+    <section class="set-sec"><h3>Learning</h3>
+      <label class="set-row"><span>Daily goal <small class="muted">chips to win each day to keep your streak</small></span><select id="set-goal"></select></label>
     </section>
     <section class="set-sec"><h3>Clocks</h3><p class="small" id="set-clock-sum"></p><p class="small muted">The app admin sets these for everyone.</p></section>
     <section class="set-sec set-admin" id="set-admin" hidden><h3>Admin controls <span class="chip ok">Admin</span></h3>

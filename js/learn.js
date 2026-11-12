@@ -292,8 +292,54 @@ function lnICM(lvl) {
     opts: opts.map(o => o + '%'), correct, short: `${n} left, stacks ${stacks.join('/')}`,
     explain: `ICM says <b>${eq.toFixed(1)}%</b>. Your share of the chips is ${chip.toFixed(1)}%, but chips aren't money: ${eq < chip ? 'a big stack is worth less than its chip share, because first place pays a capped amount' : 'a short stack is worth more than its chip share, because you already have a shot at the paid places'}.` };
 }
+
+/* ---------- Reading hands: one hand, street by street ----------
+   The same model as the Hand reading trainer: the opponent opens, you call in the big blind and check to them,
+   and each bet or check re-weights every combo by how likely that hand is to act that way.
+   Returns a chain of questions (one per street, then the read); the lesson player asks them in order. */
+function lnRDHand(lvl, parts = 'all') {
+  const g = mode === 'cash' ? 'cash' : 'tour', [openId, callId, vName] = pick(RD_SPOTS[g]), type = lvl === 1 ? pick(['nit', 'aggro']) : pick(Object.keys(RD_TYPES));
+  const vLabels = eqSpotLabels(openId), hLabels = eqSpotLabels(callId, 'Call');
+  const hero = pick(hLabels.flatMap(labelCombos)), all = vLabels.flatMap(labelCombos).filter(c => !hero.includes(c[0]) && !hero.includes(c[1]));
+  const vil = pick(all), board = shuffled().filter(c => !hero.includes(c) && !vil.includes(c)).slice(0, 5);
+  const vPos = SPOTS.find(s => s.id === openId).hero, open = SPOTS.find(s => s.id === openId).o || (g === 'cash' ? 2.5 : 2.2);
+  let pot = open * 2 + .5 + (g === 'cash' ? 0 : 1), range = all.map(c => ({ c, w: 1, g: null }));
+  const share = f => { let a = 0, t = 0; for (const x of range) { t += x.w; if (f(x)) a += x.w; } return t ? a / t : 0; };
+  const log = [`${RD_TYPES[type].name} opens to ${fmtBB(open)} BB from the ${vName.toLowerCase()}. You call in the big blind.`], qs = [];
+  for (let k = 0; k < 3; k++) {
+    const st = ['flop', 'turn', 'river'][k], b = board.slice(0, 3 + k);
+    range = range.filter(x => !b.includes(x.c[0]) && !b.includes(x.c[1])); for (const x of range) x.g = rdGroup(x.c, b);
+    const before = share(x => RD_TOPPLUS.has(x.g)), bets = Math.random() < rdP(st, rdGroup(vil, b), type), f = x => { const q = rdP(st, x.g, type); return bets ? q : 1 - q; };
+    let num = 0, den = 0; for (const x of range) { const w = x.w * f(x); den += w; if (RD_TOPPLUS.has(x.g)) num += w; }
+    const after = den ? num / den : 0, size = Math.round(pot * RD_SIZE[st] * 2) / 2;
+    const seats = {}; POS.forEach(p => seats[p] = { state: 'folded', bet: '', tag: '', stack: '' });
+    seats.BB = { state: 'hero', tag: 'You', stack: '', bet: '' }; seats[vPos] = { state: 'vil', tag: bets ? 'Bets' : 'Checks', stack: '', bet: bets ? fmtBB(size) + ' BB' : '' };
+    const visual = tableSnap({ hero: 'BB', seats, heroCards: hero, center: `<div class="cards">${cardsHTML(b, 'xs')}</div><b>${fmtBB(pot)} BB</b><span>pot</span>` });
+    const line = `<b>${st[0].toUpperCase() + st.slice(1)}</b> ${names(k ? b.slice(-1) : b)}: you check, they ${bets ? `bet ${fmtBB(size)} BB into ${fmtBB(pot)} BB` : 'check behind'}.`;
+    if (parts === 'all' || (parts === 'flop' && k === 0)) {
+      const v = lnRound5(after), { opts, correct } = lnPctOpts(v, lvl);
+      qs.push({ drill: 'Hand reading', spot: `${st[0].toUpperCase() + st.slice(1)}, ${bets ? 'bet' : 'check'}`, hand: names(b), visual,
+        prompt: `<ol class="small rd-log">${log.concat(line).map(t => `<li>${t}</li>`).join('')}</ol><p class="spot-text">Before this action, <b>${pct(before, 0)}</b> of their range was top pair or better. After that ${bets ? 'bet' : 'check'}, what share is?</p>`,
+        opts: opts.map(o => o + '%'), correct, short: `${RD_TYPES[type].name}, ${st} ${bets ? 'bet' : 'check'} on ${names(b)}`,
+        explain: `<b>${pct(after)}</b>. ${bets ? `A ${st} bet comes more from strong hands and draws${type === 'aggro' ? ', though this player bluffs a lot' : type === 'nit' ? ', and this tight player rarely bluffs' : ''}, so the share of top pair or better ${after > before ? 'goes up' : 'barely moves'}.` : `A check comes more from weak pairs and give-ups, so the share of top pair or better ${after < before ? 'drops' : 'barely moves'}.`}` });
+    }
+    for (const x of range) x.w *= f(x);
+    log.push(line); if (bets) pot += size * 2;
+  }
+  if (parts === 'all' || parts === 'read') {
+    const t = range.reduce((a, x) => a + x.w, 0), m = {}; for (const x of range) { const gg = x.g === 'draw' ? 'air' : x.g; m[gg] = (m[gg] || 0) + x.w; }
+    const best = Object.keys(m).sort((a, z) => m[z] - m[a])[0], keys = Object.keys(RD_GROUPS).filter(k => k !== 'draw'), seats = {};
+    POS.forEach(p => seats[p] = { state: 'folded', bet: '', tag: '', stack: '' }); seats.BB = { state: 'hero', tag: 'You', stack: '', bet: '' }; seats[vPos] = { state: 'vil', tag: 'River', stack: '', bet: '' };
+    const close = keys.filter(k => k !== best && (m[k] || 0) >= .85 * m[best]);
+    qs.push({ drill: 'Hand reading', spot: 'Final read', hand: names(vil), visual: tableSnap({ hero: 'BB', seats, heroCards: hero, center: `<div class="cards">${cardsHTML(board, 'xs')}</div><b>${fmtBB(pot)} BB</b><span>pot</span>` }),
+      prompt: `<ol class="small rd-log">${log.map(x => `<li>${x}</li>`).join('')}</ol><p class="spot-text">Putting it all together, what is the <b>most likely</b> kind of hand in their range now?</p>`,
+      opts: keys.map(k => k === 'air' ? 'Missed draw or nothing' : RD_GROUPS[k]), correct: keys.indexOf(best), okIdx: close.map(k => keys.indexOf(k)), short: `Read on ${names(board)}`,
+      explain: `By the river their range is ${keys.filter(k => (m[k] || 0) > t * .03).sort((a, z) => (m[z] || 0) - (m[a] || 0)).map(k => `${(k === 'air' ? 'missed draws or nothing' : RD_GROUPS[k].toLowerCase())} <b>${pct((m[k] || 0) / t, 0)}</b>`).join(', ')}. They actually had <b>${handLabel(vil)}</b> (${names(vil)}). Reads are about the range: the right read can still lose to the actual hand.` });
+  }
+  return qs;
+}
 /* a checkpoint mixes every lesson in its unit, at the checkpoint's level */
-function lnMix(unitId) { return lvl => { const u = LN_UNITS.find(x => x.id === unitId); return pick(u.lessons.filter(l => !l.check)).gen(lvl); }; }
+function lnMix(unitId) { return lvl => { const u = LN_UNITS.find(x => x.id === unitId); return pick(u.lessons.filter(l => !l.check && l.gen)).gen(lvl); }; }
 
 /* ---------- the path ---------- */
 const LN_UNITS = [
@@ -386,20 +432,39 @@ const LN_UNITS = [
       intro: `<p>With about 20 BB, re-shoving over a late-position open puts maximum pressure on a wide range.</p><ul><li>Good re-shoves have blockers or play well when called: suited aces, pairs, broadways.</li></ul>` },
     { id: 'tr-icm', name: 'ICM', icon: '$', d: 'ICM', gen: lnICM,
       intro: `<p>Near the money, chips aren't worth their face value. <b>ICM</b> (the independent chip model) turns stacks into shares of the prize pool.</p><ul><li>Big stacks are worth <b>less</b> than their chip share; short stacks <b>more</b>.</li><li>That's why you call shoves tighter near the bubble.</li></ul>` },
-    { id: 'tourney-check', name: 'Checkpoint', check: true, gen: lnMix('tourney'), intro: `<p>Push/fold and ICM. Score 10 out of 12 to finish this part of the path.</p>` },
+    { id: 'tourney-check', name: 'Checkpoint', check: true, gen: lnMix('tourney'), intro: `<p>Push/fold and ICM. Score 10 out of 12 to unlock <b>Reading hands</b>.</p>` },
+  ] },
+  { id: 'reading', name: 'Reading hands', blurb: 'Narrow their range street by street.', lessons: [
+    { id: 'rd-flop', name: 'What a bet says', icon: '👁', d: 'Hand reading', gen: lvl => lnRDHand(lvl, 'flop')[0],
+      intro: `<p>Every action changes what a player can have. Start each hand with their opening range, then ask: <b>which hands would do this?</b></p><ul><li>A bet comes more often from strong hands and draws, plus some bluffs.</li><li>A check comes more from weak pairs and hands that gave up.</li><li>Aggressive players bluff more, so their bets say less. Tight players' bets say a lot.</li></ul>` },
+    { id: 'rd-streets', name: 'Street by street', icon: '⇶', d: 'Hand reading', pass: [12, 10], gen: lvl => lnRDHand(lvl, 'all'),
+      intro: `<p>Now follow whole hands: flop, turn and river, then put them on a hand. Each hand is four questions, three hands a lesson.</p><ul><li>Each street starts from the range that's left after the last one.</li><li>Two bets in a row narrow the range much more than one.</li><li>The read is about the most likely <b>kind</b> of hand, not the exact two cards.</li></ul>` },
+    { id: 'rd-read', name: 'Putting them on a hand', icon: '🎯', d: 'Hand reading', gen: lvl => lnRDHand(lvl, 'read')[0],
+      intro: `<p>See the whole hand's action, then make the read.</p><ul><li>Bet, bet, bet: mostly strong hands and top pair, plus bluffs from aggressive players.</li><li>Check, check, bet: often a weaker hand going for thin value, or a bluff.</li><li>Close calls between two groups count as right.</li></ul>` },
+    { id: 'reading-check', name: 'Checkpoint', check: true, gen: lnMix('reading'), intro: `<p>Hand reading across all streets. Score 10 out of 12 to unlock the <b>Capstone</b>.</p>` },
+  ] },
+  { id: 'capstone', name: 'Capstone', blurb: 'Full hands, graded decision by decision.', lessons: [
+    { id: 'cap-loose', name: 'Loose players', icon: '🐠', cap: { types: ['rec', 'station'], game: 'cash' },
+      intro: `<p>Play <b>5 full hands</b> in the Full hand trainer against recreational players and calling stations. Every decision is graded; get <b>80%</b> best or fine to pass.</p><ul><li>Value-bet thinner and bigger; they call too much.</li><li>Bluff rarely.</li></ul>` },
+    { id: 'cap-tough', name: 'Tough opponents', icon: '🦈', cap: { types: ['nit', 'aggro'], game: 'cash' },
+      intro: `<p>5 full hands against nits and aggressive players.</p><ul><li>Against nits: steal and bluff more, respect their raises.</li><li>Against aggressive players: call down lighter and let them bluff.</li></ul>` },
+    { id: 'cap-mixed', name: 'Any opponent', icon: '🎲', cap: { types: ['rec', 'station', 'nit', 'aggro'], game: 'cash' },
+      intro: `<p>5 full hands against a random player type each hand. Read the opponent line at the top of the table before you act.</p>` },
+    { id: 'cap-tour', name: 'Tournament hands', icon: '🏆', cap: { types: ['rec', 'station', 'nit', 'aggro'], game: 'tour' },
+      intro: `<p>5 full tournament hands with shorter stacks and antes. Push/fold and re-shove charts apply when stacks are short.</p>` },
   ] },
 ];
-const LN_SOON = [['Reading hands', 'Narrowing a range street by street'], ['Capstone', 'Playing full hands against every player type']];
+const LN_SOON = [];
 const LN_ALL = LN_UNITS.flatMap((u, ui) => u.lessons.map((l, li) => ({ ...l, unit: u, ui, li })));
 const lnById = id => LN_ALL.find(l => l.id === id);
 
 /* ---------- saved progress ----------
    ln.lessons[id] = { best (level 1), b2, b3, attempts, n, c, last, placed } */
 let ln = (() => { try { return JSON.parse(localStorage.getItem(LNKEY)) || {}; } catch (e) { return {}; } })();
-ln = { xp: 0, peak: 0, lessons: {}, days: [], n: 0, c: 0, pre: null, ...ln };
+ln = { xp: 0, peak: 0, lessons: {}, days: [], goalDays: [], n: 0, c: 0, pre: null, ...ln };
 function lnSave() { try { localStorage.setItem(LNKEY, JSON.stringify(ln)); } catch (e) {} }
 const lnToday = () => new Date().toLocaleDateString('en-CA');
-const lnNeed = l => LN_PASS[l.check ? 'check' : 'lesson'];
+const lnNeed = l => l.pass || (l.cap ? [10, 8] : LN_PASS[l.check ? 'check' : 'lesson']);
 const lnBestAt = (r, k) => r ? (k === 1 ? r.best : r['b' + k]) || 0 : 0;
 const lnPassed = l => { const r = ln.lessons[l.id]; return !!(r && (r.placed || r.best >= lnNeed(l)[1])); };
 const lnLvPassed = (l, k) => k === 1 ? lnPassed(l) : lnBestAt(ln.lessons[l.id], k) >= lnNeed(l)[1];
@@ -413,18 +478,28 @@ function lnOpen(l) {
 const lnLvOpen = (l, k) => k === 1 ? lnOpen(l) : lnLvPassed(l, k - 1);
 const lnNext = () => LN_ALL.find(l => lnOpen(l) && !lnPassed(l));
 const lnRank = (x = ln.peak) => { let i = 0; LN_RANKS.forEach((r, k) => { if (x >= r.at) i = k; }); return i; };
+/* streak: days in a row you reached the daily goal (or played at all, with the goal off) */
 function lnStreak() {
-  const s = new Set(ln.days); let d = new Date(), n = 0;
+  const s = new Set(lnGoal() ? ln.goalDays : ln.days); let d = new Date(), n = 0;
   if (!s.has(lnToday())) d.setDate(d.getDate() - 1);
   while (s.has(d.toLocaleDateString('en-CA'))) { n++; d.setDate(d.getDate() - 1); }
   return n;
 }
-function lnAddChips(x) { ln.xp = Math.max(0, ln.xp + x); ln.peak = Math.max(ln.peak, ln.xp); }
+function lnAddChips(x) {
+  ln.xp = Math.max(0, ln.xp + x); ln.peak = Math.max(ln.peak, ln.xp);
+  /* daily goal: chips won today (wins only, losses don't count against it) */
+  const d = lnToday(); if (!ln.today || ln.today.d !== d) ln.today = { d, n: 0 };
+  if (x > 0) { const was = ln.today.n; ln.today.n += x; const g = lnGoal();
+    if (g && was < g && ln.today.n >= g && !ln.goalDays.includes(d)) { ln.goalDays = ln.goalDays.concat(d).slice(-400); setTimeout(() => lnToast(`🔥 Daily goal reached: ${g} chips. Streak ${lnStreak()} day${lnStreak() > 1 ? 's' : ''}!`), 300); } }
+}
+const LN_GOALS = [[0, 'Off'], [50, 'Casual (50)'], [100, 'Regular (100)'], [200, 'Serious (200)'], [400, 'Intense (400)']];
+const lnGoal = () => ln.goal ?? 100;
+const lnTodayChips = () => ln.today && ln.today.d === lnToday() ? ln.today.n : 0;
 
 /* ---------- reviews: passed lessons come back after 1, 3, 7, 14, 30 and 60 days ---------- */
 const lnMaxLv = l => [3, 2, 1].find(k => lnLvPassed(l, k)) || 1;
 function lnDueAt(l) { const r = ln.lessons[l.id] || {}; return r.due ?? ((r.last || (ln.pre && ln.pre.ts) || Date.now()) + (r.placed && !r.last ? 7 : 1) * LN_DAY); }
-const lnDue = () => LN_ALL.filter(l => !l.check && lnPassed(l) && lnDueAt(l) <= Date.now());
+const lnDue = () => LN_ALL.filter(l => !l.check && !l.cap && lnPassed(l) && lnDueAt(l) <= Date.now());
 function lnSchedule(r, step) { r.rv = Math.max(0, Math.min(LN_RV.length - 1, step)); r.due = Date.now() + LN_RV[r.rv] * LN_DAY; }
 /* ---------- weak spots: the areas with the lowest accuracy in your recent answers (lessons and trainers) ---------- */
 function lnWeak() {
@@ -460,7 +535,8 @@ function lnRankCard(compact) {
     <div class="ln-badge" aria-hidden="true">${r.icon}</div>
     <div class="ln-rank-txt"><span class="eyebrow">Your rank</span><h2>${r.name}</h2>${compact ? '' : `<p class="small">${r.line}</p>`}
       <div class="ln-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(frac * 100)}"><i style="width:${frac * 100}%"></i></div>
-      <span class="small">${nx ? `${(nx.at - ln.peak).toLocaleString()} chips to <b>${nx.name}</b>` : 'Top rank reached'} · ${done} of ${LN_ALL.length} lessons</span></div>
+      <span class="small">${nx ? `${(nx.at - ln.peak).toLocaleString()} chips to <b>${nx.name}</b>` : 'Top rank reached'} · ${done} of ${LN_ALL.length} lessons</span>
+      ${lnGoal() ? `<div class="ln-goal"><span>🔥 ${lnStreak()}</span><div class="ln-bar"><i style="width:${Math.min(1, lnTodayChips() / lnGoal()) * 100}%"></i></div><span class="small">${lnTodayChips() >= lnGoal() ? 'Goal done today' : `Today ${lnTodayChips()}/${lnGoal()}`}</span></div>` : ''}</div>
     <div class="ln-stack-box">${lnStacks(ln.xp, compact ? 64 : 104)}<b>${Math.round(ln.xp).toLocaleString()}</b><span>chips</span></div>
   </div>`;
 }
@@ -494,7 +570,7 @@ function lnRender() {
     <div class="stat"><div class="n">${LN_ALL.filter(lnPassed).length}/${LN_ALL.length}</div><span class="small muted">lessons passed</span></div>
     <div class="stat"><div class="n">${stars}<small>/${LN_ALL.length * 3}</small></div><span class="small muted">stars</span></div>
     <div class="stat"><div class="n">${qs ? pct(acc, 0) : '–'}</div><span class="small muted">lesson accuracy</span></div>
-    <div class="stat"><div class="n">${lnStreak()}</div><span class="small muted">day streak</span></div>
+    <div class="stat"><div class="n">${lnStreak()}</div><span class="small muted">${lnGoal() ? 'day goal streak' : 'day streak'}</span></div>
   </div>
   ${any ? lnPracticeCards() : ''}
   <div class="ln-path">${LN_UNITS.map((u, ui) => { const p = u.lessons.filter(l => lnPassed(LN_ALL.find(x => x.id === l.id))).length;
@@ -542,11 +618,12 @@ function lnMixStart(kind) {
   lnPlay = { kind, pool, lvl: 2, n: 10, need: 8, i: 0, right: 0, chips: 0, stage: 'intro', game: mode, miss: [], per: {} };
   lnGoLearn();
 }
+const lnPreUnits = () => LN_UNITS.filter(u => !u.lessons.some(l => l.cap));   /* the capstone is played, not tested */
 const LN_PRE_N = 8, LN_PRE_MISS = 1; /* each unit: 8 questions, at most 1 miss to place out of it */
 function lnShowPlay() {
   stopClock();
   $('ln-dash').hidden = true; $('ln-play').hidden = false; const P = lnPlay, box = $('ln-play');
-  const total = P.kind === 'pre' ? LN_UNITS.length * LN_PRE_N : P.n, done = P.kind === 'pre' ? P.ui * LN_PRE_N + P.inUnit : P.i;
+  const total = P.kind === 'pre' ? lnPreUnits().length * LN_PRE_N : P.n, done = P.kind === 'pre' ? P.ui * LN_PRE_N + P.inUnit : P.i;
   const head = `<div class="ln-top"><button type="button" class="linkbtn ln-quit" data-ln-quit>✕ Quit</button><div class="ln-bar"><i style="width:${done / total * 100}%"></i></div><span class="ln-pchips" id="ln-pchips">${P.chips >= 0 ? '+' : ''}${P.chips}</span></div>`;
   const title = P.kind === 'review' ? 'Review' : P.kind === 'weak' ? 'Weak spots' : P.kind === 'pre' ? 'Placement test' : P.l.name;
   if (P.stage === 'intro') {
@@ -570,8 +647,8 @@ function lnShowPlay() {
     box.innerHTML = `${head}<section class="panel ln-card"><span class="eyebrow">${esc(l.unit.name)} · ${l.check ? 'Checkpoint' : 'Lesson ' + (l.li + 1)}</span><h2>${esc(l.name)}</h2><div class="ln-intro">${l.intro}</div>
       <div class="ln-levels" role="group" aria-label="Level">${[1, 2, 3].map(k => { const o = lnLvOpen(l, k), pa = lnLvPassed(l, k);
         return `<button type="button" class="ln-lv${P.lvl === k ? ' on' : ''}" data-ln-lv="${k}"${o ? '' : ' disabled'} aria-pressed="${P.lvl === k}"><b>${o ? (pa ? '★ ' : '') : '🔒 '}Level ${k}</b><span>${LN_LV[k].name}</span></button>`; }).join('')}</div>
-      <p class="small muted">${lnLvLine(P.lvl)} ${P.n} questions · pass with ${P.need} · ${LN_LV[P.lvl].right} chips a right answer${l.unit.id === 'preflop' || l.d === 'Preflop' && l.unit.id !== 'tourney' ? ` · ${mode === 'cash' ? 'cash (100 BB)' : 'tournament'} charts` : ''}</p>
-      <div class="row"><button class="act" type="button" data-ln-begin>Start level ${P.lvl}</button></div></section>`;
+      <p class="small muted">${l.cap ? `${['', 'Learn: the full-hand trainer with feedback on every decision.', 'Practice: same hands, higher stakes for your chips.', `Master: the full-hand clock is on (${APPCFG.fhShot} s a decision${APPCFG.bankOn ? `, ${APPCFG.bank} s bank` : ''}).`][P.lvl]} 5 hands · pass with 80% of decisions best or fine` : `${lnLvLine(P.lvl)} ${P.n} questions · pass with ${P.need}`} · ${LN_LV[P.lvl].right} chips a right answer${l.unit.id === 'preflop' || l.d === 'Preflop' && l.unit.id !== 'tourney' ? ` · ${mode === 'cash' ? 'cash (100 BB)' : 'tournament'} charts` : ''}</p>
+      <div class="row"><button class="act" type="button" data-ln-begin>${l.cap ? `Play 5 hands at level ${P.lvl}` : `Start level ${P.lvl}`}</button></div></section>`;
     return;
   }
   if (P.stage === 'q') {
@@ -596,11 +673,11 @@ function lnShowPlay() {
       <div class="row">${nx ? `<button class="act" type="button" data-ln-go="${nx.id}">Go to next lesson</button>` : ''}<button class="act ghost" type="button" data-ln-dash>Back to path</button></div></section>`;
     return;
   }
-  const ok = P.right >= P.need, missHTML = P.miss.length ? `<details class="ln-review"><summary>Review your misses (${P.miss.length})</summary>${P.miss.map(m => `<div><span class="small muted">${esc(m.short)}</span><span>${m.picked === -1 ? 'Out of time' : `You chose <b>${m.opts[m.picked]}</b>`}; the answer is <b>${m.opts[m.correct]}</b>.</span><span class="small">${m.explain}</span></div>`).join('')}</details>` : '';
+  const ok = P.kind === 'lesson' && P.l.cap ? P.n > 0 && P.right / P.n >= .8 : P.right >= P.need, missHTML = P.miss.length ? `<details class="ln-review"><summary>Review your misses (${P.miss.length})</summary>${P.miss.map(m => `<div><span class="small muted">${esc(m.short)}</span><span>${m.picked === -1 ? 'Out of time' : `You chose <b>${m.opts[m.picked]}</b>`}; the answer is <b>${m.opts[m.correct]}</b>.</span><span class="small">${m.explain}</span></div>`).join('')}</details>` : '';
   const stackHTML = `${lnStacks(ln.xp, 90)}<p class="small">${P.chips >= 0 ? '+' : ''}${P.chips} chips this ${P.kind === 'lesson' ? 'lesson' : 'session'} · stack ${Math.round(ln.xp).toLocaleString()}</p>`;
   if (P.kind !== 'lesson') {
     box.innerHTML = `${head}<section class="panel ln-card ln-end"><span class="eyebrow">${P.kind === 'review' ? '🔁 Review' : '🎯 Weak spots'}</span>
-      <h2>${P.rankUp ? `Rank up: ${LN_RANKS[lnRank()].icon} ${LN_RANKS[lnRank()].name}!` : ok ? 'Nicely done' : 'Keep at it'}</h2>
+      ${P.rankUp ? lnConfetti() : ''}<h2>${P.rankUp ? `Rank up: ${LN_RANKS[lnRank()].icon} ${LN_RANKS[lnRank()].name}!` : ok ? 'Nicely done' : 'Keep at it'}</h2>
       <p><b>${P.right} of ${P.n}</b> right.${ok ? ` Bonus +${LN_CHIPS.review} chips.` : ''}</p>
       ${P.kind === 'review' ? `<ul class="ln-mixlist">${Object.entries(P.per).map(([id, x]) => { const l = lnById(id), r = ln.lessons[id]; return `<li><b>${esc(l.name)}</b> ${x.c}/${x.n} · <span class="small">${x.up ? `next review in ${LN_RV[r.rv]} day${LN_RV[r.rv] > 1 ? 's' : ''}` : 'back tomorrow'}</span></li>`; }).join('')}</ul>` : ''}
       ${stackHTML}${missHTML}
@@ -609,9 +686,10 @@ function lnShowPlay() {
   }
   const nx = lnNext(), up = P.lvl < 3 && lnLvOpen(P.l, P.lvl + 1);
   box.innerHTML = `${head}<section class="panel ln-card ln-end"><span class="eyebrow">${esc(P.l.name)} · Level ${P.lvl}</span>
-    <h2>${ok ? (P.rankUp ? `Rank up: ${LN_RANKS[lnRank()].icon} ${LN_RANKS[lnRank()].name}!` : P.lvl === 3 ? 'Mastered!' : `Level ${P.lvl} passed`) : 'Not this time'}</h2>
+    ${P.rankUp || P.unitDone ? lnConfetti() : ''}
+    <h2>${ok ? (P.rankUp ? `Rank up: ${LN_RANKS[lnRank()].icon} ${LN_RANKS[lnRank()].name}!` : P.unitDone ? `Unit complete: ${esc(P.unitDone)}!` : P.lvl === 3 ? 'Mastered!' : `Level ${P.lvl} passed`) : 'Not this time'}</h2>
     ${ok ? lnStarHTML(P.l) : ''}
-    <p><b>${P.right} of ${P.n}</b> right. ${ok ? (P.first ? `Passing bonus +${LN_LV[P.lvl].pass} chips.` : `Bonus +${LN_CHIPS.repass} chips.`) : `You need ${P.need} to pass. Have another go; the questions change every time.`}</p>
+    <p><b>${P.right} of ${P.n}</b> ${P.l.cap ? `decisions best or fine (${P.n ? pct(P.right / P.n, 0) : '–'})` : 'right'}. ${ok ? (P.first ? `Passing bonus +${LN_LV[P.lvl].pass} chips.` : `Bonus +${LN_CHIPS.repass} chips.`) : P.l.cap ? 'You need 80% to pass. Results swing; the decisions are what count.' : `You need ${P.need} to pass. Have another go; the questions change every time.`}</p>
     ${stackHTML}${missHTML}
     <div class="row">${ok && nx && nx.id !== P.l.id ? `<button class="act" type="button" data-ln-go="${nx.id}">Next: ${esc(nx.name)}</button>` : ''}
       ${ok && up ? `<button class="act${nx && nx.id !== P.l.id ? ' ghost' : ''}" type="button" data-ln-go="${P.l.id}" data-ln-lvl="${P.lvl + 1}">Try level ${P.lvl + 1}</button>` : ''}
@@ -623,9 +701,13 @@ function lnDeal() {
   const P = lnPlay; P.picked = null;
   let q, it = null;
   try {
-    if (P.kind === 'pre') q = pick(LN_UNITS[P.ui].lessons.filter(l => !l.check)).gen(2);
-    else if (P.kind === 'lesson') q = P.l.gen(P.lvl);
-    else { it = P.pool[P.i % P.pool.length]; q = it.l.gen(it.lvl); q._lid = it.l.id; q._lname = it.l.name; }
+    if (P.queue && P.queue.length) q = P.queue.shift();
+    else {
+      if (P.kind === 'pre') q = pick(LN_UNITS[P.ui].lessons.filter(l => !l.check)).gen(2);
+      else if (P.kind === 'lesson') q = P.l.gen(P.lvl);
+      else { it = P.pool[P.i % P.pool.length]; q = it.l.gen(it.lvl); for (const x of [].concat(q)) { x._lid = it.l.id; x._lname = it.l.name; } }
+      if (Array.isArray(q)) { P.queue = q.slice(1); q = q[0]; }
+    }
   } catch (e) { console.warn(e); q = lnRule(2); }
   q.t0 = Date.now(); P.q = q; P.stage = 'q'; lnShowPlay(); window.scrollTo(0, $('v-learn').offsetTop - 70);
 }
@@ -651,18 +733,20 @@ function lnContinue() {
     P.placed.push(P.ui);
     LN_UNITS[P.ui].lessons.forEach(l => { const r = ln.lessons[l.id] = ln.lessons[l.id] || { best: 0, attempts: 0, n: 0, c: 0 }; if (!r.placed && !lnPassed(LN_ALL.find(x => x.id === l.id))) { lnAddChips(LN_CHIPS.placed); P.chips += LN_CHIPS.placed; if (r.due == null) lnSchedule(r, 2); } r.placed = true; });
     lnSave(); P.ui++; P.inUnit = 0; P.wrong = 0;
-    if (P.ui >= LN_UNITS.length) return lnPreEnd();
+    if (P.ui >= lnPreUnits().length) return lnPreEnd();
+    P.queue = null;
   }
   lnDeal();
 }
-function lnPreEnd() { const P = lnPlay; ln.pre = { ts: Date.now(), units: P.placed.length }; lnSave(); P.stage = 'end'; lnShowPlay(); lnMini(); }
+function lnPreEnd() { const P = lnPlay; P.queue = null; ln.pre = { ts: Date.now(), units: P.placed.length }; lnSave(); P.stage = 'end'; lnShowPlay(); lnMini(); }
 function lnFinish() {
-  const P = lnPlay, ok = P.right >= P.need, rank0 = lnRank();
+  const P = lnPlay, ok = P.l && P.l.cap ? P.n > 0 && P.right / P.n >= .8 : P.right >= P.need, rank0 = lnRank();
   if (P.kind === 'lesson') {
     const r = ln.lessons[P.l.id], was = lnLvPassed(P.l, P.lvl) || (P.lvl === 1 && r.best >= P.need);
     r.attempts++; r.last = Date.now();
-    if (P.lvl === 1) r.best = Math.max(r.best || 0, P.right); else r['b' + P.lvl] = Math.max(r['b' + P.lvl] || 0, P.right);
-    if (ok) { const b = was ? LN_CHIPS.repass : LN_LV[P.lvl].pass; lnAddChips(b); P.chips += b; P.first = !was;
+    const score = P.l.cap ? (P.n ? Math.round(P.right / P.n * 10) : 0) : P.right;   /* capstone: share of good decisions, out of 10 */
+    if (P.lvl === 1) r.best = Math.max(r.best || 0, score); else r['b' + P.lvl] = Math.max(r['b' + P.lvl] || 0, score);
+    if (ok) { const b = was ? LN_CHIPS.repass : LN_LV[P.lvl].pass; lnAddChips(b); P.chips += b; P.first = !was; if (P.l.check && !was && P.lvl === 1) P.unitDone = P.l.unit.name;
       if (!P.l.check) { if (r.due == null) lnSchedule(r, 0); else lnSchedule(r, r.rv || 0); } }
   } else {
     if (P.kind === 'review') for (const [id, x] of Object.entries(P.per)) { const r = ln.lessons[id]; x.up = x.c / x.n >= .75; lnSchedule(r, x.up ? (r.rv ?? 0) + 1 : 0); }
@@ -670,6 +754,39 @@ function lnFinish() {
   }
   P.rankUp = lnRank() > rank0; lnSave(); P.stage = 'end'; lnShowPlay(); lnMini();
 }
+/* falling chips for a unit complete or a rank up */
+function lnConfetti() { const cs = LN_DENOM.map(d => d[1]); return `<div class="ln-confetti" aria-hidden="true">${Array.from({ length: 26 }, (_, i) => `<i style="left:${(i * 37) % 100}%;background:${cs[i % cs.length]};animation-delay:${(i % 9) * .12}s;animation-duration:${1.6 + (i % 5) * .25}s"></i>`).join('')}</div>`; }
+
+/* ---------- capstone: five hands in the Full hand trainer, graded decision by decision ---------- */
+let lnCap = null;
+function lnCapBegin() {
+  const P = lnPlay, l = P.l;
+  lnCap = { l, lvl: P.lvl, hands: 5, done: 0, dec: 0, ok: 0, chips: 0, prevType: $('fh-type').value };
+  lnPlay = null; if (mode !== l.cap.game) setMode(l.cap.game);
+  $('fh-seat').value = 'random'; location.hash = '#hand'; fhDeal(); window.scrollTo(0, 0);
+}
+function lnCapBanner() {
+  const b = $('cap-banner'); if (!b) return; if (!lnCap) { b.hidden = true; return; }
+  const c = lnCap; b.hidden = false;
+  b.innerHTML = `<span class="eyebrow">🎓 Capstone · ${esc(c.l.name)} · Level ${c.lvl}</span><b>Hand ${Math.min(c.done + 1, c.hands)} of ${c.hands}</b><span class="small">Decisions ${c.ok}/${c.dec} best or fine${c.dec ? ` (${pct(c.ok / c.dec, 0)})` : ''} · need 80%</span><button type="button" class="linkbtn" data-ln-capquit>Quit capstone</button>`;
+}
+const lnFhDeal0 = fhDeal, lnFhGrade0 = fhGrade, lnFhEnd0 = fhEnd;
+fhDeal = function () { if (lnCap && lnCap.done >= lnCap.hands) { $('fh-acts').innerHTML = '<button class="act" type="button" data-ln-capdone>See your capstone result</button>'; return; } if (lnCap && lnCap.done < lnCap.hands) $('fh-type').value = pick(lnCap.l.cap.types); lnFhDeal0(); if (lnCap) { fh.capHand = lnCap.done < lnCap.hands; lnCapBanner(); if (fh.capHand && lnCap.lvl === 3) fhClock(); } };
+fhGrade = function (g) { lnFhGrade0(g); if (lnCap && fh.capHand) { lnCap.dec++; if (g.ok) lnCap.ok++; const b = ln.xp; lnAddChips(g.ok ? LN_LV[lnCap.lvl].right : LN_CHIPS.wrong); lnCap.chips += ln.xp - b; lnSave(); lnCapBanner(); } };
+fhEnd = function (how) { lnFhEnd0(how); if (lnCap && fh.capHand) { lnCap.done++; lnCapBanner();
+  if (lnCap.done >= lnCap.hands) { $('fh-acts').innerHTML = '<button class="act" type="button" data-ln-capdone>See your capstone result</button>'; $('fh-acts').querySelector('button').focus(); } } };
+function lnCapFinish() {
+  const c = lnCap; lnCap = null; lnCapBanner(); $('fh-type').value = c.prevType;
+  lnPlay = { kind: 'lesson', l: c.l, lvl: c.lvl, n: c.dec, need: Math.ceil(c.dec * .8), right: c.ok, chips: c.chips, i: c.dec, stage: 'end', miss: [] };
+  if (!ln.lessons[c.l.id]) ln.lessons[c.l.id] = { best: 0, attempts: 0, n: 0, c: 0 };
+  const r = ln.lessons[c.l.id]; r.n = (r.n || 0) + c.dec; r.c = (r.c || 0) + c.ok;
+  lnFinish(); location.hash = '#learn';
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-ln-capdone]')) return lnCapFinish();
+  if (e.target.closest('[data-ln-capquit]')) { const c = lnCap; lnCap = null; lnCapBanner(); if (c) $('fh-type').value = c.prevType; stopClock(); $('fh-clock').innerHTML = ''; }
+});
+
 function lnToast(msg) { const t = $('ln-toast'); t.textContent = msg; t.hidden = false; clearTimeout(lnToast.h); lnToast.h = setTimeout(() => t.hidden = true, 2600); }
 
 document.addEventListener('click', e => {
@@ -679,7 +796,7 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-ln-weak]')) return lnMixStart('weak');
   if (!lnPlay) return;
   const lv = e.target.closest('[data-ln-lv]'); if (lv && lnPlay.stage === 'intro') { lnPlay.lvl = +lv.dataset.lnLv; return lnShowPlay(); }
-  if (e.target.closest('[data-ln-begin]')) return lnDeal();
+  if (e.target.closest('[data-ln-begin]')) return lnPlay.kind === 'lesson' && lnPlay.l.cap ? lnCapBegin() : lnDeal();
   const o = e.target.closest('#ln-play .ln-opt'); if (o) return lnAnswer(+o.dataset.k);
   if (e.target.closest('[data-ln-cont]')) return lnContinue();
   if (e.target.closest('[data-ln-dash]')) { stopClock(); lnPlay = null; return lnRender(); }

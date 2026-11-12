@@ -658,3 +658,16 @@ input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px var(-
 .ln-pc h3{text-transform:none;letter-spacing:0;font:700 20px var(--display);color:var(--ink)}
 .set-row span,.set-row small{font-family:var(--body);letter-spacing:0;text-transform:none}
 .set-row>span{font-size:15px;color:var(--ink)}
+/* daily goal, confetti, capstone banner */
+.ln-goal{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-weight:700}
+.ln-goal .ln-bar{height:7px}.ln-goal .ln-bar i{background:#E8A33D}
+.ln-end{position:relative;overflow:hidden}
+.ln-confetti{position:absolute;inset:0;pointer-events:none}
+.ln-confetti i{position:absolute;top:-20px;width:18px;height:18px;border-radius:50%;border:3px dashed rgba(255,255,255,.75);animation:lnFall 2s ease-in forwards}
+@keyframes lnFall{to{transform:translateY(520px) rotate(540deg);opacity:0}}
+@media (prefers-reduced-motion:reduce){.ln-confetti{display:none}}
+.cap-banner{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center;background:var(--navy);color:var(--ivory);border-radius:14px;padding:10px 16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.cap-banner .eyebrow{width:100%;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
+.cap-banner .linkbtn{color:var(--ivory);margin-left:auto}
+.set-row select{font:600 14px var(--body);padding:6px 8px;border-radius:8px;border:1.5px solid color-mix(in srgb,var(--ink) 25%,transparent);background:var(--surface);color:var(--ink);max-width:190px}
+.rd-log{margin:0 0 6px;padding-left:20px;display:grid;gap:2px}

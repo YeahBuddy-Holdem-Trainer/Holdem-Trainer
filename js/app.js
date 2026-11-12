@@ -61,7 +61,7 @@ function route(){if(typeof stopClock==='function')stopClock();const h=location.h
   sn.innerHTML=`<div class="subtabs">${SECTIONS[sec].map(x=>`<a href="#${x==='daily'?'home':x}"${x===v?' aria-current="page"':''}>${VIEW_LABEL[x]}</a>`).join('')}</div>${UNIT_VIEWS.includes(v)?unitsSeg():''}${LEARN[v]?'<button type="button" class="info-sub" data-info aria-label="How this works" title="How this works">i</button>':''}${sec!=='home'&&v!=='log'?'<button type="button" class="flag-btn flag-sub" aria-label="Flag this spot" title="Flag this spot">⚑</button>':''}`;
   if(sec==='learn')sn.hidden=true;
   const cur=sn.querySelector('[aria-current]');if(cur&&cur.scrollIntoView)cur.scrollIntoView({block:'nearest',inline:'nearest'});
-  if(v==='learn')lnRender();if(v==='hand'&&typeof fh!=='undefined'&&fh&&!fh.done&&APPCFG.fhOn&&$('fh-acts').querySelector('[data-a]'))fhClock();if(v==='daily')lnMini();if(v==='progress')renderProgress();if(v==='daily'&&!daily)dailyHome();if(v==='replay')rpList();if(v==='log')lgRender();if(v==='exploit')xpOpponents();if(v==='leaks')lkRender();
+  if(v==='learn')lnRender();if(v==='hand'&&typeof fh!=='undefined'&&fh&&!fh.done&&$('fh-acts').querySelector('[data-a]'))fhClock();if(v==='hand'&&typeof lnCapBanner==='function')lnCapBanner();if(v==='daily')lnMini();if(v==='progress')renderProgress();if(v==='daily'&&!daily)dailyHome();if(v==='replay')rpList();if(v==='log')lgRender();if(v==='exploit')xpOpponents();if(v==='leaks')lkRender();
   window.scrollTo(0,0)}
 /* $ / BB switch: a fresh spot in the drills, redrawn in the log */
 $('subnav').addEventListener('click',e=>{if(e.target.closest('[data-info]'))return openInfo(currentView);

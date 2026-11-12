@@ -165,7 +165,7 @@ check('Trainers', 'Leak finder spots a player who folds too much preflop', () =>
 check('Learning path', 'Every lesson makes valid questions at all 3 levels, cash and tournament (6 each)', () => {
   const was = E('mode');
   for (const m of ['cash', 'tour']) { E(`mode='${m}'`);
-    for (const l of E('LN_ALL')) for (const lv of [1, 2, 3]) for (let i = 0; i < 6; i++) { const q = l.gen(lv);
+    for (const l of E('LN_ALL').filter(l => l.gen)) for (const lv of [1, 2, 3]) for (let i = 0; i < 6; i++) for (const q of [].concat(l.gen(lv))) {
       if (!q || !Array.isArray(q.opts) || q.opts.length < 2 || !(q.correct >= 0 && q.correct < q.opts.length) || new Set(q.opts.map(String)).size !== q.opts.length) return [false, `${m} ${l.id} level ${lv}: ${JSON.stringify(q && q.opts)} → ${q && q.correct}`]; } }
   E(`mode='${was}'`); return [true, `${E('LN_ALL').length} lessons × 3 levels`];
 });
@@ -199,6 +199,17 @@ check('Learning path', 'ICM lesson answers match the ICM calculator', () => {
   for (let i = 0; i < 60; i++) { const q = E('lnICM')(1 + i % 3), st = q.hand.split('/').map(Number), pk = q.spot.split(', ')[1], eq = E('icmEquity')(st, E('ICM_PAY')[pk])[0];
     if (q.opts[q.correct] !== Math.round(eq) + '%') return [false, `${q.short}: ${q.opts[q.correct]} vs ${eq.toFixed(1)}%`]; }
   return [true];
+});
+check('Learning path', 'Reading hands: a full hand is 4 questions, and the read is the biggest group left in the range', () => {
+  for (let i = 0; i < 30; i++) { const qs = E('lnRDHand')(1 + i % 3, 'all'); if (qs.length !== 4) return [false, `${qs.length} questions`];
+    const r = qs[3]; if (!(r.correct >= 0) || !/most likely/.test(r.prompt)) return [false, 'read question malformed']; }
+  return [true];
+});
+check('Learning path', 'Every unit but the capstone ends in a checkpoint; capstone lessons name their opponents', () => {
+  const U = E('LN_UNITS'), bad = U.filter(u => !u.lessons.some(l => l.cap) && !u.lessons[u.lessons.length - 1].check).map(u => u.id);
+  const cap = U.find(u => u.id === 'capstone'), types = Object.keys(E('FH_TYPES'));
+  const capOk = cap && cap.lessons.every(l => l.cap.types.every(t => types.includes(t)));
+  return [!bad.length && capOk, bad.length ? 'no checkpoint: ' + bad : `${U.length} units`];
 });
 check('Settings', 'Clock settings are kept within their limits', () => {
   const c = E('appCfgClean')({ shot: 2, bank: 9999, fhShot: '45', bankOn: 1, fhOn: 0 });
