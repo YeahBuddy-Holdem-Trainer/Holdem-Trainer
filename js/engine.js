@@ -123,7 +123,7 @@ const MUBY=Object.fromEntries(MU.map(m=>[m.id,m]));
    (from the equity engine, by the favorite's kicker: 3-4 → 53, 5 → 56, 6 → 59, 7 → 63, 8 → 67, 9 → 69, T → 71, J+ → 73-75) */
 function muRule(h1,h2){const c=classify(h1,h2);if(!c)return null;const m=MUBY[c.id];if(c.id!=='dom')return{rule:m.rule,fav:c.fav,id:c.id,note:''};
   const f=c.fav===0?h1:h2,o=c.fav===0?h2:h1,fr=f.map(x=>x>>2),or=o.map(x=>x>>2),sh=fr.find(r=>or.includes(r)),k=fr[0]===sh?fr[1]:fr[0],R='23456789TJQKA';
-  const suited=h=>(h[0]&3)===(h[1]&3),conn=h=>Math.abs((h[0]>>2)-(h[1]>>2))<=1;
+  const suited=h=>(h[0]&3)===(h[1]&3),conn=h=>Math.abs((h[0]>>2)-(h[1]>>2))<=1&&Math.min(h[0]>>2,h[1]>>2)>=3;
   /* suits and connectedness shift a few points: a suited or connected underdog makes more flushes and straights */
   const rule=(k>=9?73:[53,53,53,56,59,63,67,69,71][k])+(suited(f)&&!suited(o)?3:0)-(suited(o)&&!suited(f)?3:0)-(conn(o)&&!conn(f)?3:0);
   return{rule,fav:c.fav,id:c.id,note:k>=9?'Big kicker, few split pots.':`The better kicker is only a ${R[k]}, so ${k<=4?'nearly half':k<=6?'about a third':'about a fifth'} of boards split the pot (both pair the shared card, or the board plays), which pulls this toward 50%.`}}
