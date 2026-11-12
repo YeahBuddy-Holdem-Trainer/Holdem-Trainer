@@ -93,19 +93,36 @@ function lnPosTable(hero, ask, folded, center) {
   seats.SB.bet = .5; seats.BB.bet = 1; return tableSnap({ hero, seats, center: `<span class="small">${center}</span>` });
 }
 function lnPositions(lvl) {
-  const t = pick(lvl === 1 ? ['blind', 'blind', 'pre1'] : lvl === 2 ? ['pre', 'post', 'behind'] : ['post', 'ip', 'ip', 'behind']);
+  const t = pick(lvl === 1 ? ['blind', 'blind', 'pre1', 'behind'] : lvl === 2 ? ['pre', 'post', 'post', 'behind', 'ip'] : ['post', 'ip', 'behind', 'postbehind', 'postbehind']);
   if (t === 'blind') {
-    const [role, ans, why] = pick([['posts the small blind', 'SB', 'The small blind sits just left of the button.'], ['posts the big blind', 'BB', 'The big blind sits two seats left of the button.'], ['has the dealer button', 'BTN', 'The button is the dealer seat. It acts last on every street after the flop.']]);
+    const [role, ans, why] = pick([['posts the small blind', 'SB', 'The small blind sits just left of the button.'], ['posts the big blind', 'BB', 'The big blind sits two seats left of the button.'],
+      ['has the dealer button', 'BTN', 'The button is the dealer seat. It acts last on every street after the flop.'], ['is "under the gun"', 'UTG', 'UTG sits left of the big blind and acts first before the flop, with a "gun" of players behind.'],
+      ['acts last before the flop', 'BB', 'The big blind acts last preflop because its blind is already in: it gets to close the action.'], ['acts last after the flop', 'BTN', 'The button acts last on the flop, turn and river. That\'s why it is the best seat.'],
+      ['sits just right of the button (the cutoff)', 'CO', 'The cutoff "cuts off" the button. It is the second-best seat.'], ['sits two seats right of the button (the hijack)', 'HJ', 'The hijack sits right of the cutoff, between UTG and the cutoff in a 6-player game.']]);
     const opts = shuffle([ans, ...shuffle(POS.filter(p => p !== ans)).slice(0, 3)]);
     return { drill: 'Positions', spot: 'Seats', hand: ans, visual: lnPosTable('CO', [], [], 'The seats, clockwise: UTG, HJ, CO, BTN, SB, BB'),
       prompt: `<p class="spot-text">Which seat ${role}?</p>`, opts, correct: opts.indexOf(ans), short: `Who ${role}`, explain: `<b>${ans}</b> (${POSNAME[ans]}). ${why}` };
   }
-  if (t === 'pre1' || t === 'pre' || t === 'post') {
-    const order = t === 'post' ? LN_POST : LN_PRE, set = t === 'pre1' ? shuffle(['UTG', 'BB', 'SB', pick(['HJ', 'CO', 'BTN'])]) : shuffle(POS).slice(0, lvl === 3 ? 4 : 3);
-    const ans = set.slice().sort((a, b) => order.indexOf(a) - order.indexOf(b))[0];
-    return { drill: 'Positions', spot: t === 'post' ? 'Order after the flop' : 'Order before the flop', hand: set.join(','), visual: lnPosTable('BB', set, [], t === 'post' ? 'After the flop' : 'Before the flop'),
-      prompt: `<p class="spot-text">${t === 'post' ? '<b>After the flop</b>' : '<b>Before the flop</b>'}, which of these seats acts first?</p>`, opts: set, correct: set.indexOf(ans), short: `${t === 'post' ? 'Postflop' : 'Preflop'} first of ${set.join(', ')}`,
-      explain: t === 'post' ? `After the flop, action starts left of the button: ${LN_POST.join(' → ')}. So <b>${ans}</b> is first, and the button always acts last.` : `Before the flop the blinds have already posted, so action starts with UTG: ${LN_PRE.join(' → ')}. <b>${ans}</b> acts first here.` };
+  const list = (a, w = 'and') => a.length === 2 ? a.join(` ${w} `) : a.slice(0, -1).join(', ') + ` ${w} ` + a[a.length - 1];
+  if (t === 'pre1' || t === 'pre') {
+    /* everyone is still in before the flop, so name the seats being compared */
+    const set = t === 'pre1' ? shuffle(['UTG', 'BB', 'SB', pick(['HJ', 'CO', 'BTN'])]) : shuffle(POS).slice(0, 3), ans = set.slice().sort((a, b) => LN_PRE.indexOf(a) - LN_PRE.indexOf(b))[0];
+    return { drill: 'Positions', spot: 'Order before the flop', hand: set.join(','), visual: lnPosTable('BB', set, [], 'Before the flop'),
+      prompt: `<p class="spot-text"><b>Before the flop</b>, which acts first: ${list(set.map(x => `<b>${x}</b>`), 'or')}?</p>`, opts: set, correct: set.indexOf(ans), short: `Preflop first of ${set.slice().sort().join(', ')}`,
+      explain: `Before the flop the blinds have already posted, so action starts with UTG: ${LN_PRE.join(' → ')}. Of these, <b>${ans}</b> is earliest.` };
+  }
+  if (t === 'post' || t === 'postbehind') {
+    /* a real hand: these players see the flop, everyone else folded */
+    const set = shuffle(POS).slice(0, lvl === 3 ? pick([3, 4]) : 3), inOrder = set.slice().sort((a, b) => LN_POST.indexOf(a) - LN_POST.indexOf(b)), out = POS.filter(p => !set.includes(p));
+    const skipped = LN_POST.slice(0, LN_POST.indexOf(inOrder[0])), why = `After the flop, action goes ${LN_POST.join(' → ')}, skipping anyone who folded${skipped.length ? ` (here the ${list(skipped)} folded)` : ''}.`;
+    if (t === 'post') return { drill: 'Positions', spot: 'Order after the flop', hand: set.join(','), visual: lnPosTable('BB', set, out, 'On the flop'),
+      prompt: `<p class="spot-text">The ${list(set.map(x => `<b>${x}</b>`))} see the flop; everyone else folded. Who acts <b>first</b> on the flop?</p>`, opts: set, correct: set.indexOf(inOrder[0]), short: `Flop first of ${set.slice().sort().join(', ')}`,
+      explain: `${why} So <b>${inOrder[0]}</b> acts first and ${inOrder[inOrder.length - 1]} acts last.` };
+    const hero = pick(set), ans = inOrder.length - 1 - inOrder.indexOf(hero), opts = [0, 1, 2, 3].slice(0, Math.max(3, set.length));
+    return { drill: 'Positions', spot: 'Players after you on the flop', hand: hero, visual: lnPosTable(hero, set.filter(x => x !== hero), out, 'On the flop'),
+      prompt: `<p class="spot-text">You're in the <b>${POSNAME[hero]}</b> and see the flop with the ${list(set.filter(x => x !== hero).map(x => `<b>${x}</b>`))}. How many players act <b>after you</b> on the flop?</p>`,
+      opts: opts.map(String), correct: opts.indexOf(ans), short: `After the ${hero} with ${set.slice().sort().join(', ')}`,
+      explain: `${why} Order on this flop: ${inOrder.join(' → ')}. <b>${ans}</b> act${ans === 1 ? 's' : ''} after you${ans === 0 ? ': you are last to act, in position on everyone' : ''}.` };
   }
   if (t === 'ip') {
     const [a, b] = shuffle(POS).slice(0, 2), ans = LN_POST.indexOf(a) > LN_POST.indexOf(b) ? a : b, oop = ans === a ? b : a;
@@ -707,6 +724,10 @@ function lnDeal() {
       else if (P.kind === 'lesson') q = P.l.gen(P.lvl);
       else { it = P.pool[P.i % P.pool.length]; q = it.l.gen(it.lvl); for (const x of [].concat(q)) { x._lid = it.l.id; x._lname = it.l.name; } }
       if (Array.isArray(q)) { P.queue = q.slice(1); q = q[0]; }
+      /* don't repeat a question already asked in this session */
+      P.seen = P.seen || new Set();
+      for (let k = 0; k < 12 && P.seen.has(q.short) && !(P.queue && P.queue.length) && P.kind === 'lesson'; k++) { const r = P.l.gen(P.lvl); q = Array.isArray(r) ? r[0] : r; }
+      P.seen.add(q.short);
     }
   } catch (e) { console.warn(e); q = lnRule(2); }
   q.t0 = Date.now(); P.q = q; P.stage = 'q'; lnShowPlay(); window.scrollTo(0, $('v-learn').offsetTop - 70);
