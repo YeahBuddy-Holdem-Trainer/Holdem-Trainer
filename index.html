@@ -41,6 +41,7 @@
 <script defer src="js/settings.js"></script>
 <script defer src="js/learn.js"></script>
 <script defer src="js/flags.js"></script>
+<script defer src="js/tour.js"></script>
 <script defer src="js/app.js"></script>
 <script type="module" src="js/cloud.js"></script>
 </head>
@@ -843,6 +844,10 @@
 </div>
 
 <!-- ANSWER EXPLANATIONS (js/feedback.js) -->
+<div class="tour" id="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tour-h">
+  <div class="tour-cover" id="tour-cover"></div><div class="tour-hole" id="tour-hole"></div>
+  <div class="tour-card" id="tour-card" tabindex="-1"></div>
+</div>
 <dialog class="modal fb-modal" id="set-dlg" aria-labelledby="set-h">
   <div class="modal-in set-in">
     <form method="dialog" class="modal-x"><button aria-label="Close">✕</button></form>
@@ -853,6 +858,7 @@
     </section>
     <section class="set-sec"><h3>Learning</h3>
       <label class="set-row"><span>Daily goal <small class="muted">chips to win each day to keep your streak</small></span><select id="set-goal"></select></label>
+      <div class="set-row"><span>App tour <small class="muted">where everything lives</small></span><button class="act ghost" type="button" id="set-tour">Replay the tour</button></div>
     </section>
     <section class="set-sec"><h3>Clocks</h3><p class="small" id="set-clock-sum"></p><p class="small muted">The app admin sets these for everyone.</p></section>
     <section class="set-sec set-admin" id="set-admin" hidden><h3>Admin controls <span class="chip ok">Admin</span></h3>

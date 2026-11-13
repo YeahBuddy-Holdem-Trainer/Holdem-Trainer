@@ -677,3 +677,17 @@ input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px var(-
 .set-share{display:grid;gap:8px;padding:12px 0;border-top:1px dashed var(--line)}
 .set-share h3{margin:0;font-size:15px}
 #set-share-text{width:100%;font:14px/1.45 var(--body);padding:10px;border-radius:10px;border:1.5px solid color-mix(in srgb,var(--ink) 25%,transparent);background:var(--surface);color:var(--ink);resize:vertical}
+/* first-launch tour */
+.tour{position:fixed;inset:0;z-index:200}
+.tour-cover{position:absolute;inset:0}
+.tour-hole{position:absolute;border-radius:14px;box-shadow:0 0 0 9999px rgba(8,14,28,.68),0 0 0 3px var(--orange);transition:all .25s ease;pointer-events:none}
+.tour-card{position:absolute;max-width:calc(100vw - 24px);width:360px;background:var(--surface);color:var(--ink);border-radius:16px;padding:16px 18px;box-shadow:0 10px 30px rgba(0,0,0,.4);display:grid;gap:8px;outline:none}
+.tour-card .eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tour-card h3{margin:0;font:700 20px var(--display);text-transform:none;letter-spacing:0;color:var(--ink)}
+.tour-card p{margin:0;font-size:15px;line-height:1.45}
+.tour-btns{align-items:center;gap:8px}.tour-btns span{flex:1}
+.tour-end{display:grid;gap:8px}
+body.touring{overflow:hidden}
+.info-sub{font:800 18px var(--body)!important;font-style:normal!important}
+@media (prefers-reduced-motion:reduce){.tour-hole{transition:none}}
+@media (min-width:761px) and (max-width:920px){.secnav{gap:0}.secnav a{padding:8px 7px;font-size:13.5px}.topbar-in{gap:8px}.seg.mode button{padding-inline:10px}.brand img{max-height:40px}}
