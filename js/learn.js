@@ -141,12 +141,20 @@ function lnNameHand(lvl) {
     const d = shuffled(), hero = d.slice(0, 2), board = d.slice(2, 2 + n), v = evalHand(hero.concat(board)), k = lnCat(v);
     if (lvl === 1 && k === 0 && Math.random() < .7) continue;
     if (lvl === 3 && k < 2 && Math.random() < .75) continue;
-    const near = [k - 2, k - 1, k + 1, k + 2].filter(x => x >= 0 && x <= 8), opts = shuffle([k, ...shuffle(near).slice(0, 3)]).sort((a, b) => a - b), b5 = lnBest5(hero.concat(board));
+    /* draws: a straight or flush that is one card away is the classic trap, so offer it as a choice and explain it */
+    const cs = hero.concat(board), R = '23456789TJQKA', st = [], used = new Set(cs);
+    if (k < 4 && n < 5) for (let r = 0; r < 13; r++) { const c = [0, 1, 2, 3].map(x => r * 4 + x).find(x => !used.has(x)); if (c != null && lnCat(evalHand(cs.concat(c))) === 4 && lnCat(evalHand(board.concat(c))) < 4) st.push(R[r]); }
+    const fs = [0, 1, 2, 3].find(x => cs.filter(c => (c & 3) === x).length === 4), fd = k < 5 && n < 5 && fs != null && hero.some(c => (c & 3) === fs);   /* your own card has to be part of it */
+    const trap = [...(st.length ? [4] : []), ...(fd ? [5] : [])];
+    const near = [k - 2, k - 1, k + 1, k + 2].filter(x => x >= 0 && x <= 8 && !trap.includes(x));
+    const opts = [...new Set([k, ...trap, ...shuffle(near)])].slice(0, 4).sort((a, b) => a - b), b5 = lnBest5(cs);
     const boardOnly = n === 5 && evalHand(board) === v;
+    const rn = r => ({ T: '10', J: 'jack', Q: 'queen', K: 'king', A: 'ace' })[r] || r, an = r => (/^[8A]$/.test(r) ? 'an ' : 'a ') + rn(r);
+    const drawNote = (st.length ? ` No straight yet: you need ${st.map(an).join(' or ')} (${st.length > 1 ? 'two ways to hit, 8 outs' : 'a gutshot straight draw, 4 outs'}).` : '') + (fd ? ' No flush yet: four cards of one suit is a flush draw (9 outs).' : '');
     return { drill: 'Name your hand', spot: ['Flop', 'Turn', 'River'][n - 3], hand: names(hero),
       prompt: `<div class="hands">${lnHandBox('You', hero)}${lnHandBox(['Flop', 'Turn', 'River'][n - 3], board)}</div><p class="spot-text">What is your best hand?</p>`,
       opts: opts.map(x => CAT[x]), correct: opts.indexOf(k), short: `${names(hero)} on ${names(board)}`,
-      explain: `<b>${CAT[k]}</b>: <span class="outs">${cardsHTML(b5.cards, 'xs')}</span>${boardOnly ? ' The board alone makes this hand, so your hole cards don\'t improve it ("the board plays").' : [1, 2, 3, 6, 7].includes(k) && b5.cards.filter(c => b5.cards.filter(x => x >> 2 === c >> 2).length > 1).every(c => board.includes(c)) ? ` The ${CAT[k].toLowerCase()} is all on the board, so every player has it too; your cards only count as kickers.` : ''}` };
+      explain: `<b>${CAT[k]}</b>: <span class="outs">${cardsHTML(b5.cards, 'xs')}</span>${drawNote}${boardOnly ? ' The board alone makes this hand, so your hole cards don\'t improve it ("the board plays").' : [1, 2, 3, 6, 7].includes(k) && b5.cards.filter(c => b5.cards.filter(x => x >> 2 === c >> 2).length > 1).every(c => board.includes(c)) ? ` The ${CAT[k].toLowerCase()} is all on the board, so every player has it too; your cards only count as kickers.` : ''}` };
   }
 }
 

@@ -65,7 +65,7 @@ function mergeEvents(evs){const key=r=>r.id||(r.ts+'|'+r.drill+'|'+r.spot);const
     if(currentView==='progress')renderProgress();if(currentView==='daily'&&typeof daily!=='undefined'&&!daily)dailyHome()}
   return n}
 /* "Show the math": a fold-out worked calculation under an answer. One setting opens them all. */
-const APP_VERSION='2026-11-12d';
+const APP_VERSION='2026-11-12e';
 function mathBox(html,sub){const o=!!(cfg.showMath||cfg.hvrMath);return `<details class="learn math-box"${o?' open':''}><summary>Show the math <span>${sub||'How to work it out yourself'}</span></summary><div class="learn-body"><label class="check math-always-l"><input type="checkbox" class="math-always"${o?' checked':''}> Always open the math</label>${html}</div></details>`}
 document.addEventListener('change',e=>{if(!e.target.classList||!e.target.classList.contains('math-always'))return;cfg.showMath=e.target.checked;delete cfg.hvrMath;
   try{localStorage.setItem(CFGKEY,JSON.stringify(cfg))}catch(err){}
