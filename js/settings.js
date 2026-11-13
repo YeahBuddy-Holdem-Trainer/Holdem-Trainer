@@ -58,6 +58,8 @@ function setRender() {
   if (admin) {
     $('set-shot').value = c.shot; $('set-bank-on').checked = c.bankOn; $('set-bank').value = c.bank; $('set-fh-on').checked = c.fhOn; $('set-fh').value = c.fhShot;
     $('set-bank').disabled = !c.bankOn; $('set-fh').disabled = !c.fhOn; $('set-msg').textContent = '';
+    let t = ''; try { t = localStorage.getItem(SHARE_KEY) || ''; } catch (e) {}
+    $('set-share-text').value = t || shareDefault(); $('set-share-msg').textContent = ''; $('set-share-send').hidden = !navigator.share;
   }
 }
 function openSettings() { if ($('acct').open) $('acct').close(); setRender(); $('set-dlg').showModal(); }
@@ -82,3 +84,20 @@ $('set-save').onclick = async () => {
 };
 $('set-reset').onclick = () => { const c = APPCFG_DEF; $('set-shot').value = c.shot; $('set-bank-on').checked = c.bankOn; $('set-bank').value = c.bank; $('set-fh-on').checked = c.fhOn; $('set-fh').value = c.fhShot; $('set-bank').disabled = !c.bankOn; $('set-fh').disabled = !c.fhOn; $('set-msg').textContent = 'Defaults filled in. Save to apply.'; };
 $('set-flags').onclick = () => { $('set-dlg').close(); openFlags(); };
+
+/* ---------- share the app (admins only) ---------- */
+const SHARE_KEY = 'holdem-share-text';
+const shareURL = () => location.origin + location.pathname.replace(/index\.html$/, '');
+const shareDefault = () => `Check out this free Texas Hold'em trainer I've been using: ${shareURL()}
+
+Guided lessons from the basics to tournament ICM, plus drills for pot odds, equity, ranges and full hands, with the math shown for every answer.
+
+On your phone: open the link, then use your browser's Share or menu button and pick "Add to Home Screen" so it works like an app. Sign in with Google or email to save your progress.`;
+$('set-share-text').oninput = e => { try { localStorage.setItem(SHARE_KEY, e.target.value); } catch (err) {} };
+$('set-share-reset').onclick = () => { try { localStorage.removeItem(SHARE_KEY); } catch (e) {} $('set-share-text').value = shareDefault(); $('set-share-msg').textContent = 'Back to the default text.'; };
+$('set-share-copy').onclick = async () => {
+  const t = $('set-share-text').value;
+  try { await navigator.clipboard.writeText(t); $('set-share-msg').textContent = 'Copied. Paste it into a text message.'; }
+  catch (e) { const a = $('set-share-text'); a.focus(); a.select(); $('set-share-msg').textContent = 'Text selected; use your phone\'s Copy.'; }
+};
+$('set-share-send').onclick = async () => { try { await navigator.share({ text: $('set-share-text').value }); } catch (e) {} };
