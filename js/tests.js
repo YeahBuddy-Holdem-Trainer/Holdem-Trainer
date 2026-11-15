@@ -217,6 +217,27 @@ check('Equity simulation', 'Dominated-hand shortcut stays within 8 points of the
     if (Math.abs(e - r.rule) > worst) { worst = Math.abs(e - r.rule); w = `${E('names')(fav)} vs ${E('names')(oth)}: rule ${r.rule}%, exact ${e.toFixed(1)}%`; } }
   return [worst <= 8, `worst miss ${worst.toFixed(1)} pts: ${w}`];
 });
+check('Hand lab', 'Player types narrow or widen a range by strength, keeping the chart hands', () => {
+  const s = E('SPOTS').find(x => x.id === 'cash-co-open'), base = [...s.map].filter(([, a]) => a !== s.fold).map(([l]) => l), n = ls => ls.reduce((a, l) => a + E('combosOf')(l), 0);
+  const nit = E('lbAdjust')(base, .6), rec = E('lbAdjust')(base, 1.7), inB = new Set(base);
+  const okNit = nit.every(l => inB.has(l)) && Math.abs(n(nit) / n(base) - .6) < .06 && nit.includes('AA');
+  const okRec = base.every(l => rec.includes(l)) && Math.abs(n(rec) / n(base) - 1.7) < .08;
+  return [okNit && okRec, `chart ${n(base)} combos, nit ${n(nit)}, recreational ${n(rec)}`];
+});
+check('Hand lab', 'JsTs vs the HJ 40 BB open: groups add up and match the overall equity', () => {
+  const s = E('SPOTS').find(x => x.id === 'tour-hj-open-40-bb'), labels = [...s.map].filter(([, a]) => a !== s.fold).map(([l]) => l), hero = [36, 32], dead = new Set(hero);
+  let live = 0, wsum = 0; const buckets = {};
+  for (const l of labels) { const cs = E('labelCombos')(l).filter(c => !dead.has(c[0]) && !dead.has(c[1])); if (!cs.length) continue; const e = E('equityVsRange')(hero, cs, [], 1200).eq; live += cs.length; wsum += e * cs.length; const b = E('lbBucket')(e); buckets[b] = (buckets[b] || 0) + cs.length; }
+  const all = E('equityVsRange')(hero, labels.flatMap(E('labelCombos')).filter(c => !dead.has(c[0]) && !dead.has(c[1])), [], 30000).eq, sum = Object.values(buckets).reduce((a, b) => a + b, 0);
+  return [sum === live && Math.abs(wsum / live - all) < .015, `${live} live combos; weighted ${(wsum / live * 100).toFixed(1)}% vs whole-range ${(all * 100).toFixed(1)}%`];
+});
+check('How I play', 'Comparing your answers with a chart finds loose, tight and different-action hands', () => {
+  const saved = E('JSON.stringify(hp)'), s = E('SPOTS').find(x => x.id === 'cash-btn-vs-co-open');
+  const fold = [...s.map].find(([, a]) => s.acts[a] === 'Fold')?.[0] || '72o', play = [...s.map].find(([, a]) => s.acts[a] === 'Call')[0], tb = [...s.map].find(([, a]) => s.acts[a] === '3-bet')[0];
+  E(`hp.s={"cash-btn-vs-co-open":{"${fold}":{"call":1},"${play}":{"fold":2},"${tb}":{"call":1}}}`);
+  const c = E('hpCompare')(s); E(`hp=${saved}`);
+  return [c.loose.includes(fold) && c.tight.includes(play) && c.style.some(x => x[0] === tb), `loose ${c.loose}, tight ${c.tight}, different ${c.style.map(x => x[0])}`];
+});
 check('Settings', 'Clock settings are kept within their limits', () => {
   const c = E('appCfgClean')({ shot: 2, bank: 9999, fhShot: '45', bankOn: 1, fhOn: 0 });
   return [c.shot === 5 && c.bank === 300 && c.fhShot === 45 && c.bankOn === true && c.fhOn === false, JSON.stringify(c)];

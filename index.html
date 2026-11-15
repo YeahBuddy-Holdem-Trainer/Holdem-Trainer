@@ -38,6 +38,7 @@
 <script defer src="js/hand-log.js"></script>
 <script defer src="js/daily.js"></script>
 <script defer src="js/feedback.js"></script>
+<script defer src="js/lab.js"></script>
 <script defer src="js/settings.js"></script>
 <script defer src="js/learn.js"></script>
 <script defer src="js/flags.js"></script>
@@ -558,6 +559,54 @@
 </section>
 
 <!-- COMBINATORICS -->
+<section class="view" id="v-lab" hidden>
+  <details class="learn"><summary>How this works <span>Study one hand against a whole range</span></summary><div class="learn-body">
+    <p>Set up a spot and see exactly how your hand does against every hand the villain could have.</p>
+    <ul><li><b>Range:</b> "Auto" uses the chart for the villain's seat and stack (an open, or a shove when stacks are short). You can also pick any chart range, one of your saved ranges, or type one (like <span class="mono">66+, A8s+, KTs+, KJo+</span>).</li>
+    <li><b>Player type</b> widens or narrows that range: a nit keeps only its strongest ~60%, a recreational player plays about 1.7× as many hands, a maniac 2.3×. Hands are added or removed by strength against a random hand.</li>
+    <li><b>Where you stand:</b> each hand in the range lands in a group by your equity against it: <b>Ahead</b> over 55%, <b>Coin flip</b> 45–55%, <b>Behind but live</b> 33–45%, <b>Dominated</b> under 33%. Combo counts drop when your cards (or the board) block them.</li>
+    <li><b>What it's worth:</b> calling compares your equity with the price. The all-in line assumes the villain calls with the strongest part of their range (about 30% for a nit up to 65% for a calling station) and folds the rest. 3-bet shows how often a bluff needs a fold. These are showdown numbers: real hands have more betting, which favors the player in position.</li></ul>
+    <p class="small muted">Player-type widths and calling shares are estimates of how those players tend to act, not measured data.</p></div></details>
+  <div class="stage">
+    <section class="panel lb-form" aria-label="Set up the spot">
+      <div class="lb-row">
+        <label><span class="lbl">Villain's seat</span><select id="lb-vseat"><option>UTG</option><option>HJ</option><option selected>CO</option><option>BTN</option><option>SB</option></select></label>
+        <label><span class="lbl">Villain opens to</span><select id="lb-open"><option value="2">2× (min raise)</option><option value="2.2">2.2×</option><option value="2.5" selected>2.5×</option><option value="3">3×</option><option value="4">4×</option></select></label>
+        <label><span class="lbl">Player type</span><select id="lb-type"></select></label>
+      </div>
+      <label class="lb-wide"><span class="lbl">Villain's range</span><select id="lb-range"></select></label>
+      <input type="text" id="lb-rtext" class="lb-rtext" placeholder="e.g. 66+, A8s+, A5s, KTs+, QTs+, JTs, T9s, ATo+, KJo+" hidden aria-label="Custom range">
+      <div class="lb-row">
+        <label><span class="lbl">Your seat</span><select id="lb-hseat"></select></label>
+        <label><span class="lbl">Effective stack (BB)</span><input type="number" id="lb-stack" min="2" max="300" step="1" inputmode="numeric"></label>
+      </div>
+      <div class="slots lb-slots" id="lb-slots"></div>
+      <div class="grid lb-cardgrid" id="lb-grid"></div>
+      <div class="row"><button class="act" type="button" id="lb-go">Analyze</button><button class="act ghost" type="button" id="lb-rand">Random hand</button><button class="linkbtn" type="button" id="lb-clrb">Clear board</button></div>
+    </section>
+    <section class="panel lb-out" id="lb-out" aria-live="polite"><p class="small muted">Pick your cards and tap Analyze.</p></section>
+  </div>
+</section>
+<section class="view" id="v-howiplay" hidden>
+  <details class="learn"><summary>How this works <span>Find out how you really play</span></summary><div class="learn-body">
+    <p>The app deals preflop spots and you choose what you'd do, with no right answers shown. Every answer is saved, and over time it builds <b>your</b> range for each spot.</p>
+    <ul><li>Hands come up so every one of the 169 starting hands gets covered in each spot, including the ugly ones.</li>
+    <li><b>My results</b> shows your range as a grid next to the chart: hands you play that the chart folds (too loose), hands you fold that it plays (too tight), and where you call instead of raising (or the reverse).</li>
+    <li>Your style is worked out from how many hands you play compared with the charts and how often you raise them: Nit, TAG, LAG, loose-passive, calling station.</li>
+    <li>Turn on "show the chart after each hand" if you want feedback; leave it off to capture your natural play.</li></ul></div></details>
+  <div class="stage">
+    <div class="seg" id="hp-tabs" role="group" aria-label="View"><button type="button" data-t="play" aria-pressed="true">Play</button><button type="button" data-t="res" aria-pressed="false">My results</button></div>
+    <section class="panel" id="hp-play">
+      <div class="seg hp-kind" id="hp-kind" role="group" aria-label="Spots"></div>
+      <div class="qz-visual" id="hp-table"></div>
+      <p class="spot-text" id="hp-text"></p>
+      <div class="row hp-acts" id="hp-acts"></div>
+      <div id="hp-fb"></div>
+      <div class="row hp-foot"><span class="small muted" id="hp-meta"></span><label class="check small"><input type="checkbox" id="hp-show"> Show the chart after each hand</label></div>
+    </section>
+    <section class="panel" id="hp-res" hidden><div id="hp-res-body"></div></section>
+  </div>
+</section>
 <section class="view" id="v-combos" hidden>
   <details class="learn"><summary>How this works <span>Counting combos and card removal</span></summary><div class="learn-body">
     <p><b>Combos</b> are the exact two-card holdings a hand stands for. Counting them tells you how likely each part of a range really is: there are three times as many AKo as AKs, and a set is often far less likely than it feels.</p>
