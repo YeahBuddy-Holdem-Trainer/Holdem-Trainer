@@ -736,3 +736,37 @@ body.touring{overflow:hidden}
 .hp-sw{display:inline-block;width:14px;height:14px;border-radius:3px;margin-right:6px;vertical-align:-2px;background:var(--line)}
 .hp-list{display:grid;gap:4px;padding-left:18px}
 .lb-out .qz-visual,#hp-table{max-width:560px;margin-inline:auto;width:100%}.lb-grid,.hp-grid{max-width:560px}.lb-out{gap:12px}
+/* Hand lab v2 */
+.lb-set>summary{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;cursor:pointer;list-style:none}
+.lb-set>summary::-webkit-details-marker{display:none}
+.lb-set>summary::after{content:'▾';margin-left:auto;color:var(--muted)}.lb-set[open]>summary::after{content:'▴'}
+.lb-set .lb-form{display:grid;gap:12px;margin-top:12px}
+.lb-row>div{display:grid;gap:4px}
+.lb-opps{display:grid;gap:10px}
+.lb-opp{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:end;padding:10px;border-radius:12px;background:color-mix(in srgb,var(--ink) 5%,transparent)}
+.lb-opp label{display:grid;gap:4px;flex:1 1 140px;min-width:0}.lb-opp .lb-wide{flex-basis:100%}
+.lb-opp select,.lb-opp .lb-rtext{font:600 14px var(--body);padding:8px 10px;border-radius:10px;border:1.5px solid color-mix(in srgb,var(--ink) 25%,transparent);background:var(--surface);color:var(--ink);width:100%}
+.lb-role{flex-basis:100%;font:700 12px var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lb-edit button{cursor:pointer}
+.lb-grid .a0{background:var(--range);color:#fff}
+.lb-otabs{flex-wrap:wrap;margin-bottom:8px}
+#lb-grid[hidden]{display:none}
+.lb-strip{display:flex;flex-wrap:wrap;gap:6px}
+.lb-seat{display:grid;justify-items:center;padding:6px 8px;border-radius:10px;background:color-mix(in srgb,var(--ink) 6%,transparent);min-width:52px;opacity:.6}
+.lb-seat b{font:700 13px var(--mono)}.lb-seat small{font-size:11px}
+.lb-seat.me{background:var(--navy);color:var(--ivory);opacity:1}.lb-seat.opp{background:color-mix(in srgb,var(--orange) 22%,transparent);opacity:1}
+.lb-each{border-top:1px solid var(--line);padding-top:8px}.lb-each summary{cursor:pointer}
+/* poker-site bet controls */
+.betbar{display:grid;gap:8px;width:100%}
+.bb-main{display:flex;flex-wrap:wrap;gap:8px}.bb-main .act{flex:1 1 22%;min-width:0;white-space:nowrap}
+.bb-raise{background:var(--orange)!important;border-color:var(--orange)!important}
+.bb-allin{background:#7B1E1E!important;border-color:#7B1E1E!important;color:#fff!important}
+.bb-slide{display:flex;align-items:center;gap:8px}.bb-slide input{flex:1;accent-color:var(--orange);height:32px}
+.bb-step{width:44px;height:44px;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--ink) 25%,transparent);background:var(--surface);color:var(--ink);font:800 22px var(--body);cursor:pointer;flex:none}
+.bb-pre{display:flex;flex-wrap:wrap;gap:6px}.bb-pre button{flex:1;padding:6px 8px;border-radius:999px;border:1px solid color-mix(in srgb,var(--ink) 22%,transparent);background:var(--surface);color:var(--ink);font:600 13px var(--body);cursor:pointer}
+#fh-acts .betbar,#hp-acts .betbar{flex-basis:100%}
+.hp-mode{margin-bottom:10px}
+.hp-quiet .cols>.panel:last-child,.hp-quiet .fb-wrap[data-for="fh-out"]{display:none}
+.hp-quiet .cols{grid-template-columns:1fr}
+.hp-banner .linkbtn+.linkbtn{margin-left:0}
+.hp-ftable td{vertical-align:top}

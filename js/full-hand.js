@@ -94,7 +94,7 @@ function fhAsk(kind){fh.ask=kind;fhRender();
   else if(kind==='pre-def')h=`<button class="act" data-a="3bet">3-bet to 10 BB</button><button class="act" data-a="call">Call 1.5 BB</button><button class="act ghost" data-a="fold">Fold</button>`;
   else if(kind==='pre-vs3')h=`<button class="act" data-a="4bet">4-bet to ${fh.seat==='CO'?20:22} BB</button><button class="act" data-a="call">Call ${fmtBB(toCall)} BB</button><button class="act ghost" data-a="fold">Fold</button>`;
   else if(kind==='pre-jam')h=`<button class="act" data-a="call">Call all in (${fmtBB(Math.min(toCall,fh.stack.hero))} BB)</button><button class="act ghost" data-a="fold">Fold</button>`;
-  else{const opts=fhOptions();h=opts.map(o=>`<button class="act ${o.id==='fold'||o.id==='check'?'ghost':''}" data-a="${o.id}">${o.label}</button>`).join('')}
+  else{const opts=fhOptions();if(typeof betBarFH==='function'){b.innerHTML='';betBarFH(b,opts);fhClock();return}h=opts.map(o=>`<button class="act ${o.id==='fold'||o.id==='check'?'ghost':''}" data-a="${o.id}">${o.label}</button>`).join('')}
   b.innerHTML=h;fhClock()}
 /* optional action clock (an admin setting): runs out → check if you can, otherwise fold; the time bank lasts the whole hand */
 function fhClock(){const host=$('fh-clock'),cap=typeof lnCap!=='undefined'&&lnCap&&lnCap.lvl===3&&fh&&fh.capHand;if(!(APPCFG.fhOn||cap)||!fh||fh.done){stopClock();host.innerHTML='';return}
@@ -139,7 +139,7 @@ function fhPre(a){const S=fh.S,pre=FH_PRE[fh.type],l=handLabel(fh.hero);
     const x=fh.seat==='CO'?20:22;fhTo('hero',x);fh.pfr='hero';fhLog('Preflop',`You 4-bet to ${x} BB.`,'hero');
     if(parseRange(pre.j4).has(handLabel(fh.vil))){fhTo('vil',100);fhLog('Preflop',`The ${POSNAME[S.vil]} moves all in.`,'vil');fh.vw=fhRange(pre.j4,fh.hero);return fhAsk('pre-jam')}
     fhLog('Preflop',`The ${POSNAME[S.vil]} folds.`,'vil');return fhEnd('vilfold')}
-  if(fh.ask==='pre-jam'){const raw=fh.streetIn.vil-fh.streetIn.hero,toCall=Math.min(raw,fh.stack.hero),eq=fhEq(fh.vw,[],5000),evC=eq*(fh.pot-(raw-toCall)+toCall)-toCall,best=evC>0?'call':'fold',ok=a===best;
+  if(fh.ask==='pre-jam'){const raw=fh.streetIn.vil-fh.streetIn.hero,toCall=Math.min(raw,fh.stack.hero),eq=fhEq(fhVw(),[],5000),evC=eq*(fh.pot-(raw-toCall)+toCall)-toCall,best=evC>0?'call':'fold',ok=a===best;
     const loss=Math.abs(evC);fhGrade({street:'Preflop',spot:'Facing an all-in',choice:a==='call'?'Call':'Fold',best:best==='call'?'Call':'Fold',ok,cost:ok?'best':fhCostTier(loss,fh.pot),
       why:`You need ${pct(toCall/(fh.pot-(raw-toCall)+toCall))} equity to call; against this player's all-in range you have about ${pct(eq)}. Calling is worth ${evC>=0?'+':''}${fmtBB(Math.round(evC*10)/10)} BB.`,ev:[['Call',evC],['Fold',0]]});
     if(a==='fold'){fhLog('Preflop','You fold.','hero');return fhEnd('fold')}
@@ -170,7 +170,10 @@ function fhVil(){const board=fhBoardNow(),tier=fhTier(fh.vil,board),toCall=fh.st
   const b=Math.min(Math.round(FH_SZ[bp.size]*P*2)/2,fh.stack.vil);fhTo('vil',b);fh.lastAgg='vil';
   fhLog(nm,`The ${POSNAME[fh.S.vil]} bets ${fmtBB(b)} BB (${SZB[SZI[bp.size]].name.toLowerCase()}).`,'vil');fh.toAct='hero';fhNext()}
 /* multiply the opponent's range weights by the chance each combo takes the action seen */
-function fhNarrow(f){const board=new Set(fhBoardNow());let s=0;for(const x of fh.vw){if(board.has(x.c[0])||board.has(x.c[1])){x.w=0;continue}x.w*=f(x.c);s+=x.w}
+/* safety net: if a hand reaches the flop without a range for the opponent, treat it as any two cards */
+const FH_ANY='22+,A2s+,K2s+,Q2s+,J2s+,T2s+,92s+,82s+,72s+,62s+,52s+,42s+,32s,A2o+,K2o+,Q2o+,J2o+,T2o+,92o+,82o+,72o+,62o+,52o+,42o+,32o';
+const fhVw=()=>{if(!fh.vw)fh.vw=fhRange(FH_ANY,fh.hero);return fh.vw};
+function fhNarrow(f){fhVw();const board=new Set(fhBoardNow());let s=0;for(const x of fh.vw){if(board.has(x.c[0])||board.has(x.c[1])){x.w=0;continue}x.w*=f(x.c);s+=x.w}
   if(s<=1e-9)for(const x of fh.vw)if(!board.has(x.c[0])&&!board.has(x.c[1]))x.w=1}
 function fhRefund(){for(const[a,b]of[['hero','vil'],['vil','hero']]){const d=fh.streetIn[a]-fh.streetIn[b];if(d>0&&fh.stack[b]<=0){fh.stack[a]+=d;fh.inv[a]-=d;fh.pot-=d;fh.streetIn[a]-=d}}}
 function fhCloseStreet(){fhRefund();if(fh.street>=3)return fhShowdown();if(fh.stack.hero<=0||fh.stack.vil<=0)return fhRunout();fh.street++;fhStreet()}
@@ -185,7 +188,7 @@ function fhResult(combo,full){const a=evalHand(fh.hero.concat(full)),b=evalHand(
 function fhEq(vw,board,N=3000){const smp=fhSample(vw,board);let s=0;for(let i=0;i<N;i++){const x=smp();s+=fhResult(x.c,fhRun(x.c,board))}return s/N}
 
 /* expected value of each option, one street ahead */
-function fhEvaluate(opts){const board=fhBoardNow(),P=fh.pot,hIn=fh.streetIn.hero,vIn=fh.streetIn.vil,smp=fhSample(fh.vw,board),N=4000,tierC=new Map();
+function fhEvaluate(opts){fhVw();const board=fhBoardNow(),P=fh.pot,hIn=fh.streetIn.hero,vIn=fh.streetIn.vil,smp=fhSample(fh.vw,board),N=4000,tierC=new Map();
   const tierOf=c=>{const k=fhKey(c);if(!tierC.has(k))tierC.set(k,fhTier(c,board));return tierC.get(k)};
   const acc=opts.map(()=>({f:0,c:0,cr:0,r:0,rr:0,all:0}));
   for(let i=0;i<N;i++){const x=smp(),r=fhResult(x.c,fhRun(x.c,board)),t=tierOf(x.c);

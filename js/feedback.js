@@ -32,6 +32,7 @@ $('fb-next').onclick = () => {
 };
 
 function fbUpdate(id) {
+  if (fbQuiet(id)) return;
   const box = $(id), wrap = document.querySelector(`.fb-wrap[data-for="${id}"]`), chip = wrap && wrap.querySelector('.fb-chip');
   if (!box || !chip) return;
   const v = box.querySelector('.verdict');
@@ -49,6 +50,8 @@ function fbUpdate(id) {
   else if (fbOpenId === id) fbOpen(id);    /* refresh the Next button */
 }
 
+/* How I play (full hands) records your natural play, so no pop-ups there */
+const fbQuiet = id => id === 'fh-out' && window.hpFull;
 for (const id of Object.keys(FB_BOXES)) {
   const box = $(id); if (!box) continue;
   const wrap = document.createElement('div'); wrap.className = 'fb-wrap'; wrap.dataset.for = id;

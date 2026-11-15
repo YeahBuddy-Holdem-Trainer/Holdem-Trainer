@@ -436,6 +436,7 @@
     <p class="small muted">Results swing with the cards. The decisions are what you're practicing. Your last 50 hands are saved on this device for the hand replayer.</p>
   </div></details>
   <div class="cap-banner" id="cap-banner" role="status" hidden></div>
+  <div class="cap-banner hp-banner" id="hp-banner" role="status" hidden></div>
   <div class="cols">
     <div class="panel stage">
       <div class="setup">
@@ -562,29 +563,38 @@
 <section class="view" id="v-lab" hidden>
   <details class="learn"><summary>How this works <span>Study one hand against a whole range</span></summary><div class="learn-body">
     <p>Set up a spot and see exactly how your hand does against every hand the villain could have.</p>
-    <ul><li><b>Range:</b> "Auto" uses the chart for the villain's seat and stack (an open, or a shove when stacks are short). You can also pick any chart range, one of your saved ranges, or type one (like <span class="mono">66+, A8s+, KTs+, KJo+</span>).</li>
+    <ul><li><b>Settings</b> (tap to open): 6- or 9-handed, stack, open size, your seat, and each opponent's seat, range and player type. Add up to three callers for multiway pots.</li>
+    <li><b>Range:</b> "Auto" uses the chart for the seat and stack (an open, or a shove when stacks are short). Callers use the seat's range minus its strongest fifth (the hands that would 3-bet). 9-handed UTG to UTG+2 use the UTG chart, tightened. You can also pick any chart range, a saved range, or type one (like <span class="mono">66+, A8s+, KTs+, KJo+</span>). <b>Tap the grid</b> to add or remove hands; the numbers update.</li>
+    <li><b>Multiway:</b> your equity against everyone comes from simulated deals, each opponent holding a hand from their own range. Compare it with your fair share (1 ÷ players).</li>
     <li><b>Player type</b> widens or narrows that range: a nit keeps only its strongest ~60%, a recreational player plays about 1.7× as many hands, a maniac 2.3×. Hands are added or removed by strength against a random hand.</li>
     <li><b>Where you stand:</b> each hand in the range lands in a group by your equity against it: <b>Ahead</b> over 55%, <b>Coin flip</b> 45–55%, <b>Behind but live</b> 33–45%, <b>Dominated</b> under 33%. Combo counts drop when your cards (or the board) block them.</li>
     <li><b>What it's worth:</b> calling compares your equity with the price. The all-in line assumes the villain calls with the strongest part of their range (about 30% for a nit up to 65% for a calling station) and folds the rest. 3-bet shows how often a bluff needs a fold. These are showdown numbers: real hands have more betting, which favors the player in position.</li></ul>
     <p class="small muted">Player-type widths and calling shares are estimates of how those players tend to act, not measured data.</p></div></details>
   <div class="stage">
-    <section class="panel lb-form" aria-label="Set up the spot">
-      <div class="lb-row">
-        <label><span class="lbl">Villain's seat</span><select id="lb-vseat"><option>UTG</option><option>HJ</option><option selected>CO</option><option>BTN</option><option>SB</option></select></label>
-        <label><span class="lbl">Villain opens to</span><select id="lb-open"><option value="2">2× (min raise)</option><option value="2.2">2.2×</option><option value="2.5" selected>2.5×</option><option value="3">3×</option><option value="4">4×</option></select></label>
-        <label><span class="lbl">Player type</span><select id="lb-type"></select></label>
+    <details class="panel lb-set" id="lb-set"><summary><span class="lbl">Settings</span><span class="small" id="lb-set-sum"></span></summary>
+      <div class="lb-form">
+        <div class="lb-row">
+          <div><span class="lbl">Table</span><div class="seg" id="lb-size" role="group" aria-label="Table size"><button type="button" data-n="6">6-handed</button><button type="button" data-n="9">9-handed</button></div></div>
+          <label><span class="lbl">Effective stack (BB)</span><input type="number" id="lb-stack" min="2" max="300" step="1" inputmode="numeric"></label>
+          <label><span class="lbl">Raiser opens to</span><select id="lb-open"><option value="2">2× (min raise)</option><option value="2.2">2.2×</option><option value="2.5">2.5×</option><option value="3">3×</option><option value="4">4×</option></select></label>
+          <label><span class="lbl">Your seat</span><select id="lb-hseat"></select></label>
+        </div>
+        <div id="lb-opps" class="lb-opps"></div>
+        <button type="button" class="act ghost" id="lb-add">+ Add a caller (multiway)</button>
       </div>
-      <label class="lb-wide"><span class="lbl">Villain's range</span><select id="lb-range"></select></label>
-      <input type="text" id="lb-rtext" class="lb-rtext" placeholder="e.g. 66+, A8s+, A5s, KTs+, QTs+, JTs, T9s, ATo+, KJo+" hidden aria-label="Custom range">
-      <div class="lb-row">
-        <label><span class="lbl">Your seat</span><select id="lb-hseat"></select></label>
-        <label><span class="lbl">Effective stack (BB)</span><input type="number" id="lb-stack" min="2" max="300" step="1" inputmode="numeric"></label>
-      </div>
+    </details>
+    <section class="panel lb-range" aria-label="Villain's range">
+      <div class="seg lb-otabs" id="lb-otabs" role="group" aria-label="Whose range" hidden></div>
+      <p class="small" id="lb-rinfo"></p>
+      <div class="rgrid eq-grid lb-grid lb-edit" id="lb-rgrid" aria-label="Range: tap a hand to add or remove it"></div>
+      <p class="small lb-legend"><span><i class="lb-dot lb-ahead"></i>Ahead</span><span><i class="lb-dot lb-flip"></i>Coin flip</span><span><i class="lb-dot lb-live"></i>Behind but live</span><span><i class="lb-dot lb-dom"></i>Dominated</span><span><i class="lb-dot lb-blocked"></i>Blocked</span><span class="muted">Tap a hand to add or remove it.</span> <button class="linkbtn" type="button" id="lb-reset" hidden>Undo my edits</button></p>
+    </section>
+    <section class="panel lb-hand" aria-label="Your hand and the board">
       <div class="slots lb-slots" id="lb-slots"></div>
       <div class="grid lb-cardgrid" id="lb-grid"></div>
-      <div class="row"><button class="act" type="button" id="lb-go">Analyze</button><button class="act ghost" type="button" id="lb-rand">Random hand</button><button class="linkbtn" type="button" id="lb-clrb">Clear board</button></div>
+      <div class="row"><button class="act ghost" type="button" id="lb-rand">Random hand</button><button class="linkbtn" type="button" id="lb-clrb">Clear board</button></div>
     </section>
-    <section class="panel lb-out" id="lb-out" aria-live="polite"><p class="small muted">Pick your cards and tap Analyze.</p></section>
+    <section class="panel lb-out" id="lb-out" aria-live="polite"></section>
   </div>
 </section>
 <section class="view" id="v-howiplay" hidden>
@@ -597,12 +607,22 @@
   <div class="stage">
     <div class="seg" id="hp-tabs" role="group" aria-label="View"><button type="button" data-t="play" aria-pressed="true">Play</button><button type="button" data-t="res" aria-pressed="false">My results</button></div>
     <section class="panel" id="hp-play">
+      <div class="seg hp-mode" id="hp-mode" role="group" aria-label="What to play"><button type="button" data-m="pre" aria-pressed="true">Preflop spots</button><button type="button" data-m="full" aria-pressed="false">Full hands</button></div>
+      <div id="hp-full" hidden>
+        <h3 class="lb-h3">Play whole hands, preflop to showdown</h3>
+        <p class="small">You play full hands in the Full hand trainer against the opponent you pick, with poker-site betting and <b>no grades or pop-ups</b>, so it records how you naturally play. Every decision is saved with your hand strength and whether you were facing a bet; <b>My results</b> then compares it with the trainer's best play.</p>
+        <p class="small muted">Full hands are heads-up (you against one opponent). Every hand is dealt, including ones the charts fold, so your preflop folds count too.</p>
+        <div class="row"><label class="lb-wide" style="max-width:320px"><span class="lbl">Opponent</span><select id="hp-ftype"><option value="random">Random type each hand</option><option value="rec">Typical recreational player</option><option value="station">Calling station</option><option value="nit">Nit</option><option value="aggro">Aggressive player</option></select></label></div>
+        <div class="row"><button class="act" type="button" id="hp-fstart">Start playing</button><span class="small muted" id="hp-fcount"></span></div>
+      </div>
+      <div id="hp-pre">
       <div class="seg hp-kind" id="hp-kind" role="group" aria-label="Spots"></div>
       <div class="qz-visual" id="hp-table"></div>
       <p class="spot-text" id="hp-text"></p>
       <div class="row hp-acts" id="hp-acts"></div>
       <div id="hp-fb"></div>
       <div class="row hp-foot"><span class="small muted" id="hp-meta"></span><label class="check small"><input type="checkbox" id="hp-show"> Show the chart after each hand</label></div>
+      </div>
     </section>
     <section class="panel" id="hp-res" hidden><div id="hp-res-body"></div></section>
   </div>
