@@ -39,6 +39,7 @@
 <script defer src="js/daily.js"></script>
 <script defer src="js/feedback.js"></script>
 <script defer src="js/lab.js"></script>
+<script defer src="js/game.js"></script>
 <script defer src="js/settings.js"></script>
 <script defer src="js/learn.js"></script>
 <script defer src="js/flags.js"></script>
@@ -436,7 +437,6 @@
     <p class="small muted">Results swing with the cards. The decisions are what you're practicing. Your last 50 hands are saved on this device for the hand replayer.</p>
   </div></details>
   <div class="cap-banner" id="cap-banner" role="status" hidden></div>
-  <div class="cap-banner hp-banner" id="hp-banner" role="status" hidden></div>
   <div class="cols">
     <div class="panel stage">
       <div class="setup">
@@ -598,30 +598,21 @@
   </div>
 </section>
 <section class="view" id="v-howiplay" hidden>
-  <details class="learn"><summary>How this works <span>Find out how you really play</span></summary><div class="learn-body">
-    <p>The app deals preflop spots and you choose what you'd do, with no right answers shown. Every answer is saved, and over time it builds <b>your</b> range for each spot.</p>
-    <ul><li>Hands come up so every one of the 169 starting hands gets covered in each spot, including the ugly ones.</li>
-    <li><b>My results</b> shows your range as a grid next to the chart: hands you play that the chart folds (too loose), hands you fold that it plays (too tight), and where you call instead of raising (or the reverse).</li>
-    <li>Your style is worked out from how many hands you play compared with the charts and how often you raise them: Nit, TAG, LAG, loose-passive, calling station.</li>
-    <li>Turn on "show the chart after each hand" if you want feedback; leave it off to capture your natural play.</li></ul></div></details>
+  <details class="learn"><summary>How this works <span>Play a real table and see how you play</span></summary><div class="learn-body">
+    <p>Sit at a 6- or 9-handed table. Every seat is dealt cards and plays them like its player type, so you get limps, multiway pots, 3-bets and all-ins the way a real game goes. Nothing is graded while you play: every decision is logged so <b>My results</b> can show how you actually play.</p>
+    <ul><li><b>What to train:</b> Preflop (each hand stops when the preflop betting ends), Flop, Turn or River (the app plays your seat by the charts until you're in a hand on that street, then you play it out), or Full hand.</li>
+    <li><b>Opponents:</b> regulars play the charts; nits play about two-thirds as many hands; loose-aggressive players and maniacs open and 3-bet much wider; recreational players and calling stations limp and call a lot. After the flop they bet, call, raise or fold by hand strength, how many players are in, and their type. These are estimates of how such players tend to act.</li>
+    <li><b>Betting</b> works like a poker site: Fold, Check or Call, Raise or Bet with the slider (− and + move half a big blind; the chips are quick sizes), or All in. Raises follow the minimum-raise rule; all-ins create side pots.</li>
+    <li><b>My results:</b> your style (VPIP, preflop raise %, 3-bet, c-bet, aggression, showdown numbers) against typical winning ranges, your play by position and by hand strength in heads-up and multiway pots, your recent hands, and your preflop ranges against the charts.</li></ul></div></details>
   <div class="stage">
     <div class="seg" id="hp-tabs" role="group" aria-label="View"><button type="button" data-t="play" aria-pressed="true">Play</button><button type="button" data-t="res" aria-pressed="false">My results</button></div>
     <section class="panel" id="hp-play">
-      <div class="seg hp-mode" id="hp-mode" role="group" aria-label="What to play"><button type="button" data-m="pre" aria-pressed="true">Preflop spots</button><button type="button" data-m="full" aria-pressed="false">Full hands</button></div>
-      <div id="hp-full" hidden>
-        <h3 class="lb-h3">Play whole hands, preflop to showdown</h3>
-        <p class="small">You play full hands in the Full hand trainer against the opponent you pick, with poker-site betting and <b>no grades or pop-ups</b>, so it records how you naturally play. Every decision is saved with your hand strength and whether you were facing a bet; <b>My results</b> then compares it with the trainer's best play.</p>
-        <p class="small muted">Full hands are heads-up (you against one opponent). Every hand is dealt, including ones the charts fold, so your preflop folds count too.</p>
-        <div class="row"><label class="lb-wide" style="max-width:320px"><span class="lbl">Opponent</span><select id="hp-ftype"><option value="random">Random type each hand</option><option value="rec">Typical recreational player</option><option value="station">Calling station</option><option value="nit">Nit</option><option value="aggro">Aggressive player</option></select></label></div>
-        <div class="row"><button class="act" type="button" id="hp-fstart">Start playing</button><span class="small muted" id="hp-fcount"></span></div>
-      </div>
-      <div id="hp-pre">
-      <div class="seg hp-kind" id="hp-kind" role="group" aria-label="Spots"></div>
-      <div class="qz-visual" id="hp-table"></div>
-      <p class="spot-text" id="hp-text"></p>
-      <div class="row hp-acts" id="hp-acts"></div>
-      <div id="hp-fb"></div>
-      <div class="row hp-foot"><span class="small muted" id="hp-meta"></span><label class="check small"><input type="checkbox" id="hp-show"> Show the chart after each hand</label></div>
+      <div id="g-setup"></div>
+      <div id="g-game" hidden>
+        <div class="g-top"><span class="small" id="g-info"></span><button class="linkbtn" type="button" id="g-change">Change setup</button></div>
+        <div class="rt" id="g-table" role="img" aria-label="The table"></div>
+        <div class="g-acts" id="g-acts"></div>
+        <ol class="g-log small" id="g-log" aria-label="Hand history"></ol>
       </div>
     </section>
     <section class="panel" id="hp-res" hidden><div id="hp-res-body"></div></section>

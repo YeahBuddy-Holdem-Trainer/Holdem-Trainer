@@ -257,60 +257,12 @@ hp = { s: {}, n: 0, show: false, kind: 'all', ...hp };
 const hpSave = () => { try { localStorage.setItem(HP_KEY, JSON.stringify(hp)); } catch (e) {} };
 const hpKind = s => /shove/.test(s.id) ? 'short' : /3-bet$/.test(s.id) ? 'vs3b' : /-vs-/.test(s.id) ? 'facing' : 'open';
 const HP_KINDS = { all: 'Everything', open: 'Opening (first in)', facing: 'Facing a raise', vs3b: 'Facing a 3-bet', short: 'Short stack' };
-function hpActs(s) {
-  const k = hpKind(s);
-  if (k === 'open') return ['fold', 'limp', 'r2', 'r25', 'r3', 'allin'];
-  if (k === 'facing') return s.acts.includes('Call') ? ['fold', 'call', '3b3', '3b4', 'allin'] : ['fold', 'call', '3b3', '3b4', 'allin'];
-  if (k === 'vs3b') return ['fold', 'call', '4b', 'allin'];
-  if (/-vs-.*-shove/.test(s.id)) return ['fold', 'call'];
-  if (/re-shove/.test(s.id)) return ['fold', 'call', '3b3', 'allin'];
-  return ['fold', 'r2', 'allin'];
-}
 /* chart answer as a category: fold, passive (call) or aggressive (raise, 3-bet, shove) */
 const hpChartCat = (s, l) => { const a = s.acts[s.map.get(l) ?? s.fold]; return a === 'Fold' ? 'fold' : a === 'Call' ? 'pass' : 'agg'; };
 const hpCat = code => code === 'fold' ? 'fold' : HP_AGG.has(code) ? 'agg' : 'pass';
-const hpSpots = () => SPOTS.filter(s => s.game === (mode === 'cash' ? 'cash' : 'tour') && (hp.kind === 'all' || hpKind(s) === hp.kind));
-let hpCur = null;
-function hpDeal() {
-  const pool = hpSpots(); if (!pool.length) { hp.kind = 'all'; return hpDeal(); }
-  const s = pick(pool), rec = hp.s[s.id] || {}, all = lbAll169(), cnt = l => Object.values(rec[l] || {}).reduce((a, b) => a + b, 0), lo = Math.min(...all.map(cnt));
-  const label = pick(all.filter(l => cnt(l) === lo)), cards = comboFor(label); if (cards[0] >> 2 < cards[1] >> 2) cards.reverse();
-  hpCur = { s, label, cards, t0: Date.now(), last: null }; hpShow();
-}
-function hpShow() {
-  const c = hpCur, s = c.s, cov = Object.keys(hp.s[s.id] || {}).length;
-  if (!$('hp-kind').children.length) $('hp-kind').innerHTML = Object.entries(HP_KINDS).filter(([k]) => k === 'all' || SPOTS.some(x => x.game === (mode === 'cash' ? 'cash' : 'tour') && hpKind(x) === k)).map(([k, t]) => `<button type="button" data-k="${k}">${t}</button>`).join('');
-  $('hp-kind').querySelectorAll('[data-k]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === hp.kind));
-  $('hp-show').checked = !!hp.show;
-  $('hp-table').innerHTML = tableSnap({ ...spotTable(s), heroCards: c.cards });
-  $('hp-text').innerHTML = `<b>${s.name}.</b> ${spotText(s)}`;
-  /* poker-site controls: what it costs to call, and raise sizes from a min-raise to all in */
-  const k = hpKind(s), St = s.stack || 100, posted = s.hero === 'SB' ? .5 : s.hero === 'BB' ? 1 : 0, facingShove = /-vs-.*-shove/.test(s.id);
-  const cur = k === 'vs3b' ? (s.tb || s.o * 3) : k === 'open' || k === 'short' && !/vs/.test(s.id) ? 1 : s.o, mine = k === 'vs3b' ? s.o : posted;
-  const minTo = k === 'vs3b' ? cur * 2 : k === 'open' || (k === 'short' && !/vs/.test(s.id)) ? 2 : cur * 2, steps = [];
-  if (!facingShove) { steps.push(Math.round(minTo * 10) / 10); for (let v = Math.floor(minTo * 2) / 2 + .5; v < St - .01; v += St > 60 && v >= 20 ? 1 : .5) steps.push(v); }   /* the min-raise, then half-BB steps (1 BB above 20 BB when deep) */
-  const pot = 1.5 + (s.game === 'tour' ? 1 : 0) + (k === 'vs3b' ? s.o + s.tb : k === 'facing' || /vs/.test(s.id) ? cur : 0);
-  const presets = k === 'vs3b' ? [{ to: cur * 2.2, label: '2.2×', def: 1 }, { to: cur * 2.5, label: '2.5×' }] : k === 'facing' || /re-shove/.test(s.id) ? [{ to: cur * 3, label: '3×', def: 1 }, { to: cur * 4, label: '4×' }, { to: pot * 2 + cur, label: 'Pot' }]
-    : [{ to: 2, label: '2×' }, { to: 2.5, label: '2.5×', def: 1 }, { to: 3, label: '3×' }, { to: 3.5 + (s.game === 'tour' ? 1 : 0), label: 'Pot' }];
-  betBar($('hp-acts'), { toCall: facingShove ? Math.min(St, s.o) - posted : cur - mine, canCheck: false, steps, presets: presets.filter(p => p.to < St), allin: facingShove ? null : St, raiseWord: k === 'facing' || /re-shove/.test(s.id) ? '3-bet to' : k === 'vs3b' ? '4-bet to' : 'Raise to',
-    onAct: (kind, to) => hpAnswer(kind === 'fold' ? 'fold' : kind === 'call' ? (k === 'open' || k === 'short' && !/vs/.test(s.id) ? 'limp' : 'call') : kind === 'allin' ? 'allin' : hpSizeCode(k, to, cur, St), to) });
-  $('hp-meta').textContent = `${hp.n} hands answered · this spot: ${cov} of 169 starting hands covered`;
-  $('hp-fb').innerHTML = c.last || '';
-}
 /* a raise size as one of the comparison groups (opens 2× / 2.5× / 3×+, 3-bets 3× / 4×+, 4-bets) */
 function hpSizeCode(k, to, cur, St) { if (to >= St - .01) return 'allin'; if (k === 'vs3b') return '4b'; if (k === 'open' || k === 'short') return to <= 2.1 ? 'r2' : to <= 2.7 ? 'r25' : 'r3'; return to <= cur * 3.5 ? '3b3' : '3b4'; }
-function hpAnswer(code, to) {
-  if (!hpCur) return; const c = hpCur, s = c.s;
-  const r = hp.s[s.id] = hp.s[s.id] || {}, x = r[c.label] = r[c.label] || {}; x[code] = (x[code] || 0) + 1; hp.n++; hp.last = Date.now();
-  if (to) { const z = hp.z = hp.z || {}; (z[s.id] = z[s.id] || []).push(to); if (z[s.id].length > 200) z[s.id].shift(); }
-  hpSave();
-  const prev = hp.show ? (() => { const ch = s.acts[s.map.get(c.label) ?? s.fold], ok = hpChartCat(s, c.label) === hpCat(code);
-    return `<p class="small hp-prev ${ok ? 'good' : 'bad'}">Last hand: ${c.label}, you chose <b>${HP_ACTS[code]}${to && code !== 'allin' ? ' (' + fmtBB(to) + ' BB)' : ''}</b>; the chart says <b>${ch}</b>.</p>`; })() : `<p class="small muted hp-prev">Last hand: ${c.label} → ${HP_ACTS[code]}${to && code !== 'allin' ? ' ' + fmtBB(to) + ' BB' : ''}</p>`;
-  hpDeal(); hpCur.last = prev; $('hp-fb').innerHTML = prev;
-}
-$('hp-kind').addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (!b) return; hp.kind = b.dataset.k; hpSave(); hpDeal(); });
-$('hp-show').onchange = e => { hp.show = e.target.checked; hpSave(); };
-$('hp-tabs').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (!b) return; hpTab(b.dataset.t); });
+$('hp-tabs').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (b) hpTab(b.dataset.t); });
 function hpTab(t) { $('hp-tabs').querySelectorAll('[data-t]').forEach(b => b.setAttribute('aria-pressed', b.dataset.t === t)); $('hp-play').hidden = t !== 'play'; $('hp-res').hidden = t !== 'res'; if (t === 'res') hpResults(); }
 
 /* your most common choice for each hand in a spot */
@@ -339,19 +291,17 @@ function hpStyle() {
 }
 function hpResults() {
   const box = $('hp-res-body'), st = hpStyle(), sel0 = $('hp-spot') ? $('hp-spot').value : '', spots = SPOTS.filter(s => hp.s[s.id]).sort((a, b) => Object.keys(hp.s[b.id]).length - Object.keys(hp.s[a.id]).length);
-  if (!spots.length) { box.innerHTML = `<p class="small muted">Play some preflop spots first. Every answer builds your own range for that spot.</p><h3 class="lb-h3">Full hands</h3>${hpFullResults()}`; return; }
+  if (!spots.length) { box.innerHTML = gResultsHTML(); return; }
   const cur = spots.find(s => s.id === sel0) || spots[0];
   const all = spots.map(s => ({ s, c: hpCompare(s) })), leaks = all.flatMap(({ s, c }) => [c.wLoose ? { s, kind: 'loose', w: c.wLoose, ls: c.loose } : null, c.wTight ? { s, kind: 'tight', w: c.wTight, ls: c.tight } : null, c.wStyle ? { s, kind: 'style', w: c.wStyle, ls: c.style.map(x => x[0]) } : null].filter(Boolean)).sort((a, b) => b.w - a.w).slice(0, 5);
   const C = hpCompare(cur), grid = (() => { let h = ''; for (let i = 12; i >= 0; i--) for (let j = 12; j >= 0; j--) { const l = gridLabel(i, j), code = C.main[l], cls = code ? 'hp-' + hpCat(code) + (code === 'limp' ? ' hp-limp' : code === 'allin' ? ' hp-allin' : '') : '';
     const diff = code ? (C.loose.includes(l) ? ' hp-loose' : C.tight.includes(l) ? ' hp-tight' : C.style.some(x => x[0] === l) ? ' hp-diff' : '') : ''; h += `<span class="${cls}${diff}" title="${l}${code ? ': ' + HP_ACTS[code] + ' (chart: ' + cur.acts[cur.map.get(l) ?? cur.fold] + ')' : ''}">${l}</span>`; }
     return `<div class="rgrid eq-grid hp-grid">${h}</div>`; })();
   const pc = x => x == null ? '–' : pct(x, 0);
-  box.innerHTML = `
-    ${st ? `<section class="hp-style"><div class="hp-ico" aria-hidden="true">${st.icon}</div><div><span class="eyebrow">Your style so far</span><h3>${st.type}</h3><p class="small">${st.line}</p>
-      <p class="small">First in, you play <b>${st.ratio.toFixed(2)}×</b> as many hands as the charts (counting the hands you've answered), and raise <b>${pc(st.ag)}</b> of what you play.${st.fCont != null ? ` Facing a raise: you continue with <b>${pc(st.fCont)}</b> (charts ${pc(st.fChart)}) and 3-bet <b>${pc(st.f3)}</b> (charts ${pc(st.c3)}).` : ''}</p></div></section>`
-      : `<p class="small muted">Answer at least 30 hands to see your style.</p>`}
+  box.innerHTML = `${gResultsHTML()}
+    <h3 class="lb-h3">Your preflop ranges vs the charts</h3>
+    <p class="small muted">Spots that match a chart (first in, facing one raise with no callers, or facing a 3-bet after you opened) fill these grids as you play.</p>
     ${leaks.length ? `<h3 class="lb-h3">Biggest differences from the charts</h3><ol class="hp-leaks">${leaks.map(x => `<li><b>${x.s.name}</b>: ${x.kind === 'loose' ? 'playing hands the chart folds' : x.kind === 'tight' ? 'folding hands the chart plays' : 'a different action than the chart'} (${x.w} combos): <span class="small">${x.ls.slice(0, 10).join(', ')}${x.ls.length > 10 ? '…' : ''}</span></li>`).join('')}</ol>` : ''}
-    <h3 class="lb-h3">Full hands</h3>${hpFullResults()}
     <h3 class="lb-h3">Your range for one spot</h3>
     <label class="hp-pick"><span class="small muted">Spot</span><select id="hp-spot">${spots.map(s => `<option value="${s.id}"${s.id === cur.id ? ' selected' : ''}>${esc(s.name)} (${Object.keys(hp.s[s.id]).length}/169)</option>`).join('')}</select></label>
     ${grid}
@@ -362,52 +312,11 @@ function hpResults() {
       <li><b>Different action</b> (${C.wStyle} combos): ${C.style.length ? C.style.map(([l, code, ch]) => `${l} (you ${HP_ACTS[code].toLowerCase()}, chart ${ch.toLowerCase()})`).join(', ') : 'none'}</li>
     </ul>
     <p class="small muted">${C.n} of 169 hands answered here; blank cells haven't come up yet. Keep playing this spot to fill the grid.</p>
-    <div class="row"><button class="linkbtn" type="button" id="hp-reset">Reset all my answers</button></div>`;
+    <div class="row"><button class="linkbtn" type="button" id="hp-reset">Reset everything I've logged</button></div>`;
   $('hp-spot').onchange = hpResults;
-  $('hp-reset').onclick = e => { if (e.target.dataset.sure !== '1') { e.target.dataset.sure = '1'; e.target.textContent = 'Tap again to erase every answer'; return; } hp = { s: {}, n: 0, show: hp.show, kind: hp.kind }; hpSave(); hpResults(); hpDeal(); };
+  $('hp-reset').onclick = e => { if (e.target.dataset.sure !== '1') { e.target.dataset.sure = '1'; e.target.textContent = 'Tap again to erase every answer'; return; } hp = { s: {}, n: 0, gcfg: hp.gcfg, g: { d: [], h: [], hh: [] } }; hpSave(); hpResults(); };
 }
-function hpInit() { hpMode(hp.mode || 'pre'); if (!hpCur || hpCur.s.game !== (mode === 'cash' ? 'cash' : 'tour')) hpDeal(); else hpShow(); }
+function hpInit() { if (!gs) { $('g-setup').hidden = false; $('g-game').hidden = true; gSetupRender(); } }
 
-/* ---------- How I play: full hands ----------
-   Plays in the Full hand trainer with grading hidden; each decision is saved with the hand's strength (the same tiers the
-   opponent model uses) and compared, in My results, with the trainer's best play. */
+/* hand-strength groups after the flop (the same tiers the opponent model uses) */
 const HP_TIER = { monster: 'Two pair or better', strong: 'Overpair or top pair, good kicker', medium: 'Top pair weak kicker, middle pair', draw: 'Strong draw', gut: 'Gutshot', weak: 'Weak pair', air: 'Nothing' };
-const hpKindOf = l => /^fold/i.test(l) ? 'fold' : /^check/i.test(l) ? 'check' : /^call/i.test(l) ? 'call' : /^all in/i.test(l) ? 'allin' : 'bet';
-function hpMode(m) { hp.mode = m; hpSave(); $('hp-mode').querySelectorAll('[data-m]').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === m)); $('hp-pre').hidden = m !== 'pre'; $('hp-full').hidden = m !== 'full';
-  const n = (hp.fh || []).length; $('hp-fcount').textContent = n ? `${hp.fhHands || 0} hands, ${n} decisions recorded so far` : ''; }
-$('hp-mode').addEventListener('click', e => { const b = e.target.closest('[data-m]'); if (b) hpMode(b.dataset.m); });
-function hpBanner() { const b = $('hp-banner'), f = window.hpFull; if (!f) { b.hidden = true; return; } b.hidden = false;
-  b.innerHTML = `<span class="eyebrow">📋 How I play · full hands</span><b>${f.hands} hand${f.hands === 1 ? '' : 's'} · ${f.dec} decisions recorded</b><span class="small">No grades shown: play the way you normally would.</span><button type="button" class="linkbtn" data-hpf="res">See my results</button><button type="button" class="linkbtn" data-hpf="stop">Stop</button>`; }
-function hpFullStop() { const f = window.hpFull; if (!f) return; window.hpFull = null; $('v-hand').classList.remove('hp-quiet'); $('fh-type').value = f.prevType; $('fh-play').checked = f.prevPlay; hpBanner(); }
-$('hp-fstart').onclick = () => {
-  window.hpFull = { type: $('hp-ftype').value, hands: 0, dec: 0, prevType: $('fh-type').value, prevPlay: $('fh-play').checked };
-  $('v-hand').classList.add('hp-quiet'); $('fh-type').value = window.hpFull.type; $('fh-play').checked = false;
-  location.hash = '#hand'; fhDeal(); hpBanner(); window.scrollTo(0, 0);
-};
-document.addEventListener('click', e => { const b = e.target.closest('[data-hpf]'); if (!b) return; const a = b.dataset.hpf; hpFullStop(); if (a === 'res') { location.hash = '#howiplay'; setTimeout(() => hpTab('res'), 50); } });
-{ const g0 = fhGrade, e0 = fhEnd;
-  fhGrade = function (g) { g0(g); const f = window.hpFull; if (!f || !fh) return;
-    const tier = g.street === 'Preflop' ? 'pre' : fhTier(fh.hero, fhBoardNow());
-    (hp.fh = hp.fh || []).push({ st: g.street, face: /facing/.test(g.spot), tier, you: hpKindOf(g.choice), best: hpKindOf(g.best), ok: g.ok, t: fh.type });
-    if (hp.fh.length > 3000) hp.fh.shift(); f.dec++; hpSave(); hpBanner(); };
-  fhEnd = function (how) { e0(how); const f = window.hpFull; if (!f) return; f.hands++; hp.fhHands = (hp.fhHands || 0) + 1; hpSave(); hpBanner(); }; }
-function hpFullResults() {
-  const xs = hp.fh || []; if (!xs.length) return '<p class="small muted">No full hands yet. Choose <b>Full hands</b> on the Play tab.</p>';
-  const agg = k => k === 'bet' || k === 'allin', P = (a, b) => b ? Math.round(a / b * 100) : null, post = xs.filter(x => x.tier !== 'pre'), pre = xs.filter(x => x.tier === 'pre');
-  const rows = Object.entries(HP_TIER).map(([t, name]) => {
-    const fi = post.filter(x => x.tier === t && !x.face), fa = post.filter(x => x.tier === t && x.face);
-    return { t, name, fiN: fi.length, bet: P(fi.filter(x => agg(x.you)).length, fi.length), betB: P(fi.filter(x => agg(x.best)).length, fi.length),
-      faN: fa.length, fold: P(fa.filter(x => x.you === 'fold').length, fa.length), foldB: P(fa.filter(x => x.best === 'fold').length, fa.length), rz: P(fa.filter(x => agg(x.you)).length, fa.length), rzB: P(fa.filter(x => agg(x.best)).length, fa.length) };
-  }).filter(r => r.fiN + r.faN);
-  const cell = (a, b, n) => n ? `<b>${a}%</b> <span class="small muted">vs ${b}%</span>` : '<span class="small muted">–</span>';
-  const gaps = [];
-  for (const r of rows) {
-    if (r.fiN >= 5 && Math.abs(r.bet - r.betB) >= 20) gaps.push(`With <b>${r.name.toLowerCase()}</b> and no bet to face, you bet <b>${r.bet}%</b>; the best play bets ${r.betB}%.`);
-    if (r.faN >= 5 && Math.abs(r.fold - r.foldB) >= 20) gaps.push(`With <b>${r.name.toLowerCase()}</b> facing a bet, you fold <b>${r.fold}%</b>; the best play folds ${r.foldB}%.`);
-  }
-  return `<p class="small">${hp.fhHands || 0} hands · ${xs.length} decisions · <b>${P(xs.filter(x => x.ok).length, xs.length)}%</b> were the best play or close to it${pre.length ? ` · preflop ${P(pre.filter(x => x.ok).length, pre.length)}% matched the charts` : ''}.</p>
-    ${gaps.length ? `<ul class="small hp-list">${gaps.map(g => `<li>${g}</li>`).join('')}</ul>` : ''}
-    <div style="overflow-x:auto"><table class="ref hp-ftable"><thead><tr><th>Your hand (after the flop)</th><th>Checked to you / first: you bet</th><th>Facing a bet: you fold</th><th>Facing a bet: you raise</th></tr></thead><tbody>
-    ${rows.map(r => `<tr><td class="t">${r.name}</td><td>${cell(r.bet, r.betB, r.fiN)}<br><span class="small muted">${r.fiN} spots</span></td><td>${cell(r.fold, r.foldB, r.faN)}<br><span class="small muted">${r.faN} spots</span></td><td>${cell(r.rz, r.rzB, r.faN)}</td></tr>`).join('')}
-    </tbody></table></div><p class="small muted">"vs" is how often the trainer's best play does the same in those exact spots. Small samples swing a lot; aim for a few dozen spots per row.</p>`;
-}

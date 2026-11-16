@@ -31,7 +31,8 @@ A Texas Hold'em training app that runs on GitHub Pages, with Firebase sign-in so
 | `js/daily.js` | Daily challenge and the Home screen. |
 | `js/learn.js` | Learn tab: the guided path (units, lessons with 3 levels, checkpoints), Basics question makers, placement test, Fish→Crusher ranks and chip stacks. |
 | `js/settings.js` | Settings menu, the admin clock settings (Firestore `config/app`), and the shot clock / time bank. |
-| `js/lab.js` | Ranges › Hand lab (hand vs range by where you stand, with combos and EV) and How I play (builds your own ranges and compares them with the charts). |
+| `js/lab.js` | Ranges › Hand lab (hand vs range by where you stand, with combos and EV), the shared poker-site bet bar, and How I play's results and chart comparison. |
+| `js/game.js` | How I play table game: 6- or 9-handed table where every seat is dealt in and bots play by player type and range charts; train preflop, flop, turn, river or full hands; logs your decisions and computes VPIP, PFR, 3-bet, c-bet and other stats. |
 | `js/tour.js` | First-launch guided tour (replay from Settings). |
 | `js/flags.js` | "Flag this" reports and the admin review list. |
 | `tests.html`, `js/tests.js` | App checks page (linked from the account menu). |

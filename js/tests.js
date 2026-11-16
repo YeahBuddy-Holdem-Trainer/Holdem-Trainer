@@ -248,6 +248,31 @@ check('Learning path', 'Rule of 2 and 4 answers are outs × 4 on the flop and ×
   return [true];
 });
 
+
+/* ---------- How I play table ---------- */
+check('Table game', '2,000 hands with every seat played by the bots: chips always balance and every hand finishes', () => {
+  for (let h = 0; h < 2000; h++) {
+    const n = h % 2 ? 9 : 6, S = [100, 40, 15, 200][h % 4], game = S === 100 || S === 200 ? 'cash' : 'tour', seats = Array.from({ length: n }, () => E('gPickType')(['mixed', 'loose', 'tough'][h % 3]));
+    E('gNewHand')({ n, game, stack: S, seats, heroIdx: 0, start: 0, only: null }); const G = E('g'); G.heroAuto = true; E('gRunBots')();
+    if (!G.done) return [false, `hand ${h} did not finish`];
+    const tot = G.players.reduce((a, q) => a + q.stack, 0); if (Math.abs(tot - n * S) > 1e-6) return [false, `hand ${h}: ${tot} chips instead of ${n * S}`];
+  }
+  return [true];
+});
+check('Table game', 'Side pots: three all-ins of different sizes are paid to the right players', () => {
+  const card = s => C(s), G = E('gNewHand')({ n: 6, game: 'cash', stack: 100, seats: ['reg', 'reg', 'reg', 'reg', 'reg', 'reg'], heroIdx: 5, start: 0, only: null });
+  const [u, h, c] = G.players; u.stack = 10; h.stack = 30; u.hole = card('AsAd'); h.hole = card('KsKd'); c.hole = card('QsQd'); G.deck = card('2c7d9hJc3s').concat(G.deck.filter(x => !card('2c7d9hJc3sAsAdKsKdQsQd').includes(x)));
+  const act = (p, a, to) => E('gAct')(p, a, to);
+  act(u, 'allin'); act(h, 'allin'); act(c, 'call'); act(G.players[3], 'fold'); act(G.players[4], 'fold'); act(G.players[5], 'fold');
+  const r = G.result;   /* main pot 10×3 + blinds 1.5 → UTG; side pot 20×2 → HJ; CO loses 30 */
+  return [G.done && Math.abs(r[0] - 21.5) < 1e-9 && Math.abs(r[1] - 10) < 1e-9 && Math.abs(r[2] + 30) < 1e-9, `UTG ${r[0]}, HJ ${r[1]}, CO ${r[2]}`];
+});
+check('Table game', 'Minimum raise: after an open to 2.5 the smallest 3-bet is to 4, and a smaller raise is bumped up to it', () => {
+  const G = E('gNewHand')({ n: 6, game: 'cash', stack: 100, seats: Array(6).fill('reg'), heroIdx: 5, start: 0, only: null }), P = G.players;
+  E('gAct')(P[0], 'raise', 2.5); const m1 = E('gMinTo')(P[1]); E('gAct')(P[1], 'raise', 1); const t = G.curBet;
+  return [m1 === 4 && t === 4, `min 3-bet ${m1}, a too-small raise became ${t}`];
+});
+
 /* ---------- runner ---------- */
 function load() {
   return new Promise((res, rej) => {

@@ -31,7 +31,7 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-train]');i
 function applyModeLook(m){document.documentElement.dataset.mode=m==='cash'?'cash':'tour';
   $('m-cash').setAttribute('aria-pressed',m==='cash');$('m-tour').setAttribute('aria-pressed',m!=='cash');
   $('qz-game').textContent=m==='cash'?'cash (100 BB, 6-max)':'tournament'}
-function setMode(m){mode=m;applyModeLook(m);if(typeof lbSetup==='function'&&currentView==='lab')lbSetup();if(typeof hpInit==='function'){$('hp-kind').innerHTML='';hpCur=null;if(currentView==='howiplay')hpInit()}if(typeof lnPlay!=='undefined'&&lnPlay&&lnPlay.stage==='intro')lnShowPlay();buildPfSetup();newPF();newPO();newCF();rbBuildSelects();buildPresets();fhtSeatOptions();fhDeal();newHVR();newRVR();newTX();newRD();newPT()}
+function setMode(m){mode=m;applyModeLook(m);if(typeof lbSetup==='function'&&currentView==='lab')lbSetup();if(typeof gs!=='undefined'){if(gs)clearTimeout(gs.tm);gs=null;if(currentView==='howiplay')hpInit()}if(typeof lnPlay!=='undefined'&&lnPlay&&lnPlay.stage==='intro')lnShowPlay();buildPfSetup();newPF();newPO();newCF();rbBuildSelects();buildPresets();fhtSeatOptions();fhDeal();newHVR();newRVR();newTX();newRD();newPT()}
 $('m-cash').onclick=()=>{if(mode!=='cash')setMode('cash')};$('m-tour').onclick=()=>{if(mode==='cash')setMode('tour')};
 const VIEWS=['learn','daily','leaks','assessment','progress','pot-odds','call-or-fold','matchups','street-equity','hvr','rvr','calculator','board','sizing','texture','pots','icm','preflop','ranges','combos','lab','howiplay','hand','reading','exploit','replay','log'];
 /* sections: Odds and EV ideas are the same in cash and tournaments; Equity ranges, charts and play differ, so those views show the Cash/Tournament switch */
