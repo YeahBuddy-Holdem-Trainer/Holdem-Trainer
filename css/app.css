@@ -798,6 +798,21 @@ body.touring{overflow:hidden}
 @media (max-width:600px){.rt{aspect-ratio:.95}.rt-felt{inset:9% 4%}.rt-seat{min-width:52px;padding:3px 4px}}
 
 .rt-backs{display:flex;gap:2px;padding:2px 0}.rt-backs i{width:13px;height:18px;border-radius:3px;background:repeating-linear-gradient(45deg,#3b5ba8 0 3px,#2c4688 3px 6px);border:1px solid #fff9}
-.rt-9 .rt-seat:not(.me) .cards{transform:scale(.8);margin:-3px -6px}
+
 @media (max-width:480px){.bb-main:has(>:nth-child(4)) .act{flex-basis:40%}.bb-main .act{padding-inline:6px}}
 .rt-center .cards{flex-wrap:nowrap}
+
+/* How I play table: compact layout */
+.g-links{display:flex;gap:12px;flex:none}
+.rt-center{top:47%}
+.rt-seat .card.xs{width:21px;height:30px}.rt-seat .card.xs b{font-size:10px}.rt-seat .card.xs i{font-size:11px}
+.rt-seat.me .card.xs{width:28px;height:40px}.rt-seat.me .card.xs b{font-size:13px}.rt-seat.me .card.xs i{font-size:15px}
+.rt-center .card.xs{width:27px;height:38px}
+.rt-seat.out:not(.me){opacity:.35}
+@media (max-width:760px){
+  body:has(#v-howiplay:not([hidden]) #hp-play:not([hidden]) #g-game:not([hidden])) :is(#subnav,#v-howiplay>.learn,#hp-tabs){display:none}
+  #v-howiplay .g-top{margin:0}
+  #v-howiplay #hp-play{padding:12px}
+  .rt{width:min(100%,max(290px,calc((100dvh - 390px) * .95)))}
+  .g-acts{position:sticky;bottom:calc(66px + env(safe-area-inset-bottom,0px));z-index:5;background:var(--surface);margin:4px -12px 0;padding:8px 12px;border-radius:12px}
+}

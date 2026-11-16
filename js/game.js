@@ -239,14 +239,22 @@ function gAdvance() {
   gs.tm = setTimeout(() => { const d = gBot(p); gAct(p, d.act, d.to); if (heroOut) { gRunBots(); return gHandOver(); } gShow(); gAdvance(); }, heroOut ? 0 : gDelay());
 }
 /* seat positions around an oval; physical seat 0 (you) at the bottom, then clockwise */
-function gSeatXY(k, n) { const a = Math.PI / 2 + k * 2 * Math.PI / n; return { x: 50 + 43 * Math.cos(a), y: 50 + 40 * Math.sin(a), bx: 50 + 25 * Math.cos(a), by: 50 + 22 * Math.sin(a) }; }
+/* seat spots (x, y in %): 6-handed uses fixed spots so side seats stay clear of the board; 9-handed uses an ellipse */
+const G_SPOTS6 = [[50, 89], [9, 68], [9, 28], [50, 10], [91, 28], [91, 68]];
+function gSeatXY(k, n) {
+  let x, y;
+  if (n === 6) [x, y] = G_SPOTS6[k];
+  else { const a = Math.PI / 2 + k * 2 * Math.PI / n; x = 50 + 44 * Math.cos(a); y = 50 + 40 * Math.sin(a); }
+  /* the bet chip sits between the seat and the middle */
+  return { x, y, bx: 50 + (x - 50) * .56, by: 50 + (y - 50) * (y < 50 ? .5 : .6) };
+}
 function gShow() {
   const n = g.n, H = g.players[g.cfg.heroIdx], sd = g.done && g.showdown;
   let h = `<div class="rt-felt"><div class="rt-center"><div class="cards">${cardsHTML(g.board, 'xs')}</div><b>${fmtBB(gPot())} BB</b><span>pot</span></div>`;
   for (let k = 0; k < n; k++) {
     const p = g.players[(g.cfg.heroIdx + k) % n], xy = gSeatXY(k, n), T = G_TYPES[p.type], show = p.hero || (sd && !p.folded), act = !g.done && g.cur === p.i;
     h += `<div class="rt-seat${p.hero ? ' me' : ''}${p.folded ? ' out' : ''}${act ? ' acting' : ''}" style="left:${xy.x}%;top:${xy.y}%">
-      <span class="rt-pos">${p.pos}${p.pos === 'BTN' ? ' <i class="rt-d">D</i>' : ''}</span><span class="rt-tag">${p.hero ? 'You' : T.tag}</span>
+      <span class="rt-pos">${p.pos}${p.pos === 'BTN' ? ' <i class="rt-d">D</i>' : ''}</span>${show && !p.hero ? '' : `<span class="rt-tag">${p.hero ? 'You' : T.tag}</span>`}
       <span class="rt-cards">${p.folded && !p.hero ? '' : show ? cardsHTML(p.hole, 'xs') : '<span class="rt-backs"><i></i><i></i></span>'}</span>
       <span class="rt-stack">${p.allin && !g.done ? 'ALL IN' : fmtBB(p.stack)}</span></div>`;
     if (p.bet > 0) h += `<div class="rt-bet" style="left:${xy.bx}%;top:${xy.by}%"><i></i>${fmtBB(p.bet)}</div>`;
@@ -278,10 +286,11 @@ function gHandOver() {
   gSaveHand(H, counted ? net : null);
   if (counted) gs.net = gR(gs.net + net);
   const msg = g.stopped ? `Preflop over: ${H.folded ? 'you folded' : `you're in a ${gIn().length}-way pot`}.`
-    : H.folded && !g.dec.length ? 'You folded.' : `${net > 0 ? `You won <b class="good">${fmtBB(net)} BB</b>` : net < 0 ? `You lost <b class="bad">${fmtBB(-net)} BB</b>` : 'You broke even'}${g.showdown ? ' at showdown' : ''}.`;
+    : H.folded ? (net < 0 ? `You folded and lost <b class="bad">${fmtBB(-net)} BB</b>.` : 'You folded.') : `${net > 0 ? `You won <b class="good">${fmtBB(net)} BB</b>` : net < 0 ? `You lost <b class="bad">${fmtBB(-net)} BB</b>` : 'You broke even'}${g.showdown ? ' at showdown' : ''}.`;
   $('g-acts').innerHTML = `<div class="g-over"><p>${msg}${hp.gcfg.only === 'full' ? ` <span class="small muted">Session: ${gs.hands} hands, ${gs.net >= 0 ? '+' : ''}${fmtBB(gs.net)} BB</span>` : ''}</p><button class="act" type="button" id="g-next">Next hand</button></div>`;
   $('g-next').onclick = gDeal; $('g-next').focus({ preventScroll: true });
 }
+$('g-res').onclick = () => { hpTab('res'); scrollTo(0, 0); };
 $('g-change').onclick = () => { if (gs) clearTimeout(gs.tm); gs = null; $('g-game').hidden = true; $('g-setup').hidden = false; gSetupRender(); };
 
 /* ---------- logging ---------- */
