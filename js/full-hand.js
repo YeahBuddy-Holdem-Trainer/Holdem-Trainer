@@ -25,12 +25,14 @@ const FH_SZ={small:.33,medium:.6,large:.85,over:1.4};
 function fhTier(c,board){const {made,draw}=rvbClassify(c,board);
   if(RVB_STRONG.has(made))return 'monster';if(made==='overpair'||made==='tpgk')return 'strong';
   const big=draw==='combo'||draw==='fd'||draw==='oesd';
-  if(['tpwk','ppbelow','middle'].includes(made))return big?'draw':'medium';if(big)return 'draw';if(made==='weak')return 'weak';if(draw==='gut')return 'gut';return 'air'}
+  if(['tpwk','ppbelow','middle'].includes(made))return big?'draw':'medium';if(big)return 'draw';if(made==='weak')return 'weak';if(draw==='gut')return 'gut';
+  /* two overcards (like AQ on J-7-3) have 6 outs: about as live as a gutshot until the river */
+  if(board.length<5&&c.every(x=>x>>2>Math.max(...board.map(y=>y>>2))))return 'gut';return 'air'}
 /* facing a bet: [call, raise] at about half pot */
 const FH_FACE={
   rec:{monster:[.45,.55],strong:[.9,.08],medium:[.7,0],weak:[.35,0],draw:[.75,.1],gut:[.35,0],air:[.06,.02]},
   station:{monster:[.75,.25],strong:[.97,.02],medium:[.93,0],weak:[.7,0],draw:[.9,.03],gut:[.6,0],air:[.25,0]},
-  nit:{monster:[.5,.5],strong:[.85,.05],medium:[.45,0],weak:[.1,0],draw:[.6,.05],gut:[.12,0],air:[.02,0]},
+  nit:{monster:[.5,.5],strong:[.85,.05],medium:[.6,0],weak:[.1,0],draw:[.6,.05],gut:[.12,0],air:[.02,0]},
   aggro:{monster:[.3,.7],strong:[.75,.2],medium:[.65,.05],weak:[.35,.05],draw:[.5,.35],gut:[.3,.15],air:[.08,.15]}};
 function fhFacing(type,tier,f,isRaise){let [c,r]=FH_FACE[type][tier];
   if(tier!=='monster'&&tier!=='strong')c*=Math.min(1.1,Math.max(.3,type==='station'?1.1-.2*f:1.25-.5*f));
@@ -255,6 +257,9 @@ function fhEnd(how){fh.done=true;const P=fh.pot;let net;
 function fhSave(){try{const a=JSON.parse(localStorage.getItem(FHKEY))||[];a.push({ts:fh.ts,type:fh.type,seat:fh.seat,S:fh.S,tour:!!fh.tour,depth:fh.depth||100,hero:fh.hero,vil:fh.vil,board:fh.board,log:fh.log,dec:fh.dec.map(d=>({street:d.street,spot:d.spot,choice:d.choice,best:d.best,ok:d.ok,cost:d.cost,why:d.why,ev:d.ev?d.ev.map(r=>[r[0],Math.round(r[1]*100)/100,r[2]==null?null:Math.round(r[2]*1000)/1000,r[3]==null?null:Math.round(r[3]*1000)/1000]):null,logIdx:d.logIdx})),result:fh.result});
   if(typeof rpList==='function')rpList();
   localStorage.setItem(FHKEY,JSON.stringify(a.slice(-50)))}catch(e){}}
+/* reset the running numbers: tap twice so a stray tap doesn't wipe them */
+$('fh-reset').onclick=e=>{const b=e.currentTarget;if(b.dataset.armed){stats.fh={hands:0,dec:0,good:0,net:0};save();fhStats();b.textContent='Reset these numbers';delete b.dataset.armed;return}
+  b.dataset.armed='1';b.textContent='Tap again to reset hands, decisions and BB won';setTimeout(()=>{if(b.dataset.armed){delete b.dataset.armed;b.textContent='Reset these numbers'}},4000)};
 function fhStats(){$('fh-hands').textContent=stats.fh.hands;$('fh-good').textContent=stats.fh.dec?pct(stats.fh.good/stats.fh.dec,0):'–';$('fh-net').textContent=(stats.fh.net>=0?'+':'')+fmtBB(Math.round((stats.fh.net||0)*10)/10)}
 
 /* ---------- drawing ---------- */

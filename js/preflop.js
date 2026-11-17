@@ -13,36 +13,36 @@ function sp(game,type,stack,hero,vil,r,x={}){
   return{id:(game+'-'+name).toLowerCase().replace(/[^a-z0-9]+/g,'-'),game,type,stack,hero,vil,r,acts,o,tb:x.tb,name}}
 const SPOTS=[
  /* cash, 100 BB */
- sp('cash','open',100,'UTG',null,['55+,A2s+,K9s+,Q9s+,J9s+,T9s,98s,87s,76s,65s,ATo+,KJo+,QJo']),
- sp('cash','open',100,'HJ',null,['44+,A2s+,K8s+,Q9s+,J9s+,T8s+,97s+,87s,76s,65s,A9o+,KTo+,QTo+,JTo']),
- sp('cash','open',100,'CO',null,['22+,A2s+,K6s+,Q8s+,J8s+,T8s+,97s+,86s+,75s+,65s,54s,A8o+,A5o,KTo+,QTo+,JTo']),
- sp('cash','open',100,'BTN',null,['22+,A2s+,K2s+,Q3s+,J5s+,T6s+,96s+,85s+,74s+,63s+,53s+,43s,A2o+,K8o+,Q9o+,J9o+,T8o+,98o,87o']),
+ sp('cash','open',100,'UTG',null,['55+,A2s+,K9s+,Q9s+,J9s+,T9s,98s,ATo+,KJo+']),
+ sp('cash','open',100,'HJ',null,['44+,A2s+,K8s+,Q9s+,J9s+,T8s+,97s+,87s,A9o+,KTo+,QJo']),
+ sp('cash','open',100,'CO',null,['22+,A2s+,K6s+,Q8s+,J8s+,T8s+,97s+,86s+,75s+,A8o+,A5o,KTo+,QTo+,JTo']),
+ sp('cash','open',100,'BTN',null,['22+,A2s+,K2s+,Q3s+,J5s+,T6s+,96s+,85s+,75s+,64s+,53s+,A2o+,K8o+,Q9o+,J9o+,T9o']),
  sp('cash','open',100,'SB',null,['22+,A2s+,K3s+,Q5s+,J7s+,T7s+,96s+,85s+,75s+,64s+,54s,A4o+,K8o+,Q9o+,J9o+,T9o']),
  sp('cash','vsopen',100,'CO','HJ',['TT+,AJs+,KQs,AQo+,A5s-A4s','22+,ATs+,KTs+,QTs+,JTs,T9s,98s,AJo,KQo']),
  sp('cash','vsopen',100,'BTN','UTG',['QQ+,AKs,AKo,A5s','22+,ATs+,KTs+,QTs+,J9s+,T9s,98s,87s,76s,AQo,KQo']),
  sp('cash','vsopen',100,'BTN','CO',['TT+,AJs+,KQs,AQo+,A5s-A4s,K9s,65s','22+,A9s+,KTs+,QTs+,J9s+,T9s,98s,87s,76s,AJo,KQo']),
  sp('cash','vsopen',100,'SB','CO',['88+,A9s+,A5s-A4s,KTs+,QTs+,JTs,AJo+,KQo']),
  sp('cash','vsopen',100,'SB','BTN',['77+,A8s+,A5s-A3s,KTs+,QTs+,JTs,T9s,ATo+,KJo+']),
- sp('cash','vsopen',100,'BB','UTG',['QQ+,AKs,AKo,A5s-A4s','22+,A2s+,K9s+,Q9s+,J9s+,T8s+,97s+,86s+,75s+,64s+,54s,AJo+,KQo']),
+ sp('cash','vsopen',100,'BB','UTG',['QQ+,AKs,A9s-A2s,AKo','22-JJ,AQs-ATs,K3s+,Q7s+,J8s+,T8s+,97s+,86s+,75s+,64s+,54s,AQo-A9o,KJo-K9o,QTo+,KQo']),
  sp('cash','vsopen',100,'BB','CO',['TT+,AJs+,KQs,AQo+,A5s-A3s,K9s,T8s,76s','22+,A2s+,K5s+,Q7s+,J7s+,T7s+,96s+,85s+,75s+,64s+,54s,A7o+,KTo+,QTo+,JTo,T9o']),
  sp('cash','vsopen',100,'BB','BTN',['99+,ATs+,KJs+,AJo+,KQo,A5s-A2s,K8s,Q9s,J9s,T8s,76s,65s','22+,A2s+,K2s+,Q2s+,J5s+,T6s+,96s+,85s+,74s+,63s+,53s+,43s,A2o+,K6o+,Q8o+,J8o+,T8o+,97o+,87o,76o']),
- sp('cash','vsopen',100,'BB','SB',['TT+,A9s+,KTs+,QJs,A5s-A2s,K7s,Q8s,J8s,T8s,97s,86s,75s,AJo+,KQo','22+,A2s+,K2s+,Q2s+,J4s+,T6s+,96s+,85s+,74s+,63s+,53s+,43s,A2o+,K5o+,Q7o+,J8o+,T8o+,98o,87o']),
+ sp('cash','vsopen',100,'BB','SB',['TT+,A2s+,K5s+,QJs,Q8s,JTs,J8s,T8s,97s,86s,75s,ATo+,KQo','22-99,K4s-K2s,QTs-Q9s,Q7s-Q2s,J9s,J7s-J2s,T9s,T7s-T2s,98s,96s-94s,92s,87s,85s-84s,76s,74s,63s+,53s+,43s,A9o-A2o,KJo-K2o,Q3o+,J6o+,T7o+,98o,87o']),
  sp('cash','vs3bet',100,'UTG','BTN',['KK+,AKs,A5s','88+,AJs+,KQs,AKo,QJs,JTs'],{tb:7.5}),
  sp('cash','vs3bet',100,'CO','BTN',['QQ+,AKs,AKo,A5s','77+,ATs+,KTs+,QTs+,JTs,T9s,98s,AQo'],{tb:7.5}),
  sp('cash','vs3bet',100,'BTN','BB',['QQ+,AKs,AKo,A5s-A4s','22+,A6s+,K9s+,Q9s+,J9s+,T8s+,98s,87s,76s,65s,ATo+,KJo+'],{tb:10}),
  /* tournament */
- sp('tour','open',40,'UTG',null,['66+,A8s+,A5s,KTs+,QTs+,JTs,T9s,ATo+,KJo+']),
- sp('tour','open',40,'HJ',null,['55+,A4s+,K9s+,Q9s+,J9s+,T9s,98s,ATo+,KJo+,QJo']),
- sp('tour','open',40,'CO',null,['33+,A2s+,K7s+,Q8s+,J8s+,T8s+,97s+,87s,76s,A8o+,KTo+,QTo+,JTo']),
- sp('tour','open',40,'BTN',null,['22+,A2s+,K3s+,Q5s+,J6s+,T6s+,96s+,85s+,75s+,64s+,54s,A2o+,K8o+,Q9o+,J9o+,T9o']),
+ sp('tour','open',40,'UTG',null,['55+,A2s+,K3s+,Q7s+,J8s+,T8s+,A9o+,KTo+,QTo+']),
+ sp('tour','open',40,'HJ',null,['44+,A2s+,K2s+,Q7s+,Q4s,J7s+,T8s+,98s,A7o+,K9o+,QTo+,JTo']),
+ sp('tour','open',40,'CO',null,['33+,A2s+,K2s+,Q4s+,Q2s,J6s+,T7s+,97s+,87s,76s,A3o+,K8o+,Q9o+,JTo']),
+ sp('tour','open',40,'BTN',null,['22+,A2s+,K2s+,Q2s+,J2s+,T2s+,96s+,85s+,75s+,64s+,54s,A2o+,K4o+,Q8o+,J8o+,T9o']),
  sp('tour','open',40,'SB',null,['22+,A2s+,K4s+,Q6s+,J7s+,T7s+,97s+,86s+,76s,65s,A5o+,K9o+,QTo+,JTo'],{o:2.5}),
- sp('tour','open',25,'UTG',null,['66+,A9s+,A5s,KTs+,QJs,AJo+,KQo']),
- sp('tour','open',25,'CO',null,['44+,A2s+,K8s+,Q9s+,J9s+,T9s,A9o+,KTo+,QJo']),
- sp('tour','open',25,'BTN',null,['22+,A2s+,K5s+,Q7s+,J7s+,T7s+,97s+,86s+,76s,A3o+,K9o+,Q9o+,J9o+']),
- sp('tour','vsopen',40,'BTN','CO',['TT+,AQs+,AKo,A5s','22+,ATs+,KTs+,QTs+,JTs,T9s,98s,AJo,KQo']),
- sp('tour','vsopen',40,'BB','UTG',['QQ+,AKs,AKo','22+,A2s+,K8s+,Q9s+,J9s+,T8s+,97s+,86s+,76s,65s,ATo+,KJo+,QJo']),
- sp('tour','vsopen',40,'BB','CO',['JJ+,AQs+,AKo,A5s','22+,A2s+,K5s+,Q7s+,J7s+,T7s+,96s+,86s+,75s+,65s,54s,A5o+,K9o+,Q9o+,J9o+,T9o']),
- sp('tour','vsopen',40,'BB','BTN',['TT+,AJs+,KQs,AQo+,A5s-A4s','22+,A2s+,K2s+,Q2s+,J4s+,T6s+,95s+,85s+,74s+,63s+,53s+,43s,A2o+,K4o+,Q7o+,J7o+,T7o+,97o+,87o,76o']),
+ sp('tour','open',25,'UTG',null,['55+,A2s+,K8s+,Q9s+,A4o+,KTo+,QTo+']),
+ sp('tour','open',25,'CO',null,['44+,A2s+,K3s+,Q8s+,J9s+,T9s,A2o+,K7o+,Q8o+,JTo']),
+ sp('tour','open',25,'BTN',null,['22+,A2s+,K2s+,Q4s+,J6s+,T7s+,97s+,86s+,76s,A2o+,K3o+,Q8o+,J8o+,T9o']),
+ sp('tour','vsopen',40,'BTN','CO',['TT+,AQs+,A9s-A3s,AKo,KQo','22-99,AJs-ATs,A2s,K3s+,Q7s+,J8s+,T8s+,98s,AQo-A8o,KJo-K9o,QTo+']),
+ sp('tour','vsopen',40,'BB','UTG',['QQ+,AKs,A9s-A3s,AKo,AJo-ATo,KQo','22-JJ,AQs-ATs,A2s,K2s+,Q2s+,J2s+,T2s+,94s+,92s,84s+,75s+,64s+,54s,AQo,A9o-A2o,KJo-K2o,Q3o+,J6o+,T7o+,98o']),
+ sp('tour','vsopen',40,'BB','CO',['JJ+,AQs+,A9s-A2s,KJs,K9s-K5s,QJs,JTs,AKo,AJo-ATo,KQo','22-TT,AJs-ATs,KQs,KTs,K4s-K2s,QTs-Q2s,J9s-J2s,T2s+,92s+,82s+,73s+,64s+,53s+,43s,AQo,A9o-A2o,KJo-K2o,Q2o+,J5o+,J3o,T7o+,97o+,87o']),
+ sp('tour','vsopen',40,'BB','BTN',['TT+,AJs+,A9s-A2s,KJs+,K9s-K5s,QJs,JTs,ATo+,KQo','22-99,ATs,KTs,K4s-K2s,QTs-Q2s,J9s-J2s,T2s+,92s+,82s+,72s+,62s+,53s+,42s+,32s,A9o-A2o,KJo-K2o,Q2o+,J2o+,T6o+,97o+,95o,87o,76o']),
  sp('tour','reshove',20,'BTN','CO',['77+,A8s+,A5s-A4s,KTs+,QJs,ATo+,KQo']),
  sp('tour','reshove',20,'SB','BTN',['55+,A2s+,K9s+,QTs+,JTs,A8o+,KJo+']),
  sp('tour','reshove',20,'BB','BTN',['77+,A8s+,A5s-A4s,KTs+,QJs,ATo+,KQo','22+,A2s+,K2s+,Q5s+,J7s+,T7s+,97s+,86s+,75s+,65s,A2o+,K8o+,Q9o+,J9o+']),
@@ -51,12 +51,12 @@ const SPOTS=[
  sp('tour','shove',15,'SB',null,['22+,A2s+,K2s+,Q5s+,J7s+,T7s+,97s+,87s,A2o+,K7o+,Q9o+,J9o+']),
  sp('tour','shove',10,'UTG',null,['22+,A2s+,K8s+,Q9s+,J9s+,T9s,A7o+,KTo+,QJo']),
  sp('tour','shove',10,'HJ',null,['22+,A2s+,K6s+,Q8s+,J8s+,T8s+,98s,A4o+,K9o+,QTo+,JTo']),
- sp('tour','shove',10,'CO',null,['22+,A2s+,K3s+,Q6s+,J7s+,T7s+,97s+,87s,A2o+,K8o+,Q9o+,J9o+,T9o']),
- sp('tour','shove',10,'BTN',null,['22+,A2s+,K2s+,Q3s+,J5s+,T6s+,96s+,86s+,75s+,65s,A2o+,K5o+,Q8o+,J8o+,T8o+,98o']),
- sp('tour','shove',10,'SB',null,['22+,A2s+,K2s+,Q2s+,J3s+,T5s+,95s+,85s+,74s+,64s+,53s+,43s,A2o+,K2o+,Q6o+,J7o+,T7o+,97o+,87o']),
+ sp('tour','shove',10,'CO',null,['22+,A2s+,K4s+,Q9s+,J9s+,A2o+,K8o+,QTo+,JTo']),
+ sp('tour','shove',10,'BTN',null,['22+,A2s+,K4s+,Q8s+,J9s+,A2o+,K8o+,Q8o+,JTo']),
+ sp('tour','shove',10,'SB',null,['22+,A2s+,K2s+,Q2s+,J4s+,T6s+,98s,A2o+,K2o+,Q6o+,J7o+,T8o+']),
  sp('tour','callshove',15,'BB','CO',['55+,A7s+,A5s-A4s,KTs+,QJs,ATo+,KQo']),
- sp('tour','callshove',10,'BB','BTN',['22+,A2s+,K5s+,Q8s+,J9s+,T9s,A2o+,K9o+,QTo+']),
- sp('tour','callshove',10,'BB','SB',['22+,A2s+,K2s+,Q4s+,J7s+,T7s+,97s+,87s,A2o+,K5o+,Q8o+,J9o+,T9o']),
+ sp('tour','callshove',10,'BB','BTN',['22+,A2s+,K7s+,QTs+,JTs,A2o+,K9o+,QTo+']),
+ sp('tour','callshove',10,'BB','SB',['22+,A2s+,K2s+,Q7s+,J9s+,T9s,A2o+,K5o+,Q9o+,JTo']),
  sp('tour','callshove',10,'SB','BTN',['55+,A7s+,A5s,KTs+,QJs,A9o+,KQo']),
 ];
 SPOTS.forEach(s=>{s.map=new Map();s.r.forEach((str,a)=>parseRange(str).forEach(l=>{if(!s.map.has(l))s.map.set(l,a)}));
@@ -149,3 +149,7 @@ function pfAnswer(i){const p=pf,ok=i===p.exp,s=p.spot;
 function pfStats(){$('pf-score').textContent=`${stats.pf.c}/${stats.pf.n}`;$('pf-streak').textContent=stats.pf.streak}
 $('pf-acts').onclick=e=>{const b=e.target.closest('button');if(!b||b.disabled)return;if(b.dataset.next)newPF();else pfAnswer(+b.dataset.a)};
 $('pf-type').onchange=()=>{buildPfSetup();newPF()};$('pf-stack').onchange=()=>{buildPfSetup();newPF()};$('pf-spot').onchange=newPF;
+
+/* calling a shove: the charts use chip math; say so, because tournament survival (ICM) tightens the closest calls */
+{ const pfWhyChips = pfWhy;
+  pfWhy = (s, label, exp) => pfWhyChips(s, label, exp) + (s.type === 'callshove' ? ' <span class="muted">This is chip math. Near the money or at a final table, survival is worth more than chips (ICM), so fold some of the closest calls.</span>' : ''); }

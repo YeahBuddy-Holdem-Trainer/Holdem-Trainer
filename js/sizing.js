@@ -173,8 +173,10 @@ const SZCOST={best:['Best size','good'],ok:['Also fine','good'],small:['Small mi
 const SZCOSTTXT={small:'A step off the best size: it costs a little, mostly by getting less value or fewer folds.',medium:'This changes how much you win or lose noticeably in this spot.',big:'This is the kind of error that costs big pots: giving up clear value, or putting a lot of money in with the wrong hand.'};
 const bName=id=>SZB[SZI[id]].name;
 const ansTxt=a=>a.best.map(bName).join(' / ')+(a.ok.length?` <span class="muted">(also fine: ${a.ok.map(bName).join(', ')})</span>`:'');
-function szMath(s){const P=s.pot,rows=SZB.filter(b=>b.f).map(b=>{const x=Math.round(P*b.f*2)/2;return `<tr><td class="t">${b.name}</td><td>${fmtBB(x)} BB</td><td>${pct(x/(P+2*x),0)}</td><td>${pct(x/(P+x),0)}</td></tr>`}).join('');
-  return mathBox(`<p class="small">Every size makes two prices. <b>Their call:</b> bet ÷ (pot + bet + bet) is the equity they need to call. <b>Your bluff:</b> bet ÷ (pot + bet) is how often they must fold for a pure bluff to break even.</p>
+function szMath(s){const P=s.pot,val=['strong','tptk','thin'].includes(s.cat),bl=s.cat==='air'||s.cat==='draw',dim=' style="opacity:.45"';
+  const rows=SZB.filter(b=>b.f).map(b=>{const x=Math.round(P*b.f*2)/2;return `<tr><td class="t">${b.name}</td><td>${fmtBB(x)} BB</td><td${bl?dim:''}>${pct(x/(P+2*x),0)}</td><td${val?dim:''}>${pct(x/(P+x),0)}</td></tr>`}).join('');
+  const focus=val?`<p class="small"><b>You're betting for value</b>, so the column that matters is <b>They need to call</b>: you want a price that worse hands will still pay. The bluff column is shown faded for reference.</p>`:bl?`<p class="small"><b>You're betting as a bluff or semi-bluff</b>, so the column that matters is <b>Bluff must work</b>.</p>`:'';
+  return mathBox(`${focus}<p class="small">Every size makes two prices. <b>Their call:</b> bet ÷ (pot + bet + bet) is the equity they need to call. <b>Your bluff:</b> bet ÷ (pot + bet) is how often they must fold for a pure bluff to break even.</p>
     <div class="tbl-scroll"><table class="ref"><thead><tr><th>Size (pot ${fmtBB(P)} BB)</th><th>Bet</th><th>They need to call</th><th>Bluff must work</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="small muted">Small bets give them a cheap price, so they call wide: good for thin value and for hands that want calls. Big bets need folds less often to show a profit as bluffs and charge draws more, but only worse hands that can't fold will call them.</p>`)}
 function szAnswerPick(choice){const s=sz;if(!s||s.done&&!choice)return;const key=szKey(),ans=szAnswer(s.sc,s.cat,key),other=szAnswer(s.sc,s.cat,key==='x'?'g':'x');
@@ -183,7 +185,7 @@ function szAnswerPick(choice){const s=sz;if(!s||s.done&&!choice)return;const key
     logEvent({drill:'Bet sizing',spot:s.sc.label,hand:names(s.hero),answer:bName(choice),expected:ans.best.map(bName).join(' / '),correct:ok,
       detail:`${key==='g'?'GTO':'Exploit'} key · ${SZCAT_SHORT[s.cat]} · ${cost==='best'||cost==='ok'?'no':cost} cost · board ${names(s.board)}`,ms:Date.now()-s.t0})}
   const [title,cls]=SZCOST[cost];
-  $('sz-out').innerHTML=`<div class="verdict ${cls}"><strong>${title}</strong><span>Your hand: ${SZCAT[s.cat]}.</span></div>
+  $('sz-out').innerHTML=`<div class="verdict ${cls}"><strong>${title}</strong><span>Your hand: ${s.hero&&s.board?`<b>${CAT[Math.floor(evalHand(s.hero.concat(s.board))/B5)].toLowerCase()}</b> (${SZCAT[s.cat].replace(/^(\w)/,c=>c.toLowerCase())})`:SZCAT[s.cat]}.</span></div>
     ${cost!=='best'&&cost!=='ok'?`<p class="small">${SZCOSTTXT[cost]}</p>`:''}
     <div class="szkey"><h4>${key==='g'?'GTO baseline':'Exploit (your notes)'}: ${ansTxt(ans)}</h4><p class="small">${ans.why}</p></div>
     <div class="szkey alt"><h4>${key==='g'?'Exploit (your notes)':'GTO baseline'}: ${ansTxt(other)}</h4><p class="small">${other.why}</p></div>${szMath(s)}`;

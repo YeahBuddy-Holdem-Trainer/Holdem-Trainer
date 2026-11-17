@@ -136,7 +136,7 @@ function lnPositions(lvl) {
     explain: `<b>${ans}</b>: ${LN_PRE.slice(i + 1).join(', ')}. The more players behind you, the more likely one of them has a strong hand, which is why early seats play tighter.` };
 }
 function lnNameHand(lvl) {
-  const n = lvl === 1 ? 3 : lvl === 2 ? 4 : 5;
+  const n = pick(lvl === 1 ? [3] : lvl === 2 ? [3, 4, 5] : [4, 5]);   /* mix streets so the board isn't always four cards */
   for (;;) {
     const d = shuffled(), hero = d.slice(0, 2), board = d.slice(2, 2 + n), v = evalHand(hero.concat(board)), k = lnCat(v);
     if (lvl === 1 && k === 0 && Math.random() < .7) continue;
@@ -152,7 +152,7 @@ function lnNameHand(lvl) {
     const rn = r => ({ T: '10', J: 'jack', Q: 'queen', K: 'king', A: 'ace' })[r] || r, an = r => (/^[8A]$/.test(r) ? 'an ' : 'a ') + rn(r);
     const drawNote = (st.length ? ` No straight yet: you need ${st.map(an).join(' or ')} (${st.length > 1 ? 'two ways to hit, 8 outs' : 'a gutshot straight draw, 4 outs'}).` : '') + (fd ? ' No flush yet: four cards of one suit is a flush draw (9 outs).' : '');
     return { drill: 'Name your hand', spot: ['Flop', 'Turn', 'River'][n - 3], hand: names(hero),
-      prompt: `<div class="hands">${lnHandBox('You', hero)}${lnHandBox(['Flop', 'Turn', 'River'][n - 3], board)}</div><p class="spot-text">What is your best hand?</p>`,
+      prompt: `<div class="hands">${lnHandBox('You', hero)}${lnHandBox(['Flop', 'Turn', 'River'][n - 3], board)}</div><p class="spot-text">What is your best hand right now?${n < 5 ? ` <span class="small muted">(${5 - n} more card${n < 4 ? 's' : ''} to come, but count only what you have now)</span>` : ''}</p>`,
       opts: opts.map(x => CAT[x]), correct: opts.indexOf(k), short: `${names(hero)} on ${names(board)}`,
       explain: `<b>${CAT[k]}</b>: <span class="outs">${cardsHTML(b5.cards, 'xs')}</span>${drawNote}${boardOnly ? ' The board alone makes this hand, so your hole cards don\'t improve it ("the board plays").' : [1, 2, 3, 6, 7].includes(k) && b5.cards.filter(c => b5.cards.filter(x => x >> 2 === c >> 2).length > 1).every(c => board.includes(c)) ? ` The ${CAT[k].toLowerCase()} is all on the board, so every player has it too; your cards only count as kickers.` : ''}` };
   }
@@ -172,13 +172,19 @@ function lnPF(re, game) {
     if (cards[0] >> 2 < cards[1] >> 2) cards.reverse();
     const exp = spot.map.get(label) ?? spot.fold;
     return { drill: 'Preflop', spot: spot.name, hand: label, visual: tableSnap({ ...spotTable(spot), heroCards: cards }),
-      prompt: `<p class="spot-text"><b>${spot.name}.</b> ${spotText(spot)}</p>`, opts: spot.acts, correct: exp, short: `${spot.name}, ${label}`, explain: pfWhy(spot, label, exp) };
+      prompt: `<p class="spot-name">${spot.name}</p><p class="spot-text">${spotText(spot)}</p>`, opts: spot.acts, correct: exp, short: `${spot.name}, ${label}`, explain: pfWhy(spot, label, exp) };
   };
 }
 const lnSpread = (r, lvl, extra = []) => lvl === 3 ? [r + 2, r - 2, r + 3, r - 3, r + 4, ...extra] : lvl === 1 ? [r + 12, r - 12, r + 18, ...extra] : [r + 7, r - 7, r + 12, ...extra];
+let lnPOlast = [];
 function lnPO(fr) {
   return lvl => {
-    newStakes(); const pot = makePot(4, 40), bet = makeBet(pot, pick(fr[lvl - 1])), req = bet / (pot + 2 * bet), r = Math.round(req * 100);
+    let pot, bet, req, r;
+    for (let i = 0; i < 12; i++) {   /* don't repeat the answer of the last two questions */
+      newStakes(); pot = makePot(4, 40); bet = makeBet(pot, pick(fr[lvl - 1])); req = bet / (pot + 2 * bet); r = Math.round(req * 100);
+      if (!lnPOlast.includes(r)) break;
+    }
+    lnPOlast = [r, ...lnPOlast].slice(0, 2);
     const { opts, correct } = numOpts(r, lnSpread(r, lvl, [Math.round(bet / (pot + bet) * 100), Math.round(bet / pot * 100)]).filter(x => x > 0 && x < 95));
     return { drill: 'Pot odds', spot: nearestRef(bet / pot) + ' bet', hand: '',
       prompt: `<p class="spot-text">The pot is <b>${money(pot)}</b>. Villain bets <b>${money(bet)}</b>${lvl < 3 ? ` (${Math.round(bet / pot * 100)}% of the pot)` : ''}. What equity do you need to call?</p>`,
@@ -191,12 +197,13 @@ function lnOuts(lvl) {
     const d = shuffled(), hero = d.slice(0, 2), vil = d.slice(2, 4), board = d.slice(4, 8);
     if (evalHand(hero.concat(board)) >= evalHand(vil.concat(board))) continue;
     const outs = outsFor(hero, vil, board), n = outs.length;
+    const ties = deckWithout([...hero, ...vil, ...board]).filter(c => evalHand(hero.concat(board, c)) === evalHand(vil.concat(board, c)));
     if (lvl === 1 ? ![4, 8, 9].includes(n) : lvl === 3 ? n < 6 || n > 20 : n < 2 || n > 20) continue;
     const { opts, correct } = numOpts(n, (lvl === 3 ? [n - 1, n + 1, n - 2, n + 2, n - 3] : lvl === 1 ? [n - 4, n + 4, n + 5, n - 5] : [n - 4, n - 2, n + 2, n + 4, n + 3, n - 3]).filter(x => x >= 0));
     return { drill: 'Counting outs', spot: n <= 5 ? 'Turn, small draw' : n <= 10 ? 'Turn, medium draw' : 'Turn, big draw', hand: names(hero) + ' vs ' + names(vil),
-      prompt: `<div class="hands">${lnHandBox('You', hero)}${lnHandBox('Villain', vil)}</div><div class="hands">${lnHandBox('Turn', board)}</div><p class="spot-text">How many river cards put you ahead?</p>`,
+      prompt: `<div class="hands">${lnHandBox('You', hero)}${lnHandBox('Villain', vil)}</div><div class="hands">${lnHandBox('Turn', board)}</div><p class="spot-text">How many river cards make you win outright? <span class="small muted">(Cards that only split the pot don't count.)</span></p>`,
       opts: opts.map(String), correct, short: `${names(hero)} vs ${names(vil)} on ${names(board)}`,
-      explain: `${n} outs: <span class="outs">${cardsHTML(outs, 'xs')}</span>` };
+      explain: `${n} outs: <span class="outs">${cardsHTML(outs, 'xs')}</span>${ties.length ? `<br>${ties.length} more card${ties.length > 1 ? 's' : ''} would split the pot (not counted): <span class="outs">${cardsHTML(ties, 'xs')}</span>` : ''}` };
   }
 }
 /* rule of 2 and 4: outs × 4 with two cards to come (all in on the flop), outs × 2 with one */
@@ -391,7 +398,7 @@ const LN_UNITS = [
     { id: 'pf-check', name: 'Checkpoint', check: true, gen: lnMix('preflop'), intro: `<p>A mix of everything in this unit. Score 10 out of 12 to unlock <b>The price of a call</b>.</p>` },
   ] },
   { id: 'price', name: 'The price of a call', blurb: 'Pot odds, outs and quick equity math.', lessons: [
-    { id: 'po-easy', name: 'Pot odds', icon: '%', d: 'Pot odds', gen: lnPO([[.5, 1], [.33, .5, 1], [.33, .5, 1]]),
+    { id: 'po-easy', name: 'Pot odds', icon: '%', d: 'Pot odds', gen: lnPO([[.33, .5, .75, 1, 1.5], [.25, .33, .5, .67, .75, 1, 1.5, 2], [.25, .33, .5, .67, .75, 1, 1.25, 1.5, 2]]),
       intro: `<p>Pot odds tell you how often you need to win to call.</p><p class="mono-ex">equity needed = your call ÷ (pot + bet + your call)</p><ul><li>Half pot → <b>25%</b></li><li>Pot-size bet → <b>33%</b></li><li>A third of the pot → <b>20%</b></li></ul><p>Memorize these three; most bets are close to one of them.</p>` },
     { id: 'po-any', name: 'Any bet size', icon: '÷', d: 'Pot odds', gen: lnPO([FRACS, FRACS, FRACS]),
       intro: `<p>Same formula, every bet size, from a quarter pot up to twice the pot.</p><ul><li>Bigger bets need more equity: ¾ pot → 30%, 2× pot → 40%.</li><li>The most common slip is dividing by the pot <i>before</i> your call. Your call is part of what you win back.</li><li>On level 3 the bet's share of the pot isn't shown, and the choices are close together.</li></ul>` },
